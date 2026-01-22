@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_c1e416cf6f98033056002bf320d0c429 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+<div style="
+    position: fixed;
+    bottom: 50px;
+    left: 50px;
+    width: 220px;
+    z-index: 9999;
+    background-color: white;
+    border: 2px solid grey;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 14px;
+">
+<b>Hydrogen Projects</b><br><br>
+<i class="fa fa-map-marker fa-2x" style="color:red"></i>&nbsp; On hold / Cancelled<br>
+<i class="fa fa-map-marker fa-2x" style="color:blue"></i>&nbsp; HYDS projects<br>
+<i class="fa fa-map-marker fa-2x" style="color:green"></i>&nbsp; GreenH projects
+</div>
+    
+            <div class="folium-map" id="map_c1e416cf6f98033056002bf320d0c429" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_c1e416cf6f98033056002bf320d0c429 = L.map(
+                "map_c1e416cf6f98033056002bf320d0c429",
+                {
+                    center: [62.0, 8.0],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 5,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+            L.control.scale().addTo(map_c1e416cf6f98033056002bf320d0c429);
+
+            
+
+        
+    
+            var tile_layer_28ed0854d9dc2314e99222be2680056b = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_28ed0854d9dc2314e99222be2680056b.addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var tile_layer_9fe336217018fb00ef6c3a27bc1c65d2 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_9fe336217018fb00ef6c3a27bc1c65d2.addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var marker_9598e1b72e7a4aa4ad8955a0551024b5 = L.marker(
+                [59.2356, 5.5217],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_75c533edc2f719309190befd1d5cd92c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6ae7a3d5f14364140e6fea5ce17b2e2e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_36c2d9dbdea443073a86d96b4e798508 = $(`<div id="html_36c2d9dbdea443073a86d96b4e798508" style="width: 100.0%; height: 100.0%;"><b>Kårstø (CHE)</b><br>Cancelled project of Equinor</div>`)[0];
+                popup_6ae7a3d5f14364140e6fea5ce17b2e2e.setContent(html_36c2d9dbdea443073a86d96b4e798508);
+            
+        
+
+        marker_9598e1b72e7a4aa4ad8955a0551024b5.bindPopup(popup_6ae7a3d5f14364140e6fea5ce17b2e2e)
+        ;
+
+        
+    
+    
+            marker_9598e1b72e7a4aa4ad8955a0551024b5.bindTooltip(
+                `<div>
+                     Kårstø (CHE)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_9598e1b72e7a4aa4ad8955a0551024b5.setIcon(icon_75c533edc2f719309190befd1d5cd92c);
+            
+    
+            var marker_06e81a6d4779d112941d0ecc42a20adb = L.marker(
+                [62.830755, 6.916013],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_5990f9977fc45b57401c091be6916510 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ec67c23efe4d0f355ee121a67702939a = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_a46cae7c4df8cbc63597b416304816b7 = $(`<div id="html_a46cae7c4df8cbc63597b416304816b7" style="width: 100.0%; height: 100.0%;"><b>Nyhamna (Aukra Hydrogen Hub)</b><br>Cancelled hydrogen hub near Nyhamna gas terminal.</div>`)[0];
+                popup_ec67c23efe4d0f355ee121a67702939a.setContent(html_a46cae7c4df8cbc63597b416304816b7);
+            
+        
+
+        marker_06e81a6d4779d112941d0ecc42a20adb.bindPopup(popup_ec67c23efe4d0f355ee121a67702939a)
+        ;
+
+        
+    
+    
+            marker_06e81a6d4779d112941d0ecc42a20adb.bindTooltip(
+                `<div>
+                     Nyhamna (Aukra Hydrogen Hub)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_06e81a6d4779d112941d0ecc42a20adb.setIcon(icon_5990f9977fc45b57401c091be6916510);
+            
+    
+            var marker_5fbca27774767612e59c8fd87bce51e0 = L.marker(
+                [67.2709, 14.3449],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_f8b25c16bbac5a2ea413f692f66d1c03 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2232ec3ffd7fae987d656270f8f74dff = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_803602f8e520f3c9461e30d79e42572a = $(`<div id="html_803602f8e520f3c9461e30d79e42572a" style="width: 100.0%; height: 100.0%;"><b>Langstranda – Bodø (GreenH)</b><br>Planned GreenH hydrogen production project at Langstranda, Bodø.</div>`)[0];
+                popup_2232ec3ffd7fae987d656270f8f74dff.setContent(html_803602f8e520f3c9461e30d79e42572a);
+            
+        
+
+        marker_5fbca27774767612e59c8fd87bce51e0.bindPopup(popup_2232ec3ffd7fae987d656270f8f74dff)
+        ;
+
+        
+    
+    
+            marker_5fbca27774767612e59c8fd87bce51e0.bindTooltip(
+                `<div>
+                     Langstranda – Bodø (GreenH)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_5fbca27774767612e59c8fd87bce51e0.setIcon(icon_f8b25c16bbac5a2ea413f692f66d1c03);
+            
+    
+            var marker_e1b811759e3aa3509cc37c4c92e9d187 = L.marker(
+                [63.1105, 7.728],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_d88c977af0e932f555e6e3d43fa55e4a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_020aca1b9914199da47565c9ad3631df = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_cc7803a9cfbc58d57d36ddc9abfccfe7 = $(`<div id="html_cc7803a9cfbc58d57d36ddc9abfccfe7" style="width: 100.0%; height: 100.0%;"><b>Vestbase – Kristiansund (GreenH)</b><br>GreenH hydrogen project located at the Vestbase industrial area in Kristiansund.</div>`)[0];
+                popup_020aca1b9914199da47565c9ad3631df.setContent(html_cc7803a9cfbc58d57d36ddc9abfccfe7);
+            
+        
+
+        marker_e1b811759e3aa3509cc37c4c92e9d187.bindPopup(popup_020aca1b9914199da47565c9ad3631df)
+        ;
+
+        
+    
+    
+            marker_e1b811759e3aa3509cc37c4c92e9d187.bindTooltip(
+                `<div>
+                     Vestbase – Kristiansund (GreenH)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_e1b811759e3aa3509cc37c4c92e9d187.setIcon(icon_d88c977af0e932f555e6e3d43fa55e4a);
+            
+    
+            var marker_7061596e8797be6e9dedd867376eae76 = L.marker(
+                [59.2675, 10.4076],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_7a044523af6db0e8c8e5fa84a2c5c54b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f84008f91508ea5ab0c49c1274e72318 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_6450aff05ff23d744b41aad7ad98ea5b = $(`<div id="html_6450aff05ff23d744b41aad7ad98ea5b" style="width: 100.0%; height: 100.0%;"><b>Slagentangen – Tønsberg (GreenH)</b><br>GreenH hydrogen project at the Slagentangen terminal near Tønsberg.</div>`)[0];
+                popup_f84008f91508ea5ab0c49c1274e72318.setContent(html_6450aff05ff23d744b41aad7ad98ea5b);
+            
+        
+
+        marker_7061596e8797be6e9dedd867376eae76.bindPopup(popup_f84008f91508ea5ab0c49c1274e72318)
+        ;
+
+        
+    
+    
+            marker_7061596e8797be6e9dedd867376eae76.bindTooltip(
+                `<div>
+                     Slagentangen – Tønsberg (GreenH)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_7061596e8797be6e9dedd867376eae76.setIcon(icon_7a044523af6db0e8c8e5fa84a2c5c54b);
+            
+    
+            var marker_1bab572c074a97fac601da6277f39420 = L.marker(
+                [70.6634, 23.6821],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_20057c2450a46eb767b991d5629e73b8 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e2c6c7c59d11a9c5503bb7894b056088 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e13226d8f9b1705e422b000fdf8800b4 = $(`<div id="html_e13226d8f9b1705e422b000fdf8800b4" style="width: 100.0%; height: 100.0%;"><b>Hammerfest (GreenH)</b><br>Planned GreenH hydrogen hub in Hammerfest.</div>`)[0];
+                popup_e2c6c7c59d11a9c5503bb7894b056088.setContent(html_e13226d8f9b1705e422b000fdf8800b4);
+            
+        
+
+        marker_1bab572c074a97fac601da6277f39420.bindPopup(popup_e2c6c7c59d11a9c5503bb7894b056088)
+        ;
+
+        
+    
+    
+            marker_1bab572c074a97fac601da6277f39420.bindTooltip(
+                `<div>
+                     Hammerfest (GreenH)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_1bab572c074a97fac601da6277f39420.setIcon(icon_20057c2450a46eb767b991d5629e73b8);
+            
+    
+            var marker_62277184704a5dda2b2c4e6b6af9488c = L.marker(
+                [59.433, 5.433],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_c81a832c4e281941aea16b1e9fc57ed0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1fc42ed30c31cbdc080f134006d6986e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f6a4cb9bc3608422d751140e7c0ec123 = $(`<div id="html_f6a4cb9bc3608422d751140e7c0ec123" style="width: 100.0%; height: 100.0%;"><b>Årdalsfjorden – Fiskå industriområde (GreenH)</b><br>GreenH hydrogen project at the Fiskå industrial area along Årdalsfjorden, Rogaland.</div>`)[0];
+                popup_1fc42ed30c31cbdc080f134006d6986e.setContent(html_f6a4cb9bc3608422d751140e7c0ec123);
+            
+        
+
+        marker_62277184704a5dda2b2c4e6b6af9488c.bindPopup(popup_1fc42ed30c31cbdc080f134006d6986e)
+        ;
+
+        
+    
+    
+            marker_62277184704a5dda2b2c4e6b6af9488c.bindTooltip(
+                `<div>
+                     Årdalsfjorden – Fiskå industriområde (GreenH)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_62277184704a5dda2b2c4e6b6af9488c.setIcon(icon_c81a832c4e281941aea16b1e9fc57ed0);
+            
+    
+            var marker_15a7e86b3b600443eca1441f89c6ee60 = L.marker(
+                [66.0217, 12.6316],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_83f411a7b99ee523f01b814bdd28ed7d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f27b1ee56e5f43a3df6c8a74571440d7 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_4fd4ac98c04d0e005dbf9ad1a6b0382e = $(`<div id="html_4fd4ac98c04d0e005dbf9ad1a6b0382e" style="width: 100.0%; height: 100.0%;"><b>Sandnessjøen – Horvnes (GreenH)</b><br>GreenH hydrogen project at the Horvnes industrial area near Sandnessjøen.</div>`)[0];
+                popup_f27b1ee56e5f43a3df6c8a74571440d7.setContent(html_4fd4ac98c04d0e005dbf9ad1a6b0382e);
+            
+        
+
+        marker_15a7e86b3b600443eca1441f89c6ee60.bindPopup(popup_f27b1ee56e5f43a3df6c8a74571440d7)
+        ;
+
+        
+    
+    
+            marker_15a7e86b3b600443eca1441f89c6ee60.bindTooltip(
+                `<div>
+                     Sandnessjøen – Horvnes (GreenH)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_15a7e86b3b600443eca1441f89c6ee60.setIcon(icon_83f411a7b99ee523f01b814bdd28ed7d);
+            
+    
+            var marker_80d7a8be3aa959cee2ff1d00102678bd = L.marker(
+                [61.5996, 5.0328],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_083a4d8e0bf01c65dd6edd9b8e1a5169 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_51d706a2c6ed1c6dd3108dfe3d87d748 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_55a784247b8d024eaf16c6207a3de541 = $(`<div id="html_55a784247b8d024eaf16c6207a3de541" style="width: 100.0%; height: 100.0%;"><b>HyFuel – Florø (HydrogenSolutions)</b><br>HyFuel 20 MW green hydrogen production project at Fjord Base in Florø, Kinn municipality (Hydrogen Solutions AS ongoing project).</div>`)[0];
+                popup_51d706a2c6ed1c6dd3108dfe3d87d748.setContent(html_55a784247b8d024eaf16c6207a3de541);
+            
+        
+
+        marker_80d7a8be3aa959cee2ff1d00102678bd.bindPopup(popup_51d706a2c6ed1c6dd3108dfe3d87d748)
+        ;
+
+        
+    
+    
+            marker_80d7a8be3aa959cee2ff1d00102678bd.bindTooltip(
+                `<div>
+                     HyFuel – Florø (HydrogenSolutions)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_80d7a8be3aa959cee2ff1d00102678bd.setIcon(icon_083a4d8e0bf01c65dd6edd9b8e1a5169);
+            
+    
+            var marker_3d52c0b89b15ba374c4b85a396c8df26 = L.marker(
+                [58.4514, 5.9998],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_5b9ca78c8b26db4428e26b150e2c0d21 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e0daef42b5d297cea24b90e263f355c3 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1179ac7aef6c823cf180e41c236cf6d9 = $(`<div id="html_1179ac7aef6c823cf180e41c236cf6d9" style="width: 100.0%; height: 100.0%;"><b>Kaupanes Expansion – Egersund (HydrogenSolutions)</b><br>Kaupanes Expansion Project — expansion of the Kaupanes hydrogen plant in the industrial area of Egersund (Hydrogen Solutions AS ongoing project).</div>`)[0];
+                popup_e0daef42b5d297cea24b90e263f355c3.setContent(html_1179ac7aef6c823cf180e41c236cf6d9);
+            
+        
+
+        marker_3d52c0b89b15ba374c4b85a396c8df26.bindPopup(popup_e0daef42b5d297cea24b90e263f355c3)
+        ;
+
+        
+    
+    
+            marker_3d52c0b89b15ba374c4b85a396c8df26.bindTooltip(
+                `<div>
+                     Kaupanes Expansion – Egersund (HydrogenSolutions)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_3d52c0b89b15ba374c4b85a396c8df26.setIcon(icon_5b9ca78c8b26db4428e26b150e2c0d21);
+            
+    
+            var marker_65c85301d8ef5209c8cbab6ce0456e39 = L.marker(
+                [63.3923, 11.8488],
+                {
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+        
+    
+            var icon_2dc07519c5e56bb0c3fc9d70ef705e2f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "flask",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_fe0c8eb2060a80684a3f23dd6afbfdea = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_0874417a18a111f10601714f00813c05 = $(`<div id="html_0874417a18a111f10601714f00813c05" style="width: 100.0%; height: 100.0%;"><b>Meråker Hydrogen – Kopperå (HydrogenSolutions)</b><br>Meråker Hydrogen plant to be built at Kopperå in Meråker Municipality, producing green hydrogen from renewable energy (Hydrogen Solutions AS ongoing project).</div>`)[0];
+                popup_fe0c8eb2060a80684a3f23dd6afbfdea.setContent(html_0874417a18a111f10601714f00813c05);
+            
+        
+
+        marker_65c85301d8ef5209c8cbab6ce0456e39.bindPopup(popup_fe0c8eb2060a80684a3f23dd6afbfdea)
+        ;
+
+        
+    
+    
+            marker_65c85301d8ef5209c8cbab6ce0456e39.bindTooltip(
+                `<div>
+                     Meråker Hydrogen – Kopperå (HydrogenSolutions)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_65c85301d8ef5209c8cbab6ce0456e39.setIcon(icon_2dc07519c5e56bb0c3fc9d70ef705e2f);
+            
+    
+            var layer_control_f716a7cfad4796317dad834082e2b8a3_layers = {
+                base_layers : {
+                    "cartodbpositronnolabels" : tile_layer_9fe336217018fb00ef6c3a27bc1c65d2,
+                },
+                overlays :  {
+                },
+            };
+            let layer_control_f716a7cfad4796317dad834082e2b8a3 = L.control.layers(
+                layer_control_f716a7cfad4796317dad834082e2b8a3_layers.base_layers,
+                layer_control_f716a7cfad4796317dad834082e2b8a3_layers.overlays,
+                {
+  "position": "topright",
+  "collapsed": true,
+  "autoZIndex": true,
+}
+            ).addTo(map_c1e416cf6f98033056002bf320d0c429);
+
+        
+</script>
+</html>
