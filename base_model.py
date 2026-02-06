@@ -1,10 +1,21 @@
 from network import example_graph, plot_network
 import pyomo.environ as pyo
 import networkx
+import numpy as np
 
 NUMBER_OF_HOMOGENEOUS_SPLITS =10 
-NUMBER_OF_CUTTING_PLANES = 9
-NUMBER_OF_PRESSURE_BOUNDS = 4
+
+NUMBER_OF_CUTTING_PLANES_P_IN = 3
+P_IN_LOW = 4
+P_IN_HIGH = 8
+
+NUMBER_OF_CUTTING_PLANES_P_OUT = 3
+P_OUT_LOW = 3
+P_OUT_HIGH = 7
+
+NUMBER_OF_DENSITY_BOUNDS = 4
+RHO_LOW = 0.55
+RHO_HIGH = 0.70
 
 def create_base_model(network: networkx.Graph):
     model = pyo.ConcreteModel()
@@ -49,7 +60,7 @@ def create_base_model(network: networkx.Graph):
 
     # Special order sets
     
-    model.Z_theta = pyo.Set(initialize = range(NUMBER_OF_PRESSURE_BOUNDS))  # Type 1, pressure upper bound
+    model.Z_theta = pyo.Set(initialize = range(NUMBER_OF_DENSITY_BOUNDS))  # Type 1, pressure upper bound
     model.Z_v = pyo.Set(initialize = range(NUMBER_OF_HOMOGENEOUS_SPLITS))      # Type 1, homogeneous splitting
 
     # Other sets
@@ -81,8 +92,6 @@ def create_base_model(network: networkx.Graph):
                     for n in model.N_hg for c in model.C}
     )
 
-    # Demand parameters
-    
     # Parameters for demand
     def demand_rule(m, h, n):
         return network.nodes[n].get('demand', {}).get(h, 0)
@@ -93,6 +102,34 @@ def create_base_model(network: networkx.Graph):
         initialize=demand_rule,
         mutable=True
     )
+
+    # Max flow (Big-M)
+    model.M_n = pyo.Param(model.N, initialize = {n: network.nodes[n]['max_flow'] for n in model.N})
+    model.M_a =  pyo.Param(model.A, initialize = {a: network.edges[a]['max_flow'] for a in model.A})
+
+    # Relative density Parameters
+    model.rho_c = pyo.Param(model.C, initialize ={NG : 0.65, CO2 : 1.53, H2 : 0.070})
+
+    rho_values = np.linspace(RHO_LOW, RHO_HIGH, NUMBER_OF_DENSITY_BOUNDS + 1)[1:]
+
+    model.rho_Z = pyo.Param(
+        model.Z_theta,
+        initialize={z: rho_values[i] for i, z in enumerate(model.Z_theta)}
+    )
+
+    # Weymouth constants
+    model.K_a = pyo.Param(
+        model.A,
+        initialize={a: network.edges[a]['weymouth_constant'] for a in model.A}
+    )
+
+    def K_az_rule(model, a, z):
+        return model.K_a[a] / (model.rho_Z[z] ** 0.5)
+
+    model.K_az = pyo.Param(model.A, model.Z_theta, initialize=K_az_rule)
+
+
+
     # -----------------------------
     # Variables
     #-----------------------------
@@ -167,14 +204,32 @@ def create_base_model(network: networkx.Graph):
     # Pressure constraints
     # ________________
 
+    def SOS1_theta(model, a):
+        return sum(model.theta[a,z] for z in Z_theta)
+
+    model.S1_theta = pyo.Constraint(model.A, rule =SOS1_theta)
+    
+    def upperbound_rho_rule(model, a, z):
+    total_flow = sum(model.f[a, c] for c in model.C)
+    weighted_flow = sum(model.rho_c[c] * model.f[a, c] for c in model.C)
+
+    return (
+        model.rho_Z[z] * total_flow
+        + model.M_a[a] * (1 - model.theta[a, z])
+        >= weighted_flow
+    )
+
+    model.upperbound_rho = pyo.Constraint(model.A, model.Z_theta, rule=upperbound_rho_rule)
+
 
     
+
 
 
     return model
 
 def solve_model(model):
-    solver = pyo.SolverFactory('gurobi')  # You can choose a different solver if needed
+    solver = pyo.SolverFactory('highs')  # You can choose a different solver if needed
     solver.options['OutputFlag'] = 1  # ensures full output
     solver.options['TimeLimit'] = 30  # optional
     results = solver.solve(model, tee=True)  # tee=True to display solver output
