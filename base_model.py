@@ -7,11 +7,11 @@ NUMBER_OF_HOMOGENEOUS_SPLITS =10
 
 NUMBER_OF_CUTTING_PLANES_P_IN = 3
 P_IN_LOW = 4
-P_IN_HIGH = 8
+P_IN_HIGH = 10
 
 NUMBER_OF_CUTTING_PLANES_P_OUT = 3
-P_OUT_LOW = 3
-P_OUT_HIGH = 7
+P_OUT_LOW = 4
+P_OUT_HIGH = 10
 
 NUMBER_OF_DENSITY_BOUNDS = 4
 RHO_LOW = 0.55
@@ -64,7 +64,7 @@ def create_base_model(network: networkx.Graph):
     model.Z_v = pyo.Set(initialize = range(NUMBER_OF_HOMOGENEOUS_SPLITS))      # Type 1, homogeneous splitting
 
     # Other sets
-    model.L = pyo.Set()        # Set of cutting planes
+    model.L = pyo.Set(initialize = range(NUMBER_OF_CUTTING_PLANES_P_IN * NUMBER_OF_CUTTING_PLANES_P_OUT))      # Set of cutting planes
     model.H = pyo.Set(initialize=list(set().union(
                         *(network.nodes[n].get('demand', {}).keys()
                         for n in model.N_m if 'demand' in network.nodes[n])
@@ -128,7 +128,16 @@ def create_base_model(network: networkx.Graph):
 
     model.K_az = pyo.Param(model.A, model.Z_theta, initialize=K_az_rule)
 
+    # Cutting plane values
+    p_in_values = np.linspace(P_IN_LOW, P_IN_HIGH, NUMBER_OF_CUTTING_PLANES_P_IN)
+    p_out_values = np.linspace(P_OUT_LOW, P_OUT_HIGH, NUMBER_OF_CUTTING_PLANES_P_OUT)
 
+    #
+    pairs = [
+    (p_in_values[i], p_out_values[j])
+    for i in range(NUMBER_OF_CUTTING_PLANES_P_IN)
+    for j in range(NUMBER_OF_CUTTING_PLANES_P_OUT)
+    ]
 
     # -----------------------------
     # Variables
@@ -205,19 +214,19 @@ def create_base_model(network: networkx.Graph):
     # ________________
 
     def SOS1_theta(model, a):
-        return sum(model.theta[a,z] for z in Z_theta)
+        return sum(model.theta[a,z] for z in model.Z_theta)
 
     model.S1_theta = pyo.Constraint(model.A, rule =SOS1_theta)
     
     def upperbound_rho_rule(model, a, z):
-    total_flow = sum(model.f[a, c] for c in model.C)
-    weighted_flow = sum(model.rho_c[c] * model.f[a, c] for c in model.C)
+        total_flow = sum(model.f[a, c] for c in model.C)
+        weighted_flow = sum(model.rho_c[c] * model.f[a, c] for c in model.C)
 
-    return (
-        model.rho_Z[z] * total_flow
-        + model.M_a[a] * (1 - model.theta[a, z])
-        >= weighted_flow
-    )
+        return (
+            model.rho_Z[z] * total_flow
+            + model.M_a[a] * (1 - model.theta[a, z])
+            >= weighted_flow
+        )
 
     model.upperbound_rho = pyo.Constraint(model.A, model.Z_theta, rule=upperbound_rho_rule)
 
