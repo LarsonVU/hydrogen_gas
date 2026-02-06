@@ -122,16 +122,16 @@ def example_graph():
 
     edges = [
         ("A", "C", dict(max_flow=90, max_hydrogen_fraction=0.1,
-                        max_inlet_pressure=6, pressure_cost=0.05, weymouth_constant=18)),
+                        max_inlet_pressure=10, pressure_cost=0.05, weymouth_constant=18)),
         ("B", "C", dict(max_flow=40, max_hydrogen_fraction=0.15,
-                        max_inlet_pressure=7, pressure_cost=0.04, weymouth_constant=18)),
+                        max_inlet_pressure=9, pressure_cost=0.04, weymouth_constant=18)),
         ("C", "D", dict(max_flow=140, max_hydrogen_fraction=0.05,
                         max_inlet_pressure=8, pressure_cost=0.06, weymouth_constant=18)),
         ("C", "F", dict(max_flow=70, max_hydrogen_fraction=0.3,
-                        min_inlet_pressure=5, max_inlet_pressure=9,
+                        min_inlet_pressure=5, max_inlet_pressure=7,
                         pressure_cost=0.05, weymouth_constant=18)),
         ("F", "E", dict(max_flow=60, max_hydrogen_fraction=0.25,
-                        min_inlet_pressure=5, max_inlet_pressure=10,
+                        min_inlet_pressure=5, max_inlet_pressure=6,
                         pressure_cost=0.07, weymouth_constant=18)),
     ]
 
