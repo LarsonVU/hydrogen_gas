@@ -111,13 +111,19 @@ def plot_network(G):
 def example_graph():
     G = nx.DiGraph()
 
+    compression_contants = {
+        "K_out_pipe" : 0.5,
+        "K_into_pipe"  : 0.5,
+        "K_flow" : 0.2,
+    }
+
     nodes = {
         "A": dict(max_flow=200, supply_capacity=140, component_ratio={"NG": 0.98, "CO2": 0.02, "H2": 0.00}, generation_cost=0.5, supplier="Shell"),
         "B": dict(max_flow=200, supply_capacity=50, component_ratio={"NG": 0.00, "CO2": 0.00, "H2": 1.00}, generation_cost=1.2, supplier="Equinor"),
         "C": dict(max_flow=200, split_homogeneous=True),
-        "D": dict(max_flow=200, demand={"Shell": 80, "Equinor": 40}, price=1.1, min_outlet_pressure=5),
+        "D": dict(max_flow=200, demand={"Shell": 80, "Equinor": 10}, price=1.1, min_outlet_pressure=5),
         "E": dict(max_flow=200, demand={"Shell": 20, "Equinor": 20}, price=1.3, min_outlet_pressure=5), 
-        "F": dict(max_flow=200, compression_max=30),
+        "F": dict(max_flow=200, compression_max=8, compression_constants=compression_contants),
     }
 
     edges = [
