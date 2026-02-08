@@ -9,7 +9,7 @@ def plot_network(G):
     and arc capacities using only NetworkX attributes.
     """
 
-    pos = nx.spring_layout(G, seed=100)  # For consistent layout across runs
+    pos = nx.spring_layout(G, seed=10012345)  # For consistent layout across runs
 
     # Categorize nodes
     gas_supply_nodes = []
@@ -19,11 +19,11 @@ def plot_network(G):
     normal_nodes = []
 
     for n, data in G.nodes(data=True):
-        if data.get("h2_fraction", 0) > 0:
+        if data.get("component_ratio", {}).get("NG", 0) > 0:
             gas_supply_nodes.append(n)
         elif data.get("supply_capacity", 0) > 0:
             hydrogen_supply_nodes.append(n)
-        elif data.get("demand", 0) > 0:
+        elif any(v > 0 for v in data.get("demand", {}).values()):
             demand_nodes.append(n)
         elif data.get("compression_max", 0) > 0:
             storage_nodes.append(n)
@@ -127,8 +127,10 @@ def example_graph():
     }
 
     edges = [
-        ("A", "C", dict(max_flow=90, max_hydrogen_fraction=0.1,
+        ("A", "C", dict(max_flow=90, max_hydrogen_fraction=0.2,
                         max_inlet_pressure=10, pressure_cost=0.05, weymouth_constant=18)),
+        ("A", "B", dict(max_flow=90, max_hydrogen_fraction=0.2,
+                max_inlet_pressure=10, pressure_cost=0.05, weymouth_constant=18)),
         ("B", "C", dict(max_flow=40, max_hydrogen_fraction=0.15,
                         max_inlet_pressure=9, pressure_cost=0.04, weymouth_constant=18)),
         ("C", "D", dict(max_flow=140, max_hydrogen_fraction=0.05,

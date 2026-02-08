@@ -1,7 +1,7 @@
 from network import example_graph, plot_network
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('Agg')  # Ensure it works in Codespaces terminal
+#matplotlib.use('Agg')  # Ensure it works in Codespaces terminal
 import pyomo.environ as pyo
 import networkx
 import numpy as np
@@ -45,7 +45,7 @@ def generate_cutting_plane_pairs():
 # Usage
 pairs = generate_cutting_plane_pairs()
 
-NUMBER_OF_DENSITY_BOUNDS = 4
+NUMBER_OF_DENSITY_BOUNDS = 10
 RHO_LOW = 0.55
 RHO_HIGH = 0.70
 
@@ -221,7 +221,7 @@ def create_base_model(network: networkx.Graph):
     # Constraint 1: Production capacity constraint
     def production_capacity_rule(model, n):
         if n in model.N_hg:
-            return sum(model.f[a, c] for a in model.A_n_minus[n] for c in model.C) <= model.G[n]
+            return sum(model.f[a, c] for a in model.A_n_minus[n] for c in model.C) - sum(model.f[a, c] for a in model.A_n_plus[n] for c in model.C) <= model.G[n]
         return pyo.Constraint.Skip
     model.production_capacity = pyo.Constraint(model.N_hg, rule=production_capacity_rule)
 
@@ -318,7 +318,6 @@ def create_base_model(network: networkx.Graph):
     
     model.pressure_drop = pyo.Constraint(model.A, rule=pressure_drop_rule)
 
-
     # Maximum pressure 
     def max_pressure_rule(model, a1, a2):
         return model.p_in[a1, a2] <= model.P_max[a1, a2]
@@ -357,6 +356,12 @@ def create_base_model(network: networkx.Graph):
             return model.p_in[a] <= network.nodes[n]['compression_max']
         return pyo.Constraint.Skip
 
+    model.max_compression = pyo.Constraint(model.N_gamma, rule=max_compression_rule)
+
+
+    # ________________
+    # Quality constraints
+    # ________________
 
     #------------------------------
     # Expressions
