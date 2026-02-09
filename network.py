@@ -111,34 +111,33 @@ def plot_network(G):
 def example_graph():
     G = nx.DiGraph()
 
-    compression_contants = {
-        "K_out_pipe" : 0.5,
-        "K_into_pipe"  : 0.5,
-        "K_flow" : 0.2,
+    compression_constants = {
+        "NG": {"K_out_pipe": 0.5, "K_into_pipe": 0.5, "K_flow": 0.2},
+        "H2": {"K_out_pipe": 0.06, "K_into_pipe": 0.06, "K_flow": 0.25},
+        "CO2": {"K_out_pipe": 0.05, "K_into_pipe": 0.05, "K_flow": 0.22},
     }
 
     nodes = {
-        "A": dict(max_flow=200, supply_capacity=140, component_ratio={"NG": 0.98, "CO2": 0.02, "H2": 0.00}, generation_cost=0.5, supplier="Shell"),
+        "A": dict(max_flow=200, supply_capacity=140, component_ratio={"NG": 0.98, "CO2": 0.02, "H2": 0.00}, generation_cost=0.5, supplier="Shell", split_homogeneous=True),
         "B": dict(max_flow=200, supply_capacity=50, component_ratio={"NG": 0.00, "CO2": 0.00, "H2": 1.00}, generation_cost=1.2, supplier="Equinor"),
-        "C": dict(max_flow=200, split_homogeneous=True),
-        "D": dict(max_flow=200, demand={"Shell": 80, "Equinor": 10}, price=1.1, min_outlet_pressure=5),
-        "E": dict(max_flow=200, demand={"Shell": 20, "Equinor": 20}, price=1.3, min_outlet_pressure=5), 
-        "F": dict(max_flow=200, compression_max=8, compression_constants=compression_contants),
+        "C": dict(max_flow=200),
+        "D": dict(max_flow=200, demand={"Shell": 80, "Equinor": 5}, price=1.1, min_outlet_pressure=5, max_fractions = {"NG": 1, "CO2": 0.025, "H2": 0.02}),
+        "E": dict(max_flow=200, demand={"Shell": 20, "Equinor": 1}, price=1.3, min_outlet_pressure=5, max_fractions = {"NG": 1, "CO2": 0.025, "H2": 0.1}), 
+        "F": dict(max_flow=200, compression_increase=1.5, compression_constants=compression_constants),
     }
 
     edges = [
-        ("A", "C", dict(max_flow=90, max_hydrogen_fraction=0.2,
+        ("A", "C", dict(max_flow=90, max_pipe_fractions={"NG": 1, "CO2": 1, "H2": 0.2},
                         max_inlet_pressure=10, pressure_cost=0.05, weymouth_constant=18)),
-        ("A", "B", dict(max_flow=90, max_hydrogen_fraction=0.2,
+        ("A", "B", dict(max_flow=90, max_pipe_fractions={"NG": 1, "CO2": 1, "H2": 0.00},
                 max_inlet_pressure=10, pressure_cost=0.05, weymouth_constant=18)),
-        ("B", "C", dict(max_flow=40, max_hydrogen_fraction=0.15,
+        ("B", "C", dict(max_flow=40, max_pipe_fractions={"NG": 1, "CO2": 1, "H2": 0.15},
                         max_inlet_pressure=9, pressure_cost=0.04, weymouth_constant=18)),
-        ("C", "D", dict(max_flow=140, max_hydrogen_fraction=0.05,
+        ("C", "D", dict(max_flow=140, max_pipe_fractions={"NG": 1, "CO2": 1, "H2": 0.05},
                         max_inlet_pressure=8, pressure_cost=0.06, weymouth_constant=18)),
-        ("C", "F", dict(max_flow=70, max_hydrogen_fraction=0.3,
-                         max_inlet_pressure=7,
-                        pressure_cost=0.05, weymouth_constant=18)),
-        ("F", "E", dict(max_flow=60, max_hydrogen_fraction=0.25,
+        ("C", "F", dict(max_flow=70, max_pipe_fractions={"NG": 1, "CO2": 1, "H2": 0.3},
+                         max_inlet_pressure=7, pressure_cost=0.01, weymouth_constant=18)),
+        ("F", "E", dict(max_flow=60, max_pipe_fractions={"NG": 1, "CO2": 1, "H2": 0.25},
                          max_inlet_pressure=6,
                         pressure_cost=0.07, weymouth_constant=18)),
     ]

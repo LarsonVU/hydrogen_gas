@@ -5,8 +5,12 @@ import matplotlib
 import pyomo.environ as pyo
 import networkx
 import numpy as np
+import itertools
 
-NUMBER_OF_HOMOGENEOUS_SPLITS =10 
+NUMBER_OF_HOMOGENEOUS_SPLITS =11
+
+splits_per_arc = np.linspace(0, 1, NUMBER_OF_HOMOGENEOUS_SPLITS)
+
 
 NUMBER_OF_CUTTING_PLANES_P_IN = 10
 P_IN_LOW = 4
@@ -70,7 +74,7 @@ def create_base_model(network: networkx.Graph):
 
     model.N_gamma = pyo.Set(
         within=model.N,
-        initialize=[n for n, d in network.nodes(data=True) if "compression_max" in d]
+        initialize=[n for n, d in network.nodes(data=True) if "compression_increase" in d]
     ) # Nodes with compressors
 
     model.N_s = pyo.Set(
@@ -93,7 +97,48 @@ def create_base_model(network: networkx.Graph):
     # Special order sets
     
     model.Z_theta = pyo.Set(initialize = range(NUMBER_OF_DENSITY_BOUNDS))  # Type 1, pressure upper bound
-    model.Z_v = pyo.Set(initialize = range(NUMBER_OF_HOMOGENEOUS_SPLITS))      # Type 1, homogeneous splitting
+    
+    E_nz_init = {}
+
+    # Homogeneous splitting parameters
+    for n, arcs in model.A_n_minus.items():
+        if n in model.N_s:
+            order_arcs = len(arcs)
+            E_nz_init[n] = [z for z in itertools.product(splits_per_arc, repeat=order_arcs) if sum(z) == 1]
+
+    model.Z_v = pyo.Set(model.N_s, initialize = lambda model ,n: range(len(E_nz_init[n])) if n in E_nz_init else range(0))      # Type 1, homogeneous splitting
+
+    # Auxiliary set for defining E
+    def E_index_init(model):
+        return (
+            (n, z, a)
+            for n in model.N_s
+            for z in model.Z_v[n]
+            for a in model.A_n_minus[n]
+        )
+
+    model.E_index = pyo.Set(initialize=E_index_init)
+
+    # Auxilliary set for defining e
+    def e_index_init(m):
+        return (
+            (n, c, z)
+            for n in m.N_s
+            for c in m.C
+            for z in m.Z_v[n]
+        )
+
+    model.e_index = pyo.Set(dimen=3, initialize=e_index_init)
+
+    # Auxilliary set for defining v
+    def v_index_init(m):
+        return (
+            (n, z)
+            for n in m.N_s
+            for z in m.Z_v[n]
+        )
+   
+    model.v_index = pyo.Set(dimen=2, initialize=v_index_init)
 
     # Other sets
     model.L = pyo.Set(initialize = range(len(pairs)))      # Set of cutting planes
@@ -182,10 +227,59 @@ def create_base_model(network: networkx.Graph):
     # Minimum pressure at demand nodes
     model.P_min = pyo.Param(model.N_m, initialize={n: network.nodes[n].get('min_outlet_pressure', 0) for n in model.N_m})
 
-    # Fuel consumption parameters for compression nodes
-    model.K_out_pipe = pyo.Param(model.N_gamma, initialize={n: network.nodes[n].get('compression_constants', {}).get('K_out_pipe', 0) for n in model.N_gamma})
-    model.K_into_pipe = pyo.Param(model.N_gamma, initialize={n: network.nodes[n].get('compression_constants', {}).get('K_into_pipe', 0) for n in model.N_gamma})
-    model.K_flow = pyo.Param(model.N_gamma, initialize={n: network.nodes[n].get('compression_constants', {}).get('K_flow', 0) for n in model.N_gamma})
+    # Fuel consumption parameters for compression nodes (per component)
+    model.K_out_pipe = pyo.Param(
+        model.N_gamma,
+        model.C,
+        initialize=lambda model, n, c:
+            network.nodes[n]
+            .get('compression_constants', {})
+            .get(c, {})
+            .get('K_out_pipe', 0),
+        default=0
+    )
+
+    model.K_into_pipe = pyo.Param(
+        model.N_gamma,
+        model.C,
+        initialize=lambda model, n, c:
+            network.nodes[n]
+            .get('compression_constants', {})
+            .get(c, {})
+            .get('K_into_pipe', 0),
+        default=0
+    )
+
+    model.K_flow = pyo.Param(
+        model.N_gamma,
+        model.C,
+        initialize=lambda model, n, c:
+            network.nodes[n]
+            .get('compression_constants', {})
+            .get(c, {})
+            .get('K_flow', 0),
+        default=0
+    )
+
+    # Pressure increase from compression
+    model.P_hat = pyo.Param(model.N_gamma, initialize={n: network.nodes[n].get('compression_increase', 1) for n in model.N_gamma})
+
+    # Pipe quality constraints
+    model.q_plus_arc = pyo.Param(model.A, model.C, initialize=lambda model, a1,a2, c: network.edges[a1,a2].get('max_pipe_fractions', {}).get(c, 0))
+    # Unused
+    model.q_minus_arc = pyo.Param(model.A, model.C, initialize=lambda model, a1,a2, c: 0)
+
+    # Node quality constraints
+    model.q_plus_node = pyo.Param(model.N_m, model.C, initialize=lambda model, n, c: network.nodes[n].get('max_fractions', {}).get(c, 0))
+    # Unused
+    model.q_minus_node = pyo.Param(model.N_m, model.C, initialize=lambda model, n, c: 0)
+
+
+    def E_init(m, n, z, a1,a2):
+        arc_idx = list(m.A_n_minus[n]).index((a1,a2))
+        return E_nz_init[n][z][arc_idx]
+
+    model.E_nza = pyo.Param(model.E_index, initialize=E_init)
 
     # -----------------------------
     # Variables
@@ -194,9 +288,10 @@ def create_base_model(network: networkx.Graph):
     model.p_in = pyo.Var(model.A, within=pyo.NonNegativeReals, initialize=0)  # Inlet pressure on arc a
     model.p_out = pyo.Var(model.A, within=pyo.NonNegativeReals, initialize=0)  # Outlet pressure on arc a
     model.theta = pyo.Var(model.A, model.Z_theta, within=pyo.Binary, initialize=0)  # Binary variables for pressure bounds
-    model.v = pyo.Var(model.N_s, model.Z_v, within=pyo.Binary, initialize=0)  # Binary variables for homogeneous splitting
+    model.v = pyo.Var(model.v_index, within=pyo.Binary, initialize=0)  # Binary variables for homogeneous splitting
     model.w = pyo.Var(model.N_gamma, model.C, within=pyo.NonNegativeReals, initialize=0)  # Continuous variables for compression fuel consumption
-    
+    model.e = pyo.Var(model.e_index, domain=pyo.NonNegativeReals, initialize=0)  # Auxiliary variable for homogeneous splitting flow
+
     #-----------------------------
     # Objective Function
     #-----------------------------
@@ -228,13 +323,13 @@ def create_base_model(network: networkx.Graph):
     # Constraint 2: Component ratio constraint (byproduct/stoichiometric)
     def component_ratio_rule(model, n, c):
         if n in model.N_hg and c in model.C:
-            return sum(model.f[a, c] for a in model.A_n_minus[n]) == model.alpha[n, c] * sum(model.f[a, cp] for a in model.A_n_minus[n] for cp in model.C)
+            return sum(model.f[a, c] for a in model.A_n_minus[n]) - sum(model.f[a, c] for a in model.A_n_plus[n]) == model.alpha[n, c] * (sum(model.f[a, cp] for a in model.A_n_minus[n] for cp in model.C) - sum(model.f[a, cp] for a in model.A_n_plus[n] for cp in model.C))
         return pyo.Constraint.Skip
     model.component_ratio = pyo.Constraint(model.N_hg, model.C, rule=component_ratio_rule)
 
     # Constraint 3: Demand satisfaction constraint for production nodes
     def demand_satisfaction_production_rule(model, h):
-        return sum(model.f[a, c] for c in model.C for n_prime in model.N_hg if model.supplier[n_prime] == h for a in model.A_n_minus[n_prime] ) >= sum(model.D[h,n] for n in model.N_m)
+        return sum(model.f[a, c] for c in model.C for n_prime in model.N_hg if model.supplier[n_prime] == h for a in model.A_n_minus[n_prime] ) -sum(model.f[a, c] for c in model.C for n_prime in model.N_hg if model.supplier[n_prime] == h for a in model.A_n_plus[n_prime] ) >= sum(model.D[h,n] for n in model.N_m)
     model.demand_satisfaction_production = pyo.Constraint( model.H, rule=demand_satisfaction_production_rule)
 
     # Constraint 4: Demand satisfaction constraint for market nodes
@@ -338,7 +433,7 @@ def create_base_model(network: networkx.Graph):
             # For each arc into the compression node, compute fuel consumption
             a = model.A_n_minus[n].first()
             a_prime = model.A_n_plus[n].first()
-            return model.w[n, c] == model.K_out_pipe[n] * model.p_in[a] - model.K_into_pipe[n] * model.p_out[a_prime] + model.K_flow[n] * model.f[a,c]
+            return model.w[n, c] == model.K_out_pipe[n, c] * model.p_in[a] - model.K_into_pipe[n, c] * model.p_out[a_prime] + model.K_flow[n, c] * model.f[a,c]
         return pyo.Constraint.Skip
 
     model.fuel_consumption = pyo.Constraint(model.N_gamma, model.C, rule=fuel_consumption_rule)
@@ -350,18 +445,67 @@ def create_base_model(network: networkx.Graph):
 
     model.fuel_flow_balance = pyo.Constraint(model.N_gamma, model.C, rule=fuel_flow_balance_rule)
 
-    def max_compression_rule(model, n):
+    def compression_increase_rule(model, n):
         if n in model.N_gamma:
             a = model.A_n_minus[n].first()
-            return model.p_in[a] <= network.nodes[n]['compression_max']
+            a_prime = model.A_n_plus[n].first()
+            return model.p_in[a] == model.P_hat[n] * model.p_out[a_prime]
         return pyo.Constraint.Skip
 
-    model.max_compression = pyo.Constraint(model.N_gamma, rule=max_compression_rule)
-
+    model.compression_increase = pyo.Constraint(model.N_gamma, rule=compression_increase_rule)
+    print(model.N_gamma.pprint())
 
     # ________________
     # Quality constraints
     # ________________
+
+    # Composition per pipe
+    def pipe_composition_max_rule(model, a1, a2, c):
+        return model.f[a1, a2,c] <= model.q_plus_arc[a1, a2,c] * sum(model.f[a1, a2, cp] for cp in model.C)
+
+    model.pipe_composition_max = pyo.Constraint(model.A, model.C, rule=pipe_composition_max_rule)
+
+    # Unused
+    def pipe_composition_min_rule(model, a1, a2, c):
+        return model.f[a1, a2,c] >= model.q_minus_arc[a1, a2,c] * sum(model.f[a1, a2, cp] for cp in model.C)
+
+    model.pipe_composition_min = pyo.Constraint(model.A, model.C, rule =pipe_composition_min_rule)
+
+    # Composition at market nodes
+    def market_node_max_rule(model, n, c):
+        return sum(model.f[a, c] for a in model.A_n_plus[n]) <= model.q_plus_node[n, c] * sum(model.f[a, cp] for a in model.A_n_plus[n] for cp in model.C)
+    
+    model.market_node_max = pyo.Constraint(model.N_m, model.C, rule=market_node_max_rule)
+
+    # Unused
+    def market_node_min_rule(model, n, c):
+        return sum(model.f[a, c] for a in model.A_n_plus[n]) >= model.q_minus_node[n, c] * sum(model.f[a, cp] for a in model.A_n_plus[n] for cp in model.C)
+    
+    model.market_node_min = pyo.Constraint(model.N_m, model.C, rule=market_node_min_rule)
+
+    #_______________
+    # Homogeneous splitting constraints
+    #_______________
+
+    def SOS1_v(model, n):
+        return sum(model.v[n, z] for z in model.Z_v[n]) == 1 
+
+    model.S1_v = pyo.Constraint(model.N_s, rule =SOS1_v)
+
+    def choice_v_flow_rule(model, n, z):
+        if n in model.N_s:
+            return sum(model.e[n, c, z] for c in model.C) <= model.v[n, z] * model.M_n[n]
+        return pyo.Constraint.Skip
+
+    model.choice_v_flow = pyo.Constraint(model.v_index, rule=choice_v_flow_rule)
+
+    def homogeneous_split_rule(model, a1, a2, n, c):
+        if (a1,a2) in model.A_n_minus[n] and n in model.N_s:
+            return model.f[a1, a2, c] == sum(model.e[n, c, z] * model.E_nza[n, z, a1, a2] for z in model.Z_v[n])
+        else:
+            return pyo.Constraint.Skip
+
+    model.homogeneous_split = pyo.Constraint(model.A, model.N_s, model.C, rule=homogeneous_split_rule)
 
     #------------------------------
     # Expressions
@@ -377,7 +521,6 @@ def create_base_model(network: networkx.Graph):
 
     # Weymouth flow on each arc
     model.weymouth_flow = pyo.Expression(model.A, rule=lambda model, a1, a2: sum(model.theta[a1,a2,z] * model.K_az[a1,a2,z] * (model.p_in[a1,a2]**2 - model.p_out[a1,a2]**2)**0.5 for z in model.Z_theta))
-
 
     return model
 
@@ -493,11 +636,72 @@ def total_v_weymouth_flow_plot(model):
     plt.savefig("weymouth_vs_total_flow_plot.png")  # Save the plot as a PNG file
     plt.show()
 
+def plot_demand_and_composition_per_node(model):
+    """
+    Plot demand per supplier and gas composition delivered side-by-side for each demand node.
+    """
+    demand_nodes = list(model.N_m)
+    suppliers = list(model.H)
+    components = list(model.C)
+    
+    # Define consistent colors for suppliers and components
+    supplier_colors = {h: plt.cm.Set1(i) for i, h in enumerate(suppliers)}
+    component_colors = {c: plt.cm.Set2(i) for i, c in enumerate(components)}
+    
+    fig, ax = plt.subplots(figsize=(14, 6))
+    
+    bar_width = 0.35
+    x_pos = 0
+    x_ticks = []
+    x_labels = []
+    
+    for n in demand_nodes:
+        # Plot 1: Demand per supplier (stacked)
+        demand_values = [pyo.value(model.D[h, n]) for h in suppliers]
+        
+        bottom = 0
+        for h in suppliers:
+            demand = pyo.value(model.D[h, n])
+            ax.bar(x_pos, demand, bar_width, bottom=bottom, 
+                   color=supplier_colors[h], label=f'Supplier {h}' if demand_nodes.index(n) == 0 else "")
+            bottom += demand
+        
+        x_ticks.append(x_pos)
+        x_labels.append(f'{n}\n(Demand)')
+        x_pos += bar_width + 0.05
+        
+        # Plot 2: Composition delivered (stacked)
+        composition_values = {c: pyo.value(sum(model.f[a, c] for a in model.A_n_plus[n])) for c in components}
+        
+        bottom = 0
+        for c in components:
+            ax.bar(x_pos, composition_values[c], bar_width, bottom=bottom, 
+                   color=component_colors[c], label=f'Component {c}' if demand_nodes.index(n) == 0 else "")
+            bottom += composition_values[c]
+        
+        x_ticks.append(x_pos)
+        x_labels.append(f'{n}\n(Composition)')
+        
+        x_pos += bar_width + 0.3
+    
+    ax.set_ylabel("Flow")
+    ax.set_title("Demand vs Composition Delivered at Each Node")
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(x_labels, fontsize=9)
+    ax.legend(loc='upper left', fontsize=9)
+    ax.grid(axis='y', alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig("demand_and_composition_per_node_plot.png")
+    plt.show()
+
+
 def plot_results(model):
     plot_flow_per_arc(model)
     plot_inlet_outlet_pressures(model)
     plot_relative_density(model)
     total_v_weymouth_flow_plot(model)
+    plot_demand_and_composition_per_node(model)
 
 
 if __name__ == "__main__":
