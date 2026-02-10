@@ -21,16 +21,23 @@ P_OUT_LOW = 4
 P_OUT_HIGH = 10
 
 # Function to generate cutting plane pairs using the constants
-def generate_cutting_plane_pairs():
+def generate_cutting_plane_pairs(
+    n_p_out=NUMBER_OF_CUTTING_PLANES_P_OUT,
+    p_out_low=P_OUT_LOW,
+    p_out_high=P_OUT_HIGH,
+    n_p_in=NUMBER_OF_CUTTING_PLANES_P_IN,
+    p_in_low=P_IN_LOW,
+    p_in_high=P_IN_HIGH
+):
     # Evenly spaced p_out
-    p_out_values = np.linspace(P_OUT_LOW, P_OUT_HIGH, NUMBER_OF_CUTTING_PLANES_P_OUT)
+    p_out_values = np.linspace(p_out_low, p_out_high, n_p_out)
     
     # Function to skew p_in toward lower values (denser near p_out)
-    def skew_p_in(p_out, n_points=NUMBER_OF_CUTTING_PLANES_P_IN, low=None, high=P_IN_HIGH):
+    def skew_p_in(p_out, n_points=n_p_in, low=None, high=p_in_high):
         if low is None:
-            low = max(P_IN_LOW, p_out)  # ensure p_in >= p_out
+            low = max(p_in_low, p_out)  # ensure p_in >= p_out
         t = np.linspace(0, 1, n_points)
-        t_skewed = np.sqrt(t)  # adjust exponent for more/less skew
+        t_skewed = np.power(t,2)  # adjust exponent for more/less skew
         return low + (high - low) * t_skewed
     
     # Create p_in values for each p_out
@@ -453,7 +460,6 @@ def create_base_model(network: networkx.Graph):
         return pyo.Constraint.Skip
 
     model.compression_increase = pyo.Constraint(model.N_gamma, rule=compression_increase_rule)
-    print(model.N_gamma.pprint())
 
     # ________________
     # Quality constraints
