@@ -9,7 +9,7 @@ def plot_network(G):
     and arc capacities using only NetworkX attributes.
     """
 
-    pos = nx.spring_layout(G, seed=10012345)  # For consistent layout across runs
+    pos = nx.circular_layout(G)  # For consistent layout across runs
 
     # Categorize nodes
     gas_supply_nodes = []
@@ -25,7 +25,7 @@ def plot_network(G):
             hydrogen_supply_nodes.append(n)
         elif any(v > 0 for v in data.get("demand", {}).values()):
             demand_nodes.append(n)
-        elif data.get("compression_max", 0) > 0:
+        elif data.get("compression_increase", 0) > 0:
             storage_nodes.append(n)
         else:
             normal_nodes.append(n)
@@ -80,18 +80,18 @@ def plot_network(G):
     nx.draw_networkx_labels(G, pos, font_size=10 )
 
     # Edge capacity labels
-    edge_labels = {
-        (u, v): f"cap={d['max_flow']}"
-        for u, v, d in G.edges(data=True)
-        if "max_flow" in d
-    }
+    # edge_labels = {
+    #     (u, v): f"cap={d['max_flow']}"
+    #     for u, v, d in G.edges(data=True)
+    #     if "max_flow" in d
+    # }
 
-    nx.draw_networkx_edge_labels(
-        G,
-        pos,
-        edge_labels=edge_labels,
-        font_size=9
-    )
+    # nx.draw_networkx_edge_labels(
+    #     G,
+    #     pos,
+    #     edge_labels=edge_labels,
+    #     font_size=9
+    # )
 
     # Legend
     legend_elements = [
@@ -112,7 +112,7 @@ def example_graph():
     G = nx.DiGraph()
 
     compression_constants = {
-        "NG": {"K_out_pipe": 0.5, "K_into_pipe": 0.5, "K_flow": 0.2},
+        "NG": {"K_out_pipe": 0.05, "K_into_pipe": 0.05, "K_flow": 0.2},
         "H2": {"K_out_pipe": 0.06, "K_into_pipe": 0.06, "K_flow": 0.25},
         "CO2": {"K_out_pipe": 0.05, "K_into_pipe": 0.05, "K_flow": 0.22},
     }

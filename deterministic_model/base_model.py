@@ -7,6 +7,7 @@ import networkx
 import numpy as np
 import itertools
 
+folder = "Figures/"
 NUMBER_OF_HOMOGENEOUS_SPLITS =11
 
 splits_per_arc = np.linspace(0, 1, NUMBER_OF_HOMOGENEOUS_SPLITS)
@@ -60,51 +61,51 @@ NUMBER_OF_DENSITY_BOUNDS = 10
 RHO_LOW = 0.55
 RHO_HIGH = 0.70
 
-def create_base_model(network: networkx.Graph):
-    model = pyo.ConcreteModel()
+def build_sets(model, network):
 
-    #-----------------------------
-    # Sets
-    #-----------------------------
     model.N = pyo.Set(initialize=list(network.nodes))
     model.A = pyo.Set(initialize=list(network.edges), dimen=2)
 
     model.N_hg = pyo.Set(
         within=model.N,
         initialize=[n for n, d in network.nodes(data=True) if "supply_capacity" in d]
-    ) # Production nodes
+    )
 
     model.N_m = pyo.Set(
         within=model.N,
         initialize=[n for n, d in network.nodes(data=True) if "demand" in d]
-    )# Market nodes
+    )
 
     model.N_gamma = pyo.Set(
         within=model.N,
         initialize=[n for n, d in network.nodes(data=True) if "compression_increase" in d]
-    ) # Nodes with compressors
+    )
 
     model.N_s = pyo.Set(
         within=model.N,
         initialize=[n for n, d in network.nodes(data=True) if d.get("split_homogeneous", False)]
-    ) # Nodes where gas is split homogeneously
+    )
 
-    # Incoming and outgoing arcs per node
-    def A_in_rule(model, n):
-        return [a for a in model.A if a[1] == n]  # arcs ending at node n
+    # Arc incidence sets
+    def A_in_rule(m, n):
+        return [a for a in m.A if a[1] == n]
+
+    def A_out_rule(m, n):
+        return [a for a in m.A if a[0] == n]
+
     model.A_n_plus = pyo.Set(model.N, initialize=A_in_rule)
-
-    def A_out_rule(model, n):
-        return [a for a in model.A if a[0] == n]  # arcs starting from node n
     model.A_n_minus = pyo.Set(model.N, initialize=A_out_rule)
 
-    # Components of the gas mix
-    model.C = pyo.Set(initialize=['NG', 'CO2', 'H2'])  # Set of components
+    model.C = pyo.Set(initialize=['NG', 'CO2', 'H2'])
 
-    # Special order sets
-    
-    model.Z_theta = pyo.Set(initialize = range(NUMBER_OF_DENSITY_BOUNDS))  # Type 1, pressure upper bound
-    
+    model.Z_theta = pyo.Set(initialize=range(NUMBER_OF_DENSITY_BOUNDS))
+    model.L = pyo.Set(initialize=range(len(pairs)))
+
+    # Suppliers
+    model.H = pyo.Set(initialize=list(set().union(
+        *(network.nodes[n].get('demand', {}).keys() for n in model.N_m)
+    )))
+
     E_nz_init = {}
 
     # Homogeneous splitting parameters
@@ -112,6 +113,8 @@ def create_base_model(network: networkx.Graph):
         if n in model.N_s:
             order_arcs = len(arcs)
             E_nz_init[n] = [z for z in itertools.product(splits_per_arc, repeat=order_arcs) if sum(z) == 1]
+
+    model.E_nz_init = E_nz_init
 
     model.Z_v = pyo.Set(model.N_s, initialize = lambda model ,n: range(len(E_nz_init[n])) if n in E_nz_init else range(0))      # Type 1, homogeneous splitting
 
@@ -147,94 +150,59 @@ def create_base_model(network: networkx.Graph):
    
     model.v_index = pyo.Set(dimen=2, initialize=v_index_init)
 
-    # Other sets
-    model.L = pyo.Set(initialize = range(len(pairs)))      # Set of cutting planes
-    model.H = pyo.Set(initialize=list(set().union(
-                        *(network.nodes[n].get('demand', {}).keys()
-                        for n in model.N_m if 'demand' in network.nodes[n])
-                        )))
-      # Set of suppliers
-    
-    #-----------------------------
-    # Parameters
-    #-----------------------------
+def build_parameters(model, network):
 
-    # Objective function parameters
+    # Prices and costs
     model.o_n_d = pyo.Param(model.N, initialize={n: network.nodes[n]['price'] for n in model.N_m})
     model.o_n_g = pyo.Param(model.N, initialize={n: network.nodes[n]['generation_cost'] for n in model.N_hg})
     model.o_p_a = pyo.Param(model.A, initialize={a: network.edges[a]['pressure_cost'] for a in model.A})
 
-    # Parameters for production constraints
-    model.G = pyo.Param(
-        model.N_hg,
-        initialize={n: network.nodes[n].get('supply_capacity', 0) 
-                    for n in model.N_hg}
-    )
+    # Production
+    model.G = pyo.Param(model.N_hg, initialize={n: network.nodes[n]['supply_capacity'] for n in model.N_hg})
     model.alpha = pyo.Param(
         model.N_hg, model.C,
-        initialize={(n, c): network.nodes[n].get('component_ratio', {}).get(c, 0) 
+        initialize={(n, c): network.nodes[n].get('component_ratio', {}).get(c, 0)
                     for n in model.N_hg for c in model.C}
     )
 
-    # Parameters for demand
+    # Demand
     def demand_rule(m, h, n):
         return network.nodes[n].get('demand', {}).get(h, 0)
 
-    model.D = pyo.Param(
-        model.H,
-        model.N_m,
-        initialize=demand_rule,
-    )
+    model.D = pyo.Param(model.H, model.N_m, initialize=demand_rule)
 
-    # Suppliers parameter
     model.supplier = pyo.Param(
         model.N_hg,
-        initialize={n: network.nodes[n].get('supplier', 'Unknown') for n in model.N_hg},
+        initialize={n: network.nodes[n].get('supplier', 'Unknown') for n in model.N_hg}
     )
 
-    # Max flow (Big-M)
-    model.M_n = pyo.Param(model.N, initialize = {n: network.nodes[n]['max_flow'] for n in model.N})
-    model.M_a =  pyo.Param(model.A, initialize = {a: network.edges[a]['max_flow'] for a in model.A})
+    # Big-M
+    model.M_n = pyo.Param(model.N, initialize={n: network.nodes[n]['max_flow'] for n in model.N})
+    model.M_a = pyo.Param(model.A, initialize={a: network.edges[a]['max_flow'] for a in model.A})
 
-    # Relative density Parameters
-    model.rho_c = pyo.Param(model.C, initialize ={"NG" : 0.65, "CO2"  : 1.53, "H2" : 0.070})
+    # Density
+    model.rho_c = pyo.Param(model.C, initialize={"NG": 0.65, "CO2": 1.53, "H2": 0.07})
 
     rho_values = np.linspace(RHO_LOW, RHO_HIGH, NUMBER_OF_DENSITY_BOUNDS + 1)[1:]
+    model.rho_Z = pyo.Param(model.Z_theta, initialize={z: rho_values[i] for i, z in enumerate(model.Z_theta)})
 
-    model.rho_Z = pyo.Param(
-        model.Z_theta,
-        initialize={z: rho_values[i] for i, z in enumerate(model.Z_theta)}
-    )
+    # Weymouth
+    model.K_a = pyo.Param(model.A, initialize={a: network.edges[a]['weymouth_constant'] for a in model.A})
 
-    # Weymouth constants
-    model.K_a = pyo.Param(
-        model.A,
-        initialize={a: network.edges[a]['weymouth_constant'] for a in model.A}
-    )
-
-    def K_az_rule(model, a_in, a_out, z):
-        return model.K_a[a_in, a_out] / (model.rho_Z[z] ** 0.5)
+    def K_az_rule(m, a1, a2, z):
+        return m.K_a[a1, a2] / (m.rho_Z[z] ** 0.5)
 
     model.K_az = pyo.Param(model.A, model.Z_theta, initialize=K_az_rule)
 
-    # Cutting plane parameters
-    model.P_in = pyo.Param(
-        model.L,
-        initialize={l: pairs[l][0] for l in range(len(pairs))}
-    )
+    # Cutting planes
+    model.P_in = pyo.Param(model.L, initialize={l: pairs[l][0] for l in range(len(pairs))})
+    model.P_out = pyo.Param(model.L, initialize={l: pairs[l][1] for l in range(len(pairs))})
 
-    model.P_out = pyo.Param(
-        model.L,
-        initialize={l: pairs[l][1] for l in range(len(pairs))}
-    )
-
-    # Maximum pressure per arc
+    # Pressure bounds
     model.P_max = pyo.Param(model.A, initialize={a: network.edges[a].get('max_inlet_pressure', 1000) for a in model.A})
-
-    # Minimum pressure at demand nodes
     model.P_min = pyo.Param(model.N_m, initialize={n: network.nodes[n].get('min_outlet_pressure', 0) for n in model.N_m})
 
-    # Fuel consumption parameters for compression nodes (per component)
+        # Fuel consumption parameters for compression nodes (per component)
     model.K_out_pipe = pyo.Param(
         model.N_gamma,
         model.C,
@@ -281,252 +249,306 @@ def create_base_model(network: networkx.Graph):
     # Unused
     model.q_minus_node = pyo.Param(model.N_m, model.C, initialize=lambda model, n, c: 0)
 
-
     def E_init(m, n, z, a1,a2):
         arc_idx = list(m.A_n_minus[n]).index((a1,a2))
-        return E_nz_init[n][z][arc_idx]
+        return m.E_nz_init[n][z][arc_idx]
 
     model.E_nza = pyo.Param(model.E_index, initialize=E_init)
 
-    # -----------------------------
-    # Variables
-    #-----------------------------
-    model.f = pyo.Var(model.A, model.C, within=pyo.NonNegativeReals, initialize=0)  # Flow on arc a of component c
-    model.p_in = pyo.Var(model.A, within=pyo.NonNegativeReals, initialize=0)  # Inlet pressure on arc a
-    model.p_out = pyo.Var(model.A, within=pyo.NonNegativeReals, initialize=0)  # Outlet pressure on arc a
-    model.theta = pyo.Var(model.A, model.Z_theta, within=pyo.Binary, initialize=0)  # Binary variables for pressure bounds
-    model.v = pyo.Var(model.v_index, within=pyo.Binary, initialize=0)  # Binary variables for homogeneous splitting
-    model.w = pyo.Var(model.N_gamma, model.C, within=pyo.NonNegativeReals, initialize=0)  # Continuous variables for compression fuel consumption
-    model.e = pyo.Var(model.e_index, domain=pyo.NonNegativeReals, initialize=0)  # Auxiliary variable for homogeneous splitting flow
 
-    #-----------------------------
-    # Objective Function
-    #-----------------------------
-    def objective_rule(model):
-        revenue = sum(model.o_n_d[n] * sum(model.f[a, c] for a in model.A_n_plus[n] for c in model.C) 
-                      for n in model.N_m)
-        generation_cost = sum(model.o_n_g[n] * sum(model.f[a, c] for a in model.A_n_minus[n] for c in model.C) 
-                              for n in model.N_hg)
-        pressure_cost = sum(model.o_p_a[a] * model.p_in[a] for a in model.A)
+
+def build_variables(model):
+
+    model.f = pyo.Var(model.A, model.C, within=pyo.NonNegativeReals, initialize=0)
+    model.p_in = pyo.Var(model.A, within=pyo.NonNegativeReals, initialize=0)
+    model.p_out = pyo.Var(model.A, within=pyo.NonNegativeReals, initialize=0)
+
+    model.theta = pyo.Var(model.A, model.Z_theta, within=pyo.Binary, initialize=0)
+
+    # Compression
+    model.w = pyo.Var(model.N_gamma, model.C, within=pyo.NonNegativeReals, initialize=0)
+
+    # Splitting
+    model.v = pyo.Var(model.v_index, within=pyo.Binary, initialize=0)
+    model.e = pyo.Var(model.e_index, domain=pyo.NonNegativeReals, initialize=0)
+
+
+def add_expressions(model):
+
+    # Total flow
+    def total_flow_rule(m, a1, a2):
+        return sum(m.f[a1, a2, c] for c in m.C)
+
+    model.total_flow = pyo.Expression(model.A, rule=total_flow_rule)
+
+    # Relative density
+    def rho_rule(m, a1, a2):
+        num = sum(m.rho_c[c] * m.f[a1, a2, c] for c in m.C)
+        den = sum(m.f[a1, a2, c] for c in m.C) + 1e-6
+        return num / den
+
+    model.rho = pyo.Expression(model.A, rule=rho_rule)
+
+    # Weymouth flow
+    def weymouth_expr(m, a1, a2):
+        return sum(
+            m.theta[a1, a2, z]
+            * m.K_az[a1, a2, z]
+            * (m.p_in[a1, a2]**2 - m.p_out[a1, a2]**2)**0.5
+            for z in m.Z_theta
+        )
+
+    model.weymouth_flow = pyo.Expression(model.A, rule=weymouth_expr)
+
+
+def add_objective(model):
+
+    def objective_rule(m):
+        revenue = sum(
+            m.o_n_d[n] * sum(m.f[a, c] for a in m.A_n_plus[n] for c in m.C)
+            for n in m.N_m
+        )
+
+        generation_cost = sum(
+            m.o_n_g[n] * sum(m.f[a, c] for a in m.A_n_minus[n] for c in m.C)
+            for n in m.N_hg
+        )
+
+        pressure_cost = sum(m.o_p_a[a] * m.p_in[a] for a in m.A)
+
         return revenue - generation_cost - pressure_cost
 
     model.objective = pyo.Objective(rule=objective_rule, sense=pyo.maximize)
 
-    #  -----------------------------
-    # Constraints
-    #  -----------------------------
 
-    # ________________
-    # Flow constraints
-    # ________________
+def add_flow_constraints(model):
 
-    # Constraint 1: Production capacity constraint
-    def production_capacity_rule(model, n):
-        if n in model.N_hg:
-            return sum(model.f[a, c] for a in model.A_n_minus[n] for c in model.C) - sum(model.f[a, c] for a in model.A_n_plus[n] for c in model.C) <= model.G[n]
+    # Production capacity
+    def production_capacity_rule(m, n):
+        if n in m.N_hg:
+            return (
+                sum(m.f[a, c] for a in m.A_n_minus[n] for c in m.C)
+                - sum(m.f[a, c] for a in m.A_n_plus[n] for c in m.C)
+                <= m.G[n]
+            )
         return pyo.Constraint.Skip
+
     model.production_capacity = pyo.Constraint(model.N_hg, rule=production_capacity_rule)
 
-    # Constraint 2: Component ratio constraint (byproduct/stoichiometric)
-    def component_ratio_rule(model, n, c):
-        if n in model.N_hg and c in model.C:
-            return sum(model.f[a, c] for a in model.A_n_minus[n]) - sum(model.f[a, c] for a in model.A_n_plus[n]) == model.alpha[n, c] * (sum(model.f[a, cp] for a in model.A_n_minus[n] for cp in model.C) - sum(model.f[a, cp] for a in model.A_n_plus[n] for cp in model.C))
+    # Component ratio
+    def component_ratio_rule(m, n, c):
+        if n in m.N_hg:
+            total = (
+                sum(m.f[a, cp] for a in m.A_n_minus[n] for cp in m.C)
+                - sum(m.f[a, cp] for a in m.A_n_plus[n] for cp in m.C)
+            )
+            return (
+                sum(m.f[a, c] for a in m.A_n_minus[n])
+                - sum(m.f[a, c] for a in m.A_n_plus[n])
+                == m.alpha[n, c] * total
+            )
         return pyo.Constraint.Skip
+
     model.component_ratio = pyo.Constraint(model.N_hg, model.C, rule=component_ratio_rule)
 
-    # Constraint 3: Demand satisfaction constraint for production nodes
-    def demand_satisfaction_production_rule(model, h):
-        return sum(model.f[a, c] for c in model.C for n_prime in model.N_hg if model.supplier[n_prime] == h for a in model.A_n_minus[n_prime] ) -sum(model.f[a, c] for c in model.C for n_prime in model.N_hg if model.supplier[n_prime] == h for a in model.A_n_plus[n_prime] ) >= sum(model.D[h,n] for n in model.N_m)
-    model.demand_satisfaction_production = pyo.Constraint( model.H, rule=demand_satisfaction_production_rule)
+    # Supplier demand
+    def demand_satisfaction_production_rule(m, h):
+        lhs = sum(
+            m.f[a, c]
+            for c in m.C
+            for n in m.N_hg if m.supplier[n] == h
+            for a in m.A_n_minus[n]
+        ) - sum(
+            m.f[a, c]
+            for c in m.C
+            for n in m.N_hg if m.supplier[n] == h
+            for a in m.A_n_plus[n]
+        )
+        rhs = sum(m.D[h, n] for n in m.N_m)
+        return lhs >= rhs
 
-    # Constraint 4: Demand satisfaction constraint for market nodes
-    def demand_satisfaction_market_rule(model, n):
-        if n in model.N_m:
-            return sum(model.f[a, c] for a in model.A_n_plus[n] for c in model.C) >= sum(model.D[h,n] for h in model.H)
+    model.demand_satisfaction_production = pyo.Constraint(model.H, rule=demand_satisfaction_production_rule)
+
+    # Market demand
+    def demand_satisfaction_market_rule(m, n):
+        if n in m.N_m:
+            return sum(m.f[a, c] for a in m.A_n_plus[n] for c in m.C) >= sum(m.D[h, n] for h in m.H)
         return pyo.Constraint.Skip
+
     model.demand_satisfaction_market = pyo.Constraint(model.N_m, rule=demand_satisfaction_market_rule)
 
-    # Constraint 5: Flow balance constraint for intermediate nodes
-    def flow_balance_rule(model, n, c):
-        # Applies to nodes that are not production, market, or compression nodes
-        intermediate_nodes = model.N - model.N_hg - model.N_m - model.N_gamma
-        if n in intermediate_nodes:
-            inflow = sum(model.f[a, c] for a in model.A_n_plus[n])
-            outflow = sum(model.f[a, c] for a in model.A_n_minus[n])
+    # Flow balance
+    def flow_balance_rule(m, n, c):
+        intermediate = m.N - m.N_hg - m.N_m - m.N_gamma
+        if n in intermediate:
+            inflow = sum(m.f[a, c] for a in m.A_n_plus[n])
+            outflow = sum(m.f[a, c] for a in m.A_n_minus[n])
             return inflow == outflow
         return pyo.Constraint.Skip
 
     model.flow_balance = pyo.Constraint(model.N, model.C, rule=flow_balance_rule)
 
-    # ________________
-    # Weymouth constraints
-    # ________________
 
-    def SOS1_theta(model, a1, a2):
-        return sum(model.theta[a1,a2,z] for z in model.Z_theta) == 1 
+def add_weymouth_constraints(model):
 
-    model.S1_theta = pyo.Constraint(model.A, rule =SOS1_theta)
+    # SOS1 density regime
+    def SOS1_theta(m, a1, a2):
+        return sum(m.theta[a1, a2, z] for z in m.Z_theta) == 1
 
-    def upperbound_rho_rule(model, a1, a2, z):
-        total_flow = sum(model.f[a1,a2, c] for c in model.C)
-        weighted_flow = sum(model.rho_c[c] * model.f[a1,a2, c] for c in model.C)
+    model.S1_theta = pyo.Constraint(model.A, rule=SOS1_theta)
+
+    # Density upper bound
+    def upperbound_rho_rule(m, a1, a2, z):
+        total_flow = sum(m.f[a1, a2, c] for c in m.C)
+        weighted_flow = sum(m.rho_c[c] * m.f[a1, a2, c] for c in m.C)
 
         return (
-            model.rho_Z[z] * total_flow
-            + model.M_a[a1,a2] * (1 - model.theta[a1, a2, z])
+            m.rho_Z[z] * total_flow
+            + m.M_a[a1, a2] * (1 - m.theta[a1, a2, z])
             >= weighted_flow
         )
 
     model.upperbound_rho = pyo.Constraint(model.A, model.Z_theta, rule=upperbound_rho_rule)
 
-    def weymouth_cutting_plane_rule(model, a1, a2, z, l):
-        total_flow = sum(model.f[a1,a2, c] for c in model.C)
-        
-        # Cutting plane coefficients
-        p_in_l = model.P_in[l]
-        p_out_l = model.P_out[l]
-        denominator = pyo.sqrt(p_in_l**2 - p_out_l**2)
-        
-        coeff_in = p_in_l / denominator
-        coeff_out = p_out_l / denominator
-        
+    # Cutting planes
+    def weymouth_cutting_plane_rule(m, a1, a2, z, l):
+        total_flow = sum(m.f[a1, a2, c] for c in m.C)
+
+        p_in_l = m.P_in[l]
+        p_out_l = m.P_out[l]
+        denom = pyo.sqrt(p_in_l**2 - p_out_l**2)
+
+        coeff_in = p_in_l / denom
+        coeff_out = p_out_l / denom
+
         return (
             total_flow
-            <= model.K_az[a1,a2, z] * (coeff_in * model.p_in[a1, a2] - coeff_out * model.p_out[a1, a2])
-            + model.M_a[a1,a2] * (1 - model.theta[a1, a2, z])
+            <= m.K_az[a1, a2, z] * (coeff_in * m.p_in[a1, a2] - coeff_out * m.p_out[a1, a2])
+            + m.M_a[a1, a2] * (1 - m.theta[a1, a2, z])
         )
 
     model.weymouth_cutting_plane = pyo.Constraint(model.A, model.Z_theta, model.L, rule=weymouth_cutting_plane_rule)
 
-    # ________________
-    # Other pressure constraints
-    # ________________
 
-    #Node pressure relationship
-    def node_pressure_rule(model, n, a_into_node_1, a_into_node_2, a_out_node_1, a_out_node_2):
-        return model.p_in[a_out_node_1, a_out_node_2] <= model.p_out[a_into_node_1, a_into_node_2]
+def add_pressure_constraints(model):
+
+    # Node pressure propagation
+    def node_pressure_rule(m, n, a_in_1, a_in_2, a_out_1, a_out_2):
+        return m.p_in[a_out_1, a_out_2] <= m.p_out[a_in_1,a_in_2]
 
     model.node_pressure = pyo.Constraint(
-        ((n, a_into_node, a_out_node)
-        for n in model.N if n not in model.N_gamma
-        for a_into_node in model.A_n_plus[n]
-        for a_out_node in model.A_n_minus[n]),
+        ((n, a_in, a_out)
+         for n in model.N if n not in model.N_gamma
+         for a_in in model.A_n_plus[n]
+         for a_out in model.A_n_minus[n]),
         rule=node_pressure_rule
     )
 
-    # Inlet pressure must be greater than outlet pressure for arcs
-    def pressure_drop_rule(model, a1, a2):
-        return model.p_in[a1, a2] >= model.p_out[a1, a2]
-    
-    model.pressure_drop = pyo.Constraint(model.A, rule=pressure_drop_rule)
+    # Pressure drop
+    model.pressure_drop = pyo.Constraint(model.A, rule=lambda m, a1, a2: m.p_in[a1, a2] >= m.p_out[a1, a2])
 
-    # Maximum pressure 
-    def max_pressure_rule(model, a1, a2):
-        return model.p_in[a1, a2] <= model.P_max[a1, a2]
-    
-    model.max_pressure = pyo.Constraint(model.A, rule=max_pressure_rule)
+    # Max pressure
+    model.max_pressure = pyo.Constraint(model.A, rule=lambda m, a1, a2: m.p_in[a1, a2] <= m.P_max[a1, a2])
 
-    # Minimum pressure demand nodes
-    def min_pressure_demand_rule(model, n, a1,a2):
-        return model.p_out[a1,a2] >= model.P_min[n]
+    # Min pressure at markets
+    def min_pressure_demand_rule(m, n, a1,a2):
+        return m.p_out[a1, a2] >= m.P_min[n]
 
     model.min_pressure_demand = pyo.Constraint(
         ((n, a) for n in model.N_m for a in model.A_n_plus[n]),
-        rule=min_pressure_demand_rule)
-    
-    # Compression fuel consumption constraints
-    def fuel_consumption_rule(model, n,c):
-        if n in model.N_gamma:
-            # For each arc into the compression node, compute fuel consumption
-            a = model.A_n_minus[n].first()
-            a_prime = model.A_n_plus[n].first()
-            return model.w[n, c] == model.K_out_pipe[n, c] * model.p_in[a] - model.K_into_pipe[n, c] * model.p_out[a_prime] + model.K_flow[n, c] * model.f[a,c]
+        rule=min_pressure_demand_rule
+    )
+
+
+def add_compression_constraints(model):
+
+    def fuel_consumption_rule(m, n, c):
+        if n in m.N_gamma:
+            a = m.A_n_minus[n].first()
+            a_prime = m.A_n_plus[n].first()
+            return (
+                m.w[n, c]
+                == m.K_out_pipe[n, c] * m.p_in[a]
+                - m.K_into_pipe[n, c] * m.p_out[a_prime]
+                + m.K_flow[n, c] * m.f[a, c]
+            )
         return pyo.Constraint.Skip
 
     model.fuel_consumption = pyo.Constraint(model.N_gamma, model.C, rule=fuel_consumption_rule)
 
-    def fuel_flow_balance_rule(model, n,c):
-        if n in model.N_gamma:
-            return sum(model.f[a, c] for a in model.A_n_minus[n]) == sum(model.f[a, c] for a in model.A_n_plus[n]) -  model.w[n, c] 
+    def fuel_flow_balance_rule(m, n, c):
+        if n in m.N_gamma:
+            return sum(m.f[a, c] for a in m.A_n_minus[n]) == sum(m.f[a, c] for a in m.A_n_plus[n]) - m.w[n, c]
         return pyo.Constraint.Skip
 
     model.fuel_flow_balance = pyo.Constraint(model.N_gamma, model.C, rule=fuel_flow_balance_rule)
 
-    def compression_increase_rule(model, n):
-        if n in model.N_gamma:
-            a = model.A_n_minus[n].first()
-            a_prime = model.A_n_plus[n].first()
-            return model.p_in[a] == model.P_hat[n] * model.p_out[a_prime]
+    def compression_increase_rule(m, n):
+        if n in m.N_gamma:
+            a = m.A_n_minus[n].first()
+            a_prime = m.A_n_plus[n].first()
+            return m.p_in[a] == m.P_hat[n] * m.p_out[a_prime]
         return pyo.Constraint.Skip
 
     model.compression_increase = pyo.Constraint(model.N_gamma, rule=compression_increase_rule)
 
-    # ________________
-    # Quality constraints
-    # ________________
 
-    # Composition per pipe
-    def pipe_composition_max_rule(model, a1, a2, c):
-        return model.f[a1, a2,c] <= model.q_plus_arc[a1, a2,c] * sum(model.f[a1, a2, cp] for cp in model.C)
+def add_quality_constraints(model):
+
+    # Pipe composition
+    def pipe_composition_max_rule(m, a1, a2, c):
+        return m.f[a1, a2, c] <= m.q_plus_arc[a1, a2, c] * sum(m.f[a1, a2, cp] for cp in m.C)
 
     model.pipe_composition_max = pyo.Constraint(model.A, model.C, rule=pipe_composition_max_rule)
 
-    # Unused
-    def pipe_composition_min_rule(model, a1, a2, c):
-        return model.f[a1, a2,c] >= model.q_minus_arc[a1, a2,c] * sum(model.f[a1, a2, cp] for cp in model.C)
+    # Market composition
+    def market_node_max_rule(m, n, c):
+        return (
+            sum(m.f[a, c] for a in m.A_n_plus[n])
+            <= m.q_plus_node[n, c] * sum(m.f[a, cp] for a in m.A_n_plus[n] for cp in m.C)
+        )
 
-    model.pipe_composition_min = pyo.Constraint(model.A, model.C, rule =pipe_composition_min_rule)
-
-    # Composition at market nodes
-    def market_node_max_rule(model, n, c):
-        return sum(model.f[a, c] for a in model.A_n_plus[n]) <= model.q_plus_node[n, c] * sum(model.f[a, cp] for a in model.A_n_plus[n] for cp in model.C)
-    
     model.market_node_max = pyo.Constraint(model.N_m, model.C, rule=market_node_max_rule)
 
-    # Unused
-    def market_node_min_rule(model, n, c):
-        return sum(model.f[a, c] for a in model.A_n_plus[n]) >= model.q_minus_node[n, c] * sum(model.f[a, cp] for a in model.A_n_plus[n] for cp in model.C)
-    
-    model.market_node_min = pyo.Constraint(model.N_m, model.C, rule=market_node_min_rule)
 
-    #_______________
-    # Homogeneous splitting constraints
-    #_______________
+def add_homogeneous_splitting_constraints(model):
 
-    def SOS1_v(model, n):
-        return sum(model.v[n, z] for z in model.Z_v[n]) == 1 
+    def SOS1_v(m, n):
+        return sum(m.v[n, z] for z in m.Z_v[n]) == 1
 
-    model.S1_v = pyo.Constraint(model.N_s, rule =SOS1_v)
+    model.S1_v = pyo.Constraint(model.N_s, rule=SOS1_v)
 
-    def choice_v_flow_rule(model, n, z):
-        if n in model.N_s:
-            return sum(model.e[n, c, z] for c in model.C) <= model.v[n, z] * model.M_n[n]
-        return pyo.Constraint.Skip
+    def choice_v_flow_rule(m, n, z):
+        return sum(m.e[n, c, z] for c in m.C) <= m.v[n, z] * m.M_n[n]
 
     model.choice_v_flow = pyo.Constraint(model.v_index, rule=choice_v_flow_rule)
 
-    def homogeneous_split_rule(model, a1, a2, n, c):
-        if (a1,a2) in model.A_n_minus[n] and n in model.N_s:
-            return model.f[a1, a2, c] == sum(model.e[n, c, z] * model.E_nza[n, z, a1, a2] for z in model.Z_v[n])
-        else:
-            return pyo.Constraint.Skip
+    def homogeneous_split_rule(m, a1, a2, n, c):
+        if (a1, a2) in m.A_n_minus[n]:
+            return m.f[a1, a2, c] == sum(m.e[n, c, z] * m.E_nza[n, z, a1, a2] for z in m.Z_v[n])
+        return pyo.Constraint.Skip
 
     model.homogeneous_split = pyo.Constraint(model.A, model.N_s, model.C, rule=homogeneous_split_rule)
 
-    #------------------------------
-    # Expressions
-    #------------------------------
+def add_constraints(model):
+    add_flow_constraints(model)
+    add_weymouth_constraints(model)
+    add_pressure_constraints(model)
+    add_compression_constraints(model)
+    add_quality_constraints(model)
+    add_homogeneous_splitting_constraints(model)
 
-    # Total flow on each arc
-    def total_flow_rule(model, a1,a2):
-        return sum(model.f[a1,a2, c] for c in model.C)
-    model.total_flow = pyo.Expression(model.A, rule=total_flow_rule)
+def create_base_model(network: networkx.Graph):
+    model = pyo.ConcreteModel()
 
-    # Relative density on each arc
-    model.rho = pyo.Expression(model.A, rule=lambda model, a1, a2: sum(model.rho_c[c] * model.f[a1,a2,c] for c in model.C) / (sum(model.f[a1,a2,c] for c in model.C) + 1e-6))  # Adding small value to avoid division by zero
+    build_sets(model, network)
+    build_parameters(model, network)
+    build_variables(model)
 
-    # Weymouth flow on each arc
-    model.weymouth_flow = pyo.Expression(model.A, rule=lambda model, a1, a2: sum(model.theta[a1,a2,z] * model.K_az[a1,a2,z] * (model.p_in[a1,a2]**2 - model.p_out[a1,a2]**2)**0.5 for z in model.Z_theta))
+    add_constraints(model)
+
+    add_expressions(model)
+    add_objective(model)
 
     return model
 
@@ -556,7 +578,7 @@ def plot_flow_per_arc(model):
     ax.set_ylabel("Flow")
     ax.set_title("Flow per Arc per Component")
     ax.legend()
-    plt.savefig("flow_per_arc_plot.png")  # Save the plot as a PNG file
+    plt.savefig(folder + "flow_per_arc_plot.png")  # Save the plot as a PNG file
     plt.show()
 
 
@@ -581,7 +603,7 @@ def plot_inlet_outlet_pressures(model):
     ax.set_ylabel("Pressure")
     ax.set_title("Inlet and Outlet Pressure per Arc")
     ax.legend()
-    plt.savefig("inlet_outlet_pressure_plot.png")  # Save the plot as a PNG file
+    plt.savefig(folder + "inlet_outlet_pressure_plot.png")  # Save the plot as a PNG file
     plt.show()
 
 
@@ -614,7 +636,7 @@ def plot_relative_density(model):
     ax.set_ylabel("Relative Density")
     ax.set_title("Relative Density per Arc with Upper Bounds")
     ax.legend()
-    plt.savefig("relative_density_plot.png")  # Save the plot as a PNG file
+    plt.savefig(folder + "relative_density_plot.png")  # Save the plot as a PNG file
     plt.show()
 
 
@@ -630,8 +652,8 @@ def total_v_weymouth_flow_plot(model):
     width = 0.35
     x = range(len(arcs))
 
-    ax.bar([i - width/2 for i in x], weymouth_flows, width, label='Weymouth Flow', color='lightgreen')
-    ax.bar([i + width/2 for i in x], total_flows, width, label='Total Flow', color='lightgray')
+    ax.bar([i - width/2 for i in x], weymouth_flows, width, label='Weymouth Flow', color='skyblue')
+    ax.bar([i + width/2 for i in x], total_flows, width, label='Total Flow', color='lightgreen')
 
     ax.set_xticks(x)
     ax.set_xticklabels(arcs)
@@ -639,7 +661,7 @@ def total_v_weymouth_flow_plot(model):
     ax.set_ylabel("Flow")
     ax.set_title("Weymouth Flow vs Total Flow per Arc")
     ax.legend()
-    plt.savefig("weymouth_vs_total_flow_plot.png")  # Save the plot as a PNG file
+    plt.savefig(folder + "weymouth_vs_total_flow_plot.png")  # Save the plot as a PNG file
     plt.show()
 
 def plot_demand_and_composition_per_node(model):
@@ -698,7 +720,7 @@ def plot_demand_and_composition_per_node(model):
     ax.grid(axis='y', alpha=0.3)
     
     plt.tight_layout()
-    plt.savefig("demand_and_composition_per_node_plot.png")
+    plt.savefig(folder + "demand_and_composition_per_node_plot.png")
     plt.show()
 
 

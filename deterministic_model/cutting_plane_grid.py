@@ -2,6 +2,8 @@ import numpy as np
 from base_model import generate_cutting_plane_pairs
 import matplotlib.pyplot as plt
 
+folder = "Figures/"
+
 # Assuming your constants and generate_cutting_plane_pairs() function are already defined
 pairs = generate_cutting_plane_pairs(
     n_p_out=10,
@@ -36,5 +38,5 @@ colorbar.set_label('Linearize approximation values')
 # plt.legend()
 
 plt.tight_layout()
-plt.savefig("cutting_plane_grid.png", dpi=300)
+plt.savefig(folder + "cutting_plane_grid.png", dpi=300)
 plt.show()
