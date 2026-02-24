@@ -174,7 +174,6 @@ def build_parameters(model, network, scenarios, cutting_plane_pairs, allowed_dev
     model.o_p_a = pyo.Param(model.A, initialize={a: network.edges[a]['pressure_cost'] for a in model.A})
     model.o_n_x = pyo.Param(model.N, model.KM, initialize=lambda model, n, k, m: scenarios[k][m-1].G.nodes[n].get('booking_cost', 0) if n in scenarios[k][m-1].G.nodes else 0)
     
-
     # Production
     model.G = pyo.Param(model.N_hg, initialize={n: network.nodes[n]['supply_capacity'] for n in model.N_hg})
     model.alpha = pyo.Param(
@@ -199,8 +198,9 @@ def build_parameters(model, network, scenarios, cutting_plane_pairs, allowed_dev
     model.M_n = pyo.Param(model.N, initialize={n: network.nodes[n]['max_flow'] for n in model.N})
     model.M_a = pyo.Param(model.A, initialize={a: network.edges[a]['max_flow'] for a in model.A})
 
-    # Density
+    # Density and GCV
     model.rho_c = pyo.Param(model.C, initialize={"NG": 0.65, "CO2": 1.53, "H2": 0.07})
+    model.gcv_c = pyo.Param(model.C, initialize={"NG": 39.8, "H2": 12.7, "CO2": 0})
 
     rho_values = np.linspace(RHO_LOW, RHO_HIGH, NUMBER_OF_DENSITY_BOUNDS + 1)[1:]
     model.rho_Z = pyo.Param(model.Z_theta, initialize={z: rho_values[i] for i, z in enumerate(model.Z_theta)})
@@ -299,6 +299,7 @@ def build_parameters(model, network, scenarios, cutting_plane_pairs, allowed_dev
 
 def build_variables(model):
     model.f = pyo.Var(model.A, model.C, model.M[3], within=pyo.NonNegativeReals, initialize=0)
+    model.h = pyo.Var(model.N_m, model.M[3], within=pyo.NonNegativeReals, initialize=0)  # GCV 
 
     # Weymouth
     model.p_in = pyo.Var(model.A, model.M[3], within=pyo.NonNegativeReals, initialize=0)
@@ -335,11 +336,12 @@ def add_expressions(model):
 
 
 def add_objective(model):
-
     def objective_rule(m):
         revenue = sum(
-            m.sp[3,m_3] * m.o_n_d[n, m_3] * sum(m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C)
+            m.sp[3,m_3] * m.o_n_d[n, m_3] * m.gcv_c[c] * m.f[a, c, m_3]
             for n in m.N_m for m_3 in m.M[3]
+            for a in m.A_n_plus[n]
+            for c in m.C
         )
 
         generation_cost = sum(
@@ -390,12 +392,12 @@ def add_flow_constraints(model):
 
     # Supplier demand
     def demand_satisfaction_production_rule(m, h, m_3):
-        lhs = sum(
+        lhs =  sum( m.gcv_c[c] *
             m.f[a, c, m_3]
             for c in m.C
             for n in m.N_hg if m.supplier[n] == h
             for a in m.A_n_minus[n]
-        ) - sum(
+        ) - sum( m.gcv_c[c] *
             m.f[a, c, m_3]
             for c in m.C
             for n in m.N_hg if m.supplier[n] == h
@@ -409,7 +411,7 @@ def add_flow_constraints(model):
     # Market demand
     def demand_satisfaction_market_rule(m, n, m_3):
         if n in m.N_m:
-            return sum(m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C) >= sum(m.D[h, n, m_3] for h in m.H)
+            return sum(m.gcv_c[c] * m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C) >= sum(m.D[h, n, m_3] for h in m.H)
 
         return pyo.Constraint.Skip
 

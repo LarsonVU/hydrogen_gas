@@ -155,7 +155,7 @@ m.get_root().html.add_child(folium.Element(legend_html))
 # -------------------------------------------------
 # 5. Save map to file
 # -------------------------------------------------
-output_path = Path("results/h2_norway_overlay_map.html")
+output_path = Path("data/data_analysis_results/h2_norway_overlay_map.html")
 m.save(output_path)
 
 print(f"Map saved to: {output_path.resolve()}")

@@ -145,6 +145,7 @@ class Scenario:
         self.G = G
 
 
+
 def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE):
     for scenario in scenarios[2]:
         demand_fraction = scenario.index / branches_per_stage[2]  # Fraction of demand based on branch number
@@ -159,8 +160,8 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE):
 def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE):
     for scenario in scenarios[3]:
         price_fraction = (scenario.index % branches_per_stage[3]) / branches_per_stage[3]  # Fraction of price based on branch number
-        scenario.G.nodes["D"]["price"] = 1 + 1 * price_fraction
-        scenario.G.nodes["E"]["price"] = 1 + 1 * price_fraction
+        scenario.G.nodes["D"]["price"] = 0.1 + 0.1 * price_fraction
+        scenario.G.nodes["E"]["price"] = 0.1 + 0.1 * price_fraction
 
 def add_generation_costs(scenarios, branches_per_stage = BRANCHES_PER_STAGE):
     for scenario in scenarios[3]:
