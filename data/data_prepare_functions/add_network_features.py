@@ -41,16 +41,26 @@ def add_node_types(gdf, node_info):
                 gdf.at[idx, "node_type"] = node_information.iloc[0]["Node Type"]
             else:
                 gdf.at[idx, "node_type"] = "Unknown"
-            print(f"Processed node {node_id} with type {gdf.at[idx, 'node_type']}")
+    return gdf
+
+def add_booking_cost(gdf, node_info):
+    for idx, row in gdf.iterrows():
+        if row["type"] == "node":
+            node_id = row["location_id"]
+            booking_cost = node_info[node_info["Location ID"] == str(node_id)]["Tariff"]
+            row["base_booking_cost"] = booking_cost / 11.28 # NOK to Euro 23-2-2026
     return gdf
 
 def add_supplier(gdf, supplier_data):
     gdf["supplier"] = None  # ensures object dtype
-    gdf.loc[gdf["location"] == "AASTA HANSTEEN PLEM", "supplier"] = supplier_data[supplier_data["Field Name"] == "AASTA HANSTEEN"]["Operatør"].iloc[0]
-    gdf.loc[gdf["location"] == "GJØA", "supplier"] = supplier_data[supplier_data["Field Name"] == "GJØA"]["Operatør"].iloc[0]
-    gdf.loc[gdf["location"] == "NORNE ERB", "supplier"] = supplier_data[supplier_data["Field Name"] == "NORNE"]["Operatør"].iloc[0]
-    gdf.loc[gdf["location"] == "OSEBERG D", "supplier"] = supplier_data[supplier_data["Field Name"] == "OSEBERG"]["Operatør"].iloc[0]
-    gdf.loc[gdf["location"] == "VISUND", "supplier"] = supplier_data[supplier_data["Field Name"] == "VISUND"]["Operatør"].iloc[0]
+    gdf.loc[gdf["location"] == "AASTA HANSTEEN PLEM", "supplier"] = supplier_data[supplier_data["Field name"] == "AASTA HANSTEEN"]["Operatør"]
+    gdf.loc[gdf["location"] == "GJØA", "supplier"] = supplier_data[supplier_data["Field name"] == "GJØA"]["Operatør"]
+    gdf.loc[gdf["location"] == "NORNE ERB", "supplier"] = supplier_data[supplier_data["Field name"] == "NORNE"]["Operatør"]
+    gdf.loc[gdf["location"] == "OSEBERG D", "supplier"] = supplier_data[supplier_data["Field name"] == "OSEBERG"]["Operatør"]
+    gdf.loc[gdf["location"] == "VISUND", "supplier"] = supplier_data[supplier_data["Field name"] == "VISUND"]["Operatør"]
+    # Hydrogen
+    gdf.loc[gdf["location"] == "NYHAMNA", "supplier"] = "SHELL"
+    gdf.loc[gdf["location"] == "KÅRSTØ", "supplier"] = "Equinor Energy AS"
     return gdf
 
 def add_generation_capacity(gdf):
@@ -60,7 +70,12 @@ def add_generation_capacity(gdf):
     gdf.loc[gdf["location"] == "NORNE ERB", "generation_capacity"] = 0.1 /365 *1000
     gdf.loc[gdf["location"] == "OSEBERG D", "generation_capacity"] = 8.37 /365 *1000
     gdf.loc[gdf["location"] == "VISUND", "generation_capacity"] = 5.76 /365 *1000
+    # Hydrogen
+    gdf.loc[gdf["location"] == "NYHAMNA", "generation_capacity"] = 14.47
+    gdf.loc[gdf["location"] == "KÅRSTØ", "generation_capacity"] = 14.47
     return gdf
+
+
 
 def add_generation_cost(gdf):
     gdf["generation_cost"] = None  # ensures object dtype
@@ -69,6 +84,9 @@ def add_generation_cost(gdf):
     gdf.loc[gdf["location"] == "NORNE ERB", "generation_cost"] = 384.11 / 11.28
     gdf.loc[gdf["location"] == "OSEBERG D", "generation_cost"] = 476.97 / 11.28
     gdf.loc[gdf["location"] == "VISUND", "generation_cost"] = 295.56  / 11.28
+    # Hydrogen
+    gdf.loc[gdf["location"] == "NYHAMNA", "generation_cost"] = 195
+    gdf.loc[gdf["location"] == "KÅRSTØ", "generation_cost"] = 195
     return gdf
 
 def add_gas_composition(gdf):
@@ -78,12 +96,18 @@ def add_gas_composition(gdf):
     gdf.loc[gdf["location"] == "NORNE ERB", "gas_composition"] = [ {"CO2": 0.005, "H2": 0.00, "NG": 0.99}]
     gdf.loc[gdf["location"] == "OSEBERG D", "gas_composition"] = [{"CO2": 0.01, "H2": 0.00, "NG": 0.98}]
     gdf.loc[gdf["location"] == "VISUND", "gas_composition"] =[ {"CO2": 0.03, "H2": 0.00, "NG": 0.97}]
+
+    # Hydrogen
+    gdf.loc[gdf["location"] == "NYHAMNA", "generation_cost"] = [ {"CO2": 0.00, "H2": 1.00, "NG": 0}]
+    gdf.loc[gdf["location"] == "KÅRSTØ", "generation_cost"] = [ {"CO2": 0.00, "H2": 1.00, "NG": 0}]
     return gdf
 
 
-def add_generation_parameters(gdf):
+def add_generation_parameters(gdf, node_info, supplier_data):
     gdf = add_max_flow(gdf)
     gdf = add_node_types(gdf, node_info)
+    gdf = add_booking_cost(gdf, node_info)
+    gdf = add_supplier(gdf, supplier_data)
     gdf = add_generation_capacity(gdf)
     gdf = add_generation_cost(gdf)
     gdf = add_gas_composition(gdf)
@@ -165,12 +189,34 @@ def add_demand_variance(gdf):
         gdf.loc[gdf["location"] == loc, "demand_variance"] = 0.3
     return gdf
 
+def add_max_component_percentages(gdf):
+    gdf["max_fractions"] = None
+    gdf.loc[gdf["location"] == "DUNKERQUE", "max_fractions"] = [{"NG": 1, "CO2": 0.025, "H2": 0.06}]
+    gdf.loc[gdf["location"] == "EASINGTON", "max_fractions"] = [{"NG": 1, "CO2": 0.025, "H2": 0.001}]
+    gdf.loc[gdf["location"] == "ST. FERGUS", "max_fractions"] = [{"NG": 1, "CO2": 0.04, "H2": 0.001}]
+    gdf.loc[gdf["location"] == "EMDEN", "max_fractions"] = [{"NG": 1, "CO2": 0.026, "H2": 0.1}]
+    gdf.loc[gdf["location"] == "DORNUM", "max_fractions"] =[ {"NG": 1, "CO2": 0.025, "H2": 0.1}]
+    gdf.loc[gdf["location"] == "ZEEBRUGGE", "max_fractions"] = [{"NG": 1, "CO2": 0.025, "H2": 0}]
+    return gdf
+
+def add_supplier_ratios(gdf):
+    gdf["supplier_ratios"] = None
+    gdf.loc[gdf["location"] == "DUNKERQUE", "max_fractions"] = [{"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0}]
+    gdf.loc[gdf["location"] == "EASINGTON", "max_fractions"] = [{"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0}]
+    gdf.loc[gdf["location"] == "ST. FERGUS", "max_fractions"] = [{"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0}]
+    gdf.loc[gdf["location"] == "EMDEN", "max_fractions"] = [{"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0}]
+    gdf.loc[gdf["location"] == "DORNUM", "max_fractions"] =  [{"Equinor Energy AS": 0.8, "SHELL": 0.0, "Vår Energi ASA": 0.2}]
+    gdf.loc[gdf["location"] == "ZEEBRUGGE", "max_fractions"] = [{"Equinor Energy AS": 0.9, "SHELL": 0.1, "Vår Energi ASA": 0.0}]
+    return gdf
+
 def add_market_and_demand_parameters(gdf):
     gdf = add_market_prices(gdf)
     gdf = add_long_term_std(gdf)
     gdf = add_day_ahead_std(gdf)
     gdf = add_average_demand(gdf)
     gdf = add_demand_variance(gdf)
+    gdf = add_max_component_percentages(gdf)
+    gdf = add_supplier_ratios(gdf)
     return gdf
 
 def add_arc_capacities(gdf):
@@ -215,18 +261,35 @@ def add_moap(gdf):
             row["max_inlet_pressure"] = 150
     return gdf
 
+def add_arc_pressure_costs(gdf):
+    for idx, row in gdf.iterrows():
+        if row["type"] == "edge":
+            row["pressure_cost"] = 0.1
+    return gdf
+
+def add_arc_max_ratios(gdf):
+    for idx, row in gdf.iterrows():
+        if row["type"] == "edge":
+            row["max_pipe_fractions"] = [{"NG": 1, "CO2": 1, "H2": 0.2}]
+    return gdf
+    
+
 def add_arc_parameters(gdf):
     gdf = add_arc_capacities(gdf)
     gdf = add_moap(gdf)
+    gdf = add_arc_pressure_costs(gdf)
+    gdf = add_arc_max_ratios(gdf)
     return gdf
 
 if __name__ == "__main__":
     gdf = read_geojson(GDF_FILE)
+    gdf.loc[gdf["location_id"] == "286141A", "location"] = "DORNUM"
+
     node_info = pd.read_excel(NODE_INFO_FILE)
-    gdf = add_generation_parameters(gdf)
+    supplier_data  = pd.read_excel(GENERATION_NODES_FILE)
+    gdf = add_generation_parameters(gdf, node_info, supplier_data)
     gdf = add_compression_node_parameters(gdf)
     gdf = add_market_and_demand_parameters(gdf)
     gdf = add_arc_parameters(gdf)
 
-    print(gdf[["idPipeline", "mapLabel", "pipName", "max_flow"]])
     gdf.to_file(OUTPUT_FILE, driver="GeoJSON")

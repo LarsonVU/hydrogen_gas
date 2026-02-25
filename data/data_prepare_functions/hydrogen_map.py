@@ -1,6 +1,10 @@
 import pandas as pd
 import folium
 from pathlib import Path
+import geopandas as gpd
+
+FOLDER = "data/data_analysis_results/Geojson_pipelines/"
+NETWORK_FILE = FOLDER + "graphed_pipeline_network_with_features.geojson"
 
 # -------------------------------------------------
 # 1. Define hydrogen production / hub locations
@@ -12,83 +16,95 @@ sites = [
         "lat": 59.2356,
         "lon": 5.5217,
         "notes": "Cancelled project of Equinor",
-        "color": "red"
+        "color": "lightred"
     },
     {
         "name": "Nyhamna (Aukra Hydrogen Hub)",
         "lat": 62.830755,
         "lon": 6.916013,
         "notes": "Cancelled hydrogen hub near Nyhamna gas terminal.",
-        "color": "red"
+        "color": "lightred"
     },
     {
         "name": "Langstranda – Bodø (GreenH)",
         "lat": 67.2709,
         "lon": 14.3449,
         "notes": "Planned GreenH hydrogen production project at Langstranda, Bodø.",
-        "color": "green"
+        "color": "lightgreen"
     },
     {
         "name": "Vestbase – Kristiansund (GreenH)",
         "lat": 63.1105,
         "lon": 7.7280,
         "notes": "GreenH hydrogen project located at the Vestbase industrial area in Kristiansund.",
-        "color": "green"
+        "color": "lightgreen"
     },
     {
         "name": "Slagentangen – Tønsberg (GreenH)",
         "lat": 59.2675,
         "lon": 10.4076,
         "notes": "GreenH hydrogen project at the Slagentangen terminal near Tønsberg.",
-        "color": "green"
+        "color": "lightgreen"
     },
     {
         "name": "Hammerfest (GreenH)",
         "lat": 70.6634,
         "lon": 23.6821,
         "notes": "Planned GreenH hydrogen hub in Hammerfest.",
-        "color": "green"
+        "color": "lightgreen"
     },
     {
         "name": "Årdalsfjorden – Fiskå industriområde (GreenH)",
         "lat": 59.4330,
         "lon": 5.4330,
         "notes": "GreenH hydrogen project at the Fiskå industrial area along Årdalsfjorden, Rogaland.",
-        "color": "green"
+        "color": "lightgreen"
     },
     {
         "name": "Sandnessjøen – Horvnes (GreenH)",
         "lat": 66.0217,
         "lon": 12.6316,
         "notes": "GreenH hydrogen project at the Horvnes industrial area near Sandnessjøen.",
-        "color": "green"
+        "color": "lightgreen"
     },
     {
         "name": "HyFuel – Florø (HydrogenSolutions)",
         "lat": 61.5996,
         "lon": 5.0328,
         "notes": "HyFuel 20 MW green hydrogen production project at Fjord Base in Florø, Kinn municipality (Hydrogen Solutions AS ongoing project).",
-        "color": "blue"
+        "color": "lightblue"
     },
     {
         "name": "Kaupanes Expansion – Egersund (HydrogenSolutions)",
         "lat": 58.4514,
         "lon": 5.9998,
         "notes": "Kaupanes Expansion Project — expansion of the Kaupanes hydrogen plant in the industrial area of Egersund (Hydrogen Solutions AS ongoing project).",
-        "color": "blue"
+        "color": "lightblue"
     },
     {
         "name": "Meråker Hydrogen – Kopperå (HydrogenSolutions)",
         "lat": 63.3923,
         "lon": 11.8488,
         "notes": "Meråker Hydrogen plant to be built at Kopperå in Meråker Municipality, producing green hydrogen from renewable energy (Hydrogen Solutions AS ongoing project).",
-        "color": "blue"
+        "color": "lightblue"
     }
 
 
 ]
 
 df = pd.DataFrame(sites)
+
+
+gdf = gpd.read_file(NETWORK_FILE)
+
+processing_nodes = gdf[(gdf.geometry.type == "Point") & (gdf.node_type == "Processing")].copy()
+processing_node_locations = pd.DataFrame([{"name": row["location"],
+                            "lon": row.geometry.x,
+                            "lat": row.geometry.y,
+                            "color": "lightgreen"
+                            } for idx, row in processing_nodes.iterrows()])
+
+
 
 # -------------------------------------------------
 # 2. Create base map centered on Norway
@@ -107,9 +123,25 @@ m = folium.Map(
 #folium.TileLayer("OpenStreetMap").add_to(m)
 folium.TileLayer("CartoDB Positron No Labels").add_to(m)
 
+# # -------------------------------------------------
+# # 3. Add processing nodes 
+# # -------------------------------------------------
+# for _, row in processing_node_locations.iterrows():
+#     folium.CircleMarker(
+#         location=[row["lat"], row["lon"]],
+#         radius=4,  # size of the dot
+#         popup=f"<b>{row['name']}</b><br>{row.get('notes','')}",
+#         tooltip=row["name"],
+#         color=row["color"],        # border color
+#         fill=True,
+#         fill_color=row["color"],
+#         fill_opacity=0.9
+#     ).add_to(m)
+
 # -------------------------------------------------
-# 3. Add hydrogen site markers
+# 4. Add hydrogen site markers
 # -------------------------------------------------
+
 for _, row in df.iterrows():
     folium.Marker(
         location=[row["lat"], row["lon"]],
@@ -123,7 +155,7 @@ for _, row in df.iterrows():
     ).add_to(m)
 
 # -------------------------------------------------
-# 4. Add layer control
+# 5. Add layer control
 # -------------------------------------------------
 folium.LayerControl().add_to(m)
 
@@ -144,9 +176,9 @@ legend_html = """
     font-size: 14px;
 ">
 <b>Hydrogen Projects</b><br><br>
-<i class="fa fa-map-marker fa-2x" style="color:red"></i>&nbsp; On hold / Cancelled<br>
-<i class="fa fa-map-marker fa-2x" style="color:blue"></i>&nbsp; HYDS projects<br>
-<i class="fa fa-map-marker fa-2x" style="color:green"></i>&nbsp; GreenH projects
+<i class="fa fa-map-marker fa-2x" style="color:#FFB3BA"></i>&nbsp; On hold / Cancelled<br>
+<i class="fa fa-map-marker fa-2x" style="color:lightblue"></i>&nbsp; HYDS projects<br>
+<i class="fa fa-map-marker fa-2x" style="color:#BAFFC9"></i>&nbsp; GreenH projects
 </div>
 """
 
