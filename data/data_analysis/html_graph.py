@@ -9,7 +9,7 @@ from folium.features import DivIcon
 # -------------------------------
 
 FOLDER = "data/data_analysis_results/Geojson_pipelines/"
-input_path = FOLDER + f"graphed_pipeline_network_with_features.geojson"
+input_path = FOLDER + f"study_case_network.geojson"
 output_html = "data/data_analysis_results/graphed_pipeline_network.html"
 
 # -------------------------------
