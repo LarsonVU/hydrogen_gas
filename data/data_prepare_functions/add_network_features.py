@@ -78,7 +78,7 @@ def add_supply_capacity(gdf):
 
 
 def add_generation_cost(gdf):
-    gdf["generation_cost"] = None  # ensures object dtype
+    gdf["generation_cost"] = None  # ensures object dtype # Euro per Mscm
     gdf.loc[gdf["location"] == "AASTA HANSTEEN PLEM", "generation_cost"] =  122.85 * 1000  / 11.28 # NOK to EUR Ex rate 23-2-2026
     gdf.loc[gdf["location"] == "GJØA", "generation_cost"] = 194.50 * 1000  / 11.28 
     gdf.loc[gdf["location"] == "NORNE ERB", "generation_cost"] = 384.11 * 1000 / 11.28
@@ -115,23 +115,29 @@ def add_generation_parameters(gdf, node_info, supplier_data):
 
 def add_compression_factor(gdf):
     gdf["compression_increase"] = None  # ensures object dtype
-    gdf.loc[gdf["location"] == "B-11", "compression_increase"] =  1.2
-    gdf.loc[gdf["location"] == "EUROPIPE-SCP", "compression_increase"] = 1.1
-    gdf.loc[gdf["location"] == "NORPIPE Y", "compression_increase"] = 1.3
-    gdf.loc[gdf["location"] == "ZEEPIPE-SCP", "compression_increase"] = 1.25
+    gdf.loc[gdf["location"] == "B-11", "compression_increase"] =  1.9
+    gdf.loc[gdf["location"] == "EUROPIPE-SCP", "compression_increase"] = 1.9
+    gdf.loc[gdf["location"] == "NORPIPE Y", "compression_increase"] = 1.9
+    gdf.loc[gdf["location"] == "ZEEPIPE-SCP", "compression_increase"] = 1.9
     return gdf
 
 def add_compression_constants(gdf):
     gdf["compression_constants"] = None  # ensures object dtype
     compression_nodes = ["B-11", "EUROPIPE-SCP", "NORPIPE Y", "ZEEPIPE-SCP"]
     normal_inlet_pressure = 100# 40  # bar
-    normal_flow  = 8# 8
-    constant = 0.1
+    normal_flow  = 25# 8
+    T = 288.15
+    T_std = 288.15
+    eta =0.72
+    p_std =1.01325
+    w_to_hour = 3600
+    constant = T * p_std / (T_std * eta * w_to_hour)
     for node in compression_nodes:
         normal_discharge_pressure = normal_inlet_pressure * gdf.loc[gdf["location"] == node, "compression_increase"].iloc[0]  # bar
         inlet_constant= constant * (normal_inlet_pressure * normal_flow) / ((2/3 * normal_inlet_pressure + 1/3 * normal_discharge_pressure) ** 2)
         outlet_constant = constant * (normal_discharge_pressure * normal_flow) / ((2/3 * normal_inlet_pressure + 1/3 * normal_discharge_pressure) ** 2)
         flow_constant = constant * (normal_discharge_pressure- normal_inlet_pressure ) / (2/3 * normal_inlet_pressure + 1/3 * normal_discharge_pressure)
+        print(inlet_constant, outlet_constant, flow_constant)
         gdf.loc[gdf["location"] == node, "compression_constants"] = [{"NG": {"K_into_pipe": inlet_constant, "K_out_pipe": outlet_constant, "K_flow": flow_constant},
                                                                       "CO2": {"K_into_pipe": inlet_constant, "K_out_pipe": outlet_constant, "K_flow": flow_constant},
                                                                       "H2": {"K_into_pipe": inlet_constant, "K_out_pipe": outlet_constant, "K_flow": flow_constant}}]
@@ -144,12 +150,12 @@ def add_compression_node_parameters(gdf):
 
 def add_market_prices(gdf):
     gdf["average_market_price"] = None  # ensures object dtype
-    gdf.loc[gdf["location"] == "DUNKERQUE", "average_market_price"] = 30 *1000 #  euro / Mwh
-    gdf.loc[gdf["location"] == "EASINGTON", "average_market_price"] = 26 *1000
-    gdf.loc[gdf["location"] == "EMDEN", "average_market_price"] = 28 *1000
-    gdf.loc[gdf["location"] == "DORNUM", "average_market_price"] = 28 *1000
-    gdf.loc[gdf["location"] == "ST. FERGUS", "average_market_price"] = 26 *1000
-    gdf.loc[gdf["location"] == "ZEEBRUGGE", "average_market_price"] = 29 *1000
+    gdf.loc[gdf["location"] == "DUNKERQUE", "average_market_price"] = 30 #  euro / Mwh
+    gdf.loc[gdf["location"] == "EASINGTON", "average_market_price"] = 26
+    gdf.loc[gdf["location"] == "EMDEN", "average_market_price"] = 28
+    gdf.loc[gdf["location"] == "DORNUM", "average_market_price"] = 28 
+    gdf.loc[gdf["location"] == "ST. FERGUS", "average_market_price"] = 26 
+    gdf.loc[gdf["location"] == "ZEEBRUGGE", "average_market_price"] = 29 
     return gdf
 
 def add_long_term_std(gdf):
@@ -173,14 +179,14 @@ def add_day_ahead_std(gdf):
     return gdf
 
 def add_average_demand(gdf):
-    # Average Demand in Mwh x 1000
+    # Average Demand in Gwh
     gdf["average_demand_mwh_x1000"] = None
-    gdf.loc[gdf["location"] == "DUNKERQUE", "average_demand_mwh_x1000"] = 50.0
-    gdf.loc[gdf["location"] == "EASINGTON", "average_demand_mwh_x1000"] = 12.5
-    gdf.loc[gdf["location"] == "ST. FERGUS", "average_demand_mwh_x1000"] = 12.5
-    gdf.loc[gdf["location"] == "EMDEN", "average_demand_mwh_x1000"] = 25.0
-    gdf.loc[gdf["location"] == "DORNUM", "average_demand_mwh_x1000"] = 25.0
-    gdf.loc[gdf["location"] == "ZEEBRUGGE", "average_demand_mwh_x1000"] = 25.0
+    gdf.loc[gdf["location"] == "DUNKERQUE", "average_demand_mwh_x1000"] = 50.0 #*2 #+ 56.25 + 43.75
+    gdf.loc[gdf["location"] == "EASINGTON", "average_demand_mwh_x1000"] = 12.5 #* 4
+    gdf.loc[gdf["location"] == "ST. FERGUS", "average_demand_mwh_x1000"] = 12.5 #* 4
+    gdf.loc[gdf["location"] == "EMDEN", "average_demand_mwh_x1000"] = 25.0 # *2 + 56.25 
+    gdf.loc[gdf["location"] == "DORNUM", "average_demand_mwh_x1000"] = 25.0 #*4 + 56.25 
+    gdf.loc[gdf["location"] == "ZEEBRUGGE", "average_demand_mwh_x1000"] = 25.0  # * 4
     return gdf
 
 def add_demand_variance(gdf):

@@ -5,7 +5,7 @@ from matplotlib.patches import Patch
 import ast
 import numpy as np
 import pandas as pd
-
+import os
 
 np.random.seed(42)
 
@@ -102,12 +102,12 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
         for node in scenario.G.nodes:
             node_data = scenario.G.nodes[node]
             if "average_demand_mwh_x1000" in node_data and node_data["average_demand_mwh_x1000"] is not None:
-                avg_demand =  float(node_data["average_demand_mwh_x1000"]) 
+                avg_demand =  float(node_data["average_demand_mwh_x1000"]) *1000
                 variance = float(node_data.get("demand_variance", 0))
                 
                 # Sample variance multiplier from normal distribution
                 variance_multiplier = np.random.normal(1, variance)
-                sampled_demand = avg_demand * variance_multiplier
+                sampled_demand = max(avg_demand * variance_multiplier,0)
                 
                 # Apply supplier ratios if available
                 if "supplier_ratios" in node_data and node_data["supplier_ratios"]:
@@ -149,7 +149,7 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
                     price_std = float(node_data.get("day_ahead_price_std", 0))
                     # Sample price multiplier from normal distribution
                     price_multiplier = np.random.normal(1, price_std)
-                    price = predecessor.G.nodes[node]["price"] * price_multiplier
+                    price = max(predecessor.G.nodes[node]["price"] * price_multiplier, 0)
                     scenario.G.nodes[node]["price"] = price
                     price_df.loc[len(price_df)] = [scenario.stage, scenario.index, node, price]
                 else:
@@ -169,8 +169,8 @@ def add_booking_costs(scenarios, branches_per_stage = BRANCHES_PER_STAGE, percen
     for k in range(1, NUMBER_OF_STAGES + 1):
         for scenario in scenarios[k]:
             for node in scenario.G.nodes:
-                if scenario.G.nodes[node]["compression_increase"] is not None:  # Compression node
-                    scenario.G.nodes[node]["booking_cost"] = scenario.G.nodes[node]["base_booking_cost"] * (1+percentage_increase.get(k, 0))
+                if scenario.G.nodes[node]["compression_increase"] is None:  # Compression node
+                    scenario.G.nodes[node]["booking_cost"] = scenario.G.nodes[node]["base_booking_cost"] * (1+percentage_increase.get(k, 0)) * 1000000 # Cost in euro/MScm
                     
                     
 def add_scenario_attributes(scenarios, branches_per_stage = BRANCHES_PER_STAGE, folder = "study_case_model/scenario_variables/"):
@@ -180,6 +180,9 @@ def add_scenario_attributes(scenarios, branches_per_stage = BRANCHES_PER_STAGE, 
     add_booking_costs(scenarios, branches_per_stage=branches_per_stage)
 
 def create_scenarios(n_stages, b_stages, G, folder = "study_case_model/scenario_variables/"):
+    # Ensure the folder exists
+    os.makedirs(folder, exist_ok=True)
+    
     scenarios = {k: [] for k in range(1, n_stages + 1)}
 
     stage_probs = prob_per_stage(n_stages, b_stages)
@@ -220,5 +223,5 @@ if __name__ == "__main__":
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, folder="study_case_model/scenario_variables/")
 
     #Print a specific scenario for verification
-    print_nodes_network_scenario(scenarios[3][4])
+    #print_nodes_network_scenario(scenarios[3][4])
     #print_edges_network_scenario(scenarios[3][4])

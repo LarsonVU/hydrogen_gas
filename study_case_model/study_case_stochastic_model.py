@@ -6,11 +6,12 @@ import pyomo.environ as pyo
 import networkx
 import numpy as np
 import itertools
+import os
 
 FOLDER = "study_case_model/figures/"
 
 NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1 : 1, 2 : 1, 3: 1}
+BRANCHES_PER_STAGE = {1: 1, 2: 2, 3: 4}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
 NUMBER_OF_DENSITY_BOUNDS = 10
@@ -347,6 +348,48 @@ def add_expressions(model):
     
     model.avg_total_flow = pyo.Expression(model.A, rule=avg_total_flow_rule)
 
+    # Objective value per stage 3 scenario
+    def scenario_objective_rule(m, m_3):
+        revenue = sum(
+            m.o_n_d[n, m_3] * m.gcv_c[c] * m.f[a, c, m_3]
+            for n in m.N_m
+            for a in m.A_n_plus[n]
+            for c in m.C
+        )
+        
+        generation_cost = sum(
+            m.o_n_g[n, m_3] * sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C)
+            for n in m.N_hg
+        )
+        
+        pressure_cost = sum(m.o_p_a[a] * m.p_in[a, m_3] for a in m.A)
+
+        booking_cost = sum(
+            m.o_n_x[n, k, m_k] * (m.x_entry[n, k, m_k] + m.x_exit[n, k, m_k])
+            for n in m.N
+            for k, m_k in m.pred_chain[3, m_3]
+        )
+        
+        return revenue - generation_cost - pressure_cost - booking_cost
+
+    model.scenario_objective = pyo.Expression(model.M[3], rule=scenario_objective_rule)
+
+    # Mean scenario objective
+    def mean_scenario_objective_rule(m):
+        return sum(m.sp[3, m_3] * m.scenario_objective[m_3] for m_3 in m.M[3]) / len(m.M[3])
+
+    model.mean_scenario_objective = pyo.Expression(rule=mean_scenario_objective_rule)
+
+    # Variance of scenario objectives
+    def scenario_objective_variance_rule(m):
+        mean = m.mean_scenario_objective
+        return sum(
+            m.sp[3, m_3] * (m.scenario_objective[m_3] - mean)**2 
+            for m_3 in m.M[3]
+        ) / len(m.M[3])
+
+    model.scenario_objective_variance = pyo.Expression(rule=scenario_objective_variance_rule)
+
 
 def add_objective(model):
     def objective_rule(m):
@@ -659,7 +702,7 @@ def solve_model(model, verbose=True, time_limit=None, precision = 0.0001):
     results = solver.solve(model, tee=verbose)  # tee=True to display solver output
     return results
 
-def plot_average_flows(model, folder= "figures/"):
+def plot_average_flows(model, folder= "figures/", show = False):
     """
     Plot average flows per arc and per component with error bars showing range across scenarios
     """
@@ -710,14 +753,14 @@ def plot_average_flows(model, folder= "figures/"):
 
     plt.tight_layout()
     plt.savefig(folder + "average_flows.png")
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
 
-def plot_component_flows_stacked(model, folder="figures/"):
+def plot_component_flows_stacked(model, folder="figures/",  show = False):
     """
     Plot total flows per scenario as a stacked bar per component across all market nodes.
     """
-    import matplotlib.pyplot as plt
-    import numpy as np
 
     components = list(model.C)
     scenarios = list(model.M[3])
@@ -753,9 +796,11 @@ def plot_component_flows_stacked(model, folder="figures/"):
 
     plt.tight_layout()
     plt.savefig(folder + "scenario_component_flow_stacked.png")
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
 
-def plot_inlet_outlet_pressures(model, folder):
+def plot_inlet_outlet_pressures(model, folder, show = False):
     arcs = list(model.A)
     arc_labels = [f"{a[0]}-{a[1]}" for a in arcs]
     x_pos = range(len(arcs))
@@ -801,16 +846,15 @@ def plot_inlet_outlet_pressures(model, folder):
     ax.legend()
     plt.tight_layout()
     plt.savefig(folder + "inlet_outlet_pressure_plot.png")
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
 
-def plot_total_vs_weymouth_histogram(model, folder="figures/"):
+def plot_total_vs_weymouth_histogram(model, folder="figures/", show = False):
     """
     Plot a histogram of deviations between total_flow and weymouth_flow
     across all arcs and scenarios.
     """
-    import matplotlib.pyplot as plt
-    import numpy as np
-
     deviations = []
 
     # Collect deviations for all arcs and all scenarios
@@ -818,7 +862,11 @@ def plot_total_vs_weymouth_histogram(model, folder="figures/"):
         for m_3 in model.M[3]:
             total = float(pyo.value(model.total_flow[a, m_3]))
             weymouth = float(pyo.value(model.weymouth_flow[a, m_3]))
-            deviations.append(total - weymouth)
+            if total > 0:
+                deviation = (total - weymouth) / total
+            else:
+                deviation = 0
+            deviations.append(deviation)
 
     deviations = np.array(deviations)
 
@@ -833,21 +881,266 @@ def plot_total_vs_weymouth_histogram(model, folder="figures/"):
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.hist(deviations, bins=30, color='skyblue', edgecolor='black', alpha=0.7)
 
-    ax.set_xlabel("Deviation (Total Flow - Weymouth Flow)", fontsize=12)
+    ax.set_xlabel("Deviation (%)", fontsize=12)
     ax.set_ylabel("Frequency", fontsize=12)
     ax.set_title("Histogram of Deviations Across All Arcs and Scenarios", fontsize=14)
     ax.grid(alpha=0.3, axis='y')
 
     plt.tight_layout()
     plt.savefig(folder + "total_vs_weymouth_deviation_histogram.png")
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
 
+def plot_market_node_component_flow_with_std(model, folder="figures/", show = False):
+    """
+    Plot mean inflow per market node per component.
+    Bars are grouped (not stacked).
+    Error bars show std across scenarios.
+    """
+
+    market_nodes = list(model.N_m)
+    components = list(model.C)
+    scenarios = list(model.M[3])
+
+    n_nodes = len(market_nodes)
+    n_components = len(components)
+
+    means = np.zeros((n_nodes, n_components))
+    stds = np.zeros((n_nodes, n_components))
+
+    # Compute statistics
+    for i, n in enumerate(market_nodes):
+        for j, c in enumerate(components):
+
+            flows_per_scenario = []
+
+            for m_3 in scenarios:
+                total_flow = sum(
+                    pyo.value(model.f[a, c, m_3])
+                    for a in model.A_n_plus[n]
+                )
+                flows_per_scenario.append(total_flow)
+
+            flows_per_scenario = np.array(flows_per_scenario)
+            means[i, j] = flows_per_scenario.mean()
+            stds[i, j] = flows_per_scenario.std()
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(14, 6))
+
+    x = np.arange(n_nodes)
+    width = 0.8 / n_components  # adaptive width
+
+    for j, c in enumerate(components):
+        ax.bar(
+            x + j * width - (n_components - 1) * width / 2,
+            means[:, j],
+            width,
+            yerr=stds[:, j],
+            capsize=4,
+            label=c
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(market_nodes, rotation=45, ha="right")
+    ax.set_xlabel("Market Node", fontsize=12)
+    ax.set_ylabel("Mean Inflow", fontsize=12)
+    ax.set_title("Mean Inflow per Market Node by Component (Std Across Scenarios)", fontsize=14)
+    ax.legend(title="Component")
+    ax.grid(alpha=0.3, axis='y')
+
+    plt.tight_layout()
+    plt.savefig(folder + "market_node_component_flow_mean_std.png")
+    if show:
+        plt.show()
+    plt.close(fig)
+
+def plot_supplier_limit_vs_produced(model, folder="figures/", show = False):
+    """
+    For each supplier node (model.N_hg):
+    Plot total required demand vs actual produced amount per scenario.
+    """
+    os.makedirs(folder, exist_ok=True)
+
+    suppliers = list(model.N_hg)
+    scenarios = list(model.M[3])
+    components = list(model.C)
+
+    for n in suppliers:
+
+        produced = []
+        required = []
+
+        for m_3 in scenarios:
+
+            # --- Produced: net outflow ---
+            outflow = sum(
+                pyo.value(model.f[a, c, m_3])
+                for a in model.A_n_minus[n]
+                for c in components
+            )
+
+            inflow = sum(
+                pyo.value(model.f[a, c, m_3])
+                for a in model.A_n_plus[n]
+                for c in components
+            )
+
+            produced.append(outflow - inflow)
+
+            # --- Required ---
+            # Replace this if your demand definition differs
+            if hasattr(model, "G"):
+                required.append(pyo.value(model.G[n]))
+            else:
+                required.append(0)
+
+        # ---- Plot ----
+        x = np.arange(len(scenarios))
+        width = 0.35
+
+        fig, ax = plt.subplots(figsize=(14, 6))
+
+        ax.bar(x + width/2, produced, width, label="Produced")
+        ax.bar(x - width/2, required, width, label="Limit")
+
+        ax.set_xticks(x)
+        ax.set_xticklabels([str(s) for s in scenarios], rotation=45)
+        ax.set_xlabel("Scenario")
+        ax.set_ylabel("Total Flow")
+        ax.set_title(f"Limit vs Produced – Supplier {n}")
+        ax.legend()
+        ax.grid(alpha=0.3, axis='y')
+
+        plt.tight_layout()
+        plt.savefig(folder + f"supplier_{n}_limit_vs_produced.png")
+        if show:
+            plt.show()
+        plt.close(fig)
+
+
+def plot_supplier_total_prod_vs_total_demand(model, folder="figures/", show = False):
+    """
+    For each supplier s:
+        total_prod(s, scenario) = sum net production of all gen nodes owned by s
+        total_demand(scenario) = total system demand (same for all suppliers)
+
+    Plots both across scenarios.
+    """
+    os.makedirs(folder, exist_ok=True)
+
+    suppliers = list(model.H) 
+    gen_nodes = list(model.N_hg)
+    market_nodes = list(model.N_m)
+    scenarios = list(model.M[3])
+    components = list(model.C)
+
+    for h in suppliers:
+
+        prod_per_scenario = []
+        demand_per_scenario = []
+
+        for m_3 in scenarios:
+
+            # ---------------------------
+            # Total production of supplier s
+            # ---------------------------
+            total_prod = 0
+
+            for g in gen_nodes:
+                if model.supplier[g] != h:
+                    continue
+
+                inflow = sum(
+                    pyo.value(model.f[a, c, m_3])  * model.gcv_c[c]
+                    for a in model.A_n_plus[g]
+                    for c in components
+                )
+
+                outflow = sum(
+                    pyo.value(model.f[a, c, m_3]) * model.gcv_c[c]
+                    for a in model.A_n_minus[g]
+                    for c in components
+                )
+
+                total_prod += (outflow - inflow)
+
+            prod_per_scenario.append(total_prod)
+
+            # ---------------------------
+            # Total demand (system-wide)
+            # ---------------------------
+            total_demand = sum(
+                pyo.value(model.D[h, n, m_3])
+                for n in market_nodes
+            )
+
+            demand_per_scenario.append(total_demand)
+
+        # ---------------------------
+        # Plot
+        # ---------------------------
+        x = np.arange(len(scenarios))
+
+        fig, ax = plt.subplots(figsize=(14, 6))
+
+        ax.plot(x, prod_per_scenario, marker="o", label=f"Production ({h})")
+        ax.plot(x, demand_per_scenario, linestyle="--", label="Total Demand")
+
+        ax.set_xticks(x)
+        ax.set_xticklabels([str(sc) for sc in scenarios], rotation=45)
+        ax.set_xlabel("Scenario")
+        ax.set_ylabel("Flow")
+        ax.set_ylim(0)
+        ax.set_title(f"Supplier {h}: Production vs Total Demand")
+        ax.legend()
+        ax.grid(alpha=0.3)
+
+        plt.tight_layout()
+        plt.savefig(folder + f"supplier_{h}_prod_vs_total_demand.png")
+        if show:
+            plt.show()
+        plt.close(fig)
+
+def plot_scenario_objectives(model, folder="figures/", show = False):
+    """
+    Plot scenario objective values as a bar chart.
+    """
+
+    scenarios = list(model.M[3])
+    n_scenarios = len(scenarios)
+
+    # Collect objective values per scenario
+    obj_values = np.zeros(n_scenarios)
+
+    for j, m_3 in enumerate(scenarios):
+        obj_values[j] = pyo.value(model.scenario_objective[m_3])
+
+    # Plot bar chart
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.bar(range(n_scenarios), obj_values)
+
+    ax.set_xlabel('Scenario Index', fontsize=12)
+    ax.set_ylabel('Objective Value', fontsize=12)
+    ax.set_title('Scenario Objective Value per Scenario', fontsize=14)
+    ax.grid(alpha=0.3, axis='y')
+
+    plt.tight_layout()
+    plt.savefig(folder + "scenario_objectives_bar.png")
+    if show:
+        plt.show()
+    plt.close(fig)
 
 def plot_results(model, folder = "figures/"):
     plot_average_flows(model, folder)
     plot_component_flows_stacked(model, folder)
     plot_inlet_outlet_pressures(model, folder)
-    plot_total_vs_weymouth_histogram(model, folder)
+    plot_total_vs_weymouth_histogram(model, folder, show=True)
+    plot_market_node_component_flow_with_std(model, folder)
+    plot_supplier_limit_vs_produced(model, folder + "limit_production/")
+    plot_supplier_total_prod_vs_total_demand(model, folder + "contracted_demand/")
+    plot_scenario_objectives(model, folder)
 
 if __name__ == "__main__":
     G = build_base_graph()
@@ -855,6 +1148,6 @@ if __name__ == "__main__":
 
     model = create_model(G, scenarios, cutting_plane_pairs=generate_cutting_plane_pairs())
 
-    results = solve_model(model, time_limit=30)
+    results = solve_model(model, time_limit=20)
     print(results)
     plot_results(model, folder = FOLDER)
