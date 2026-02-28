@@ -137,7 +137,6 @@ def add_compression_constants(gdf):
         inlet_constant= constant * (normal_inlet_pressure * normal_flow) / ((2/3 * normal_inlet_pressure + 1/3 * normal_discharge_pressure) ** 2)
         outlet_constant = constant * (normal_discharge_pressure * normal_flow) / ((2/3 * normal_inlet_pressure + 1/3 * normal_discharge_pressure) ** 2)
         flow_constant = constant * (normal_discharge_pressure- normal_inlet_pressure ) / (2/3 * normal_inlet_pressure + 1/3 * normal_discharge_pressure)
-        print(inlet_constant, outlet_constant, flow_constant)
         gdf.loc[gdf["location"] == node, "compression_constants"] = [{"NG": {"K_into_pipe": inlet_constant, "K_out_pipe": outlet_constant, "K_flow": flow_constant},
                                                                       "CO2": {"K_into_pipe": inlet_constant, "K_out_pipe": outlet_constant, "K_flow": flow_constant},
                                                                       "H2": {"K_into_pipe": inlet_constant, "K_out_pipe": outlet_constant, "K_flow": flow_constant}}]
