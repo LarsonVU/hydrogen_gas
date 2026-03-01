@@ -93,7 +93,7 @@ def add_component_ratio(gdf):
     gdf["component_ratio"] = None  # ensures object dtype
     gdf.loc[gdf["location"] == "AASTA HANSTEEN PLEM", "component_ratio"] = [ {"CO2": 0.02, "H2": 0.00, "NG": 0.98}]
     gdf.loc[gdf["location"] == "GJØA", "component_ratio"] = [{"CO2": 0.02, "H2": 0.00, "NG": 0.98}]
-    gdf.loc[gdf["location"] == "NORNE ERB", "component_ratio"] = [ {"CO2": 0.005, "H2": 0.00, "NG": 0.995}]
+    gdf.loc[gdf["location"] == "NORNE ERB", "component_ratio"] = [ {"CO2": 0.01, "H2": 0.00, "NG": 0.99}]
     gdf.loc[gdf["location"] == "OSEBERG D", "component_ratio"] = [{"CO2": 0.01, "H2": 0.00, "NG": 0.99}]
     gdf.loc[gdf["location"] == "VISUND", "component_ratio"] =[ {"CO2": 0.03, "H2": 0.00, "NG": 0.97}]
 
