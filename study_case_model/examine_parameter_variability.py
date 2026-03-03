@@ -7,7 +7,7 @@ import os
 
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1 : 1, 2 : 3, 3: 3}
-DATA_FOLDER = "scenario_variables/study_case_model/changed_var/"
+DATA_FOLDER = "study_case_model/scenario_variables/changed_var/"
 FIGURES_FOLDER = "study_case_model/figures/changed_demand/"
 
 def change_var(G, value_range = (0,0.5), amount_of_points =4, amount_per_point = 5, variable_name = "unknown"):

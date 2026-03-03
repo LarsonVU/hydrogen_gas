@@ -26,7 +26,7 @@ print("Geometry types:", gdf.geom_type.unique())
 # ==============================
 # 2. FILTER AND EDIT PIPELINES
 # ==============================
-gdf = gdf[gdf["curOperNam"].isin(["Gassco AS"])]
+#gdf = gdf[gdf["curOperNam"].isin(["Gassco AS"])]
 gdf = gdf[gdf["medium"] == "Gas"]
 gdf = gdf[gdf["curPhase"] == "IN SERVICE"]
 

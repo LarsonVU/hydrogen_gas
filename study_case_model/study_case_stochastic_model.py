@@ -7,6 +7,10 @@ import networkx
 import numpy as np
 import itertools
 import os
+import re
+
+def safe_filename(s):
+    return re.sub(r'[\\/*?:"<>|]', "_", str(s))
 
 FOLDER = "study_case_model/figures/"
 
@@ -448,18 +452,29 @@ def add_flow_constraints(model):
 
     # Supplier demand
     def demand_satisfaction_production_rule(m, h, m_3):
-        lhs =  sum( m.gcv_c[c] *
-            m.f[a, c, m_3]
+        # Find nodes for this supplier
+        nodes_for_h = [n for n in m.N_hg if m.supplier[n] == h]
+
+        if not nodes_for_h:
+            # Skip constraint if supplier has no nodes
+            return pyo.Constraint.Feasible
+
+        # Compute LHS
+        lhs = sum(
+            m.gcv_c[c] * m.f[a, c, m_3]
             for c in m.C
-            for n in m.N_hg if m.supplier[n] == h
+            for n in nodes_for_h
             for a in m.A_n_minus[n]
-        ) - sum( m.gcv_c[c] *
-            m.f[a, c, m_3]
+        ) - sum(
+            m.gcv_c[c] * m.f[a, c, m_3]
             for c in m.C
-            for n in m.N_hg if m.supplier[n] == h
+            for n in nodes_for_h
             for a in m.A_n_plus[n]
         )
+
+        # Compute RHS
         rhs = sum(m.D[h, n, m_3] for n in m.N_m)
+
         return lhs >= rhs
 
     model.demand_satisfaction_production = pyo.Constraint(model.H, model.M[3], rule=demand_satisfaction_production_rule)
@@ -735,8 +750,8 @@ def plot_average_flows(model, folder= "figures/", show = False):
     bar_width = 0.25
     
     for i, c in enumerate(components):
-        lower_error = [avg_flows_per_component[c][j] - min_flows_per_component[c][j] for j in range(len(arcs))]
-        upper_error = [max_flows_per_component[c][j] - avg_flows_per_component[c][j] for j in range(len(arcs))]
+        lower_error = [max(avg_flows_per_component[c][j] - min_flows_per_component[c][j],0) for j in range(len(arcs))]
+        upper_error = [max(max_flows_per_component[c][j] - avg_flows_per_component[c][j],0) for j in range(len(arcs))]
         
         offset = (i - len(components) / 2 + 0.5) * bar_width
         ax.bar([x + offset for x in x_pos], avg_flows_per_component[c], 
@@ -1014,7 +1029,8 @@ def plot_supplier_limit_vs_produced(model, folder="figures/", show = False):
         ax.grid(alpha=0.3, axis='y')
 
         plt.tight_layout()
-        plt.savefig(folder + f"supplier_{n}_limit_vs_produced.png")
+        safe_n = safe_filename(n)
+        plt.savefig(folder + f"supplier_{safe_n}_limit_vs_produced.png")
         if show:
             plt.show()
         plt.close(fig)
@@ -1133,6 +1149,7 @@ def plot_scenario_objectives(model, folder="figures/", show = False):
     plt.close(fig)
 
 def plot_results(model, folder = "figures/"):
+    os.makedirs(folder, exist_ok=True)
     plot_average_flows(model, folder)
     plot_component_flows_stacked(model, folder)
     plot_inlet_outlet_pressures(model, folder)

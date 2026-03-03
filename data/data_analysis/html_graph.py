@@ -3,6 +3,9 @@ import folium
 from folium.plugins import PolyLineTextPath
 import math
 from folium.features import DivIcon
+import numpy as np
+import numbers
+import pandas as pd
 
 # -------------------------------
 # Config
@@ -11,6 +14,14 @@ from folium.features import DivIcon
 FOLDER = "data/data_analysis_results/Geojson_pipelines/"
 input_path = FOLDER + f"study_case_network.geojson"
 output_html = "data/data_analysis_results/graphed_pipeline_network.html"
+
+# Smaller network
+# input_path = FOLDER + f"smaller_network.geojson"
+# output_html = "data/data_analysis_results/graphed_smaller_network.html"
+
+# Bigger Network
+# input_path = FOLDER + f"bigger_network.geojson"
+# output_html = "data/data_analysis_results/graphed_bigger_network.html"
 
 # -------------------------------
 # Load data
@@ -25,18 +36,26 @@ edges = gdf[gdf.geometry.type.isin(["LineString", "MultiLineString"])].copy()
 # Create base map
 # -------------------------------
 # Center map on data
-center = gdf.geometry.unary_union.centroid
+center = gdf.geometry.union_all().centroid
 m = folium.Map(location=[center.y, center.x], zoom_start=7, tiles="CartoDB positron")
 
 # -------------------------------
 # Helper: tooltip builder
 # -------------------------------
+def is_nan_safe(val):
+    # Only check numbers
+    if isinstance(val, numbers.Number):
+        return np.isnan(val)
+    if isinstance(val, pd.Timestamp):
+        return not pd.isna(val)
+    return False
+
 def make_tooltip(row):
     props = []
     for col in row.index:
         if col != "geometry":
             val = row[col]
-            if val is not None:
+            if val is not None and not is_nan_safe(val) and col != "compression_constants":
                 props.append(f"<b>{col}</b>: {val}")
     return "<br>".join(props)
 

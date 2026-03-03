@@ -14,10 +14,12 @@ GEOJSON_FILE = "data/data_analysis_results/Geojson_pipelines/study_case_network.
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1 : 1, 2 : 5, 3: 1}
 
-
-
 def find_node_by_coords(node_rows, coords, tol=1e-6):
-    coords = ast.literal_eval(coords)
+    try:
+        coords = ast.literal_eval(coords)
+    except (ValueError, SyntaxError):
+        return coords
+
     x, y = coords
     matches = node_rows[
         node_rows.geometry.apply(
@@ -31,12 +33,12 @@ def find_node_by_coords(node_rows, coords, tol=1e-6):
     return matches.iloc[0]["location"]
 
 # Graph with scenario independent attributes
-def build_base_graph():
+def build_base_graph(geojspn_file = GEOJSON_FILE):
     """
     Build scenario-independent base graph from study_case_network.geojson
     """
 
-    gdf = gpd.read_file(GEOJSON_FILE)
+    gdf = gpd.read_file(geojspn_file)
 
     G = nx.DiGraph()
 
@@ -44,14 +46,10 @@ def build_base_graph():
     # Add Nodes
     # -----------------------------
     node_rows = gdf[gdf["type"] == "node"]
-
     for _, row in node_rows.iterrows():
-
         node_id = row["location"]  # use readable name as node id
-
         # Convert row to dict and remove geometry
         attributes = row.drop("geometry").to_dict()
-
         G.add_node(node_id, **attributes)
 
     # -----------------------------
