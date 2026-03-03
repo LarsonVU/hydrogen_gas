@@ -352,28 +352,49 @@ def add_expressions(model):
     
     model.avg_total_flow = pyo.Expression(model.A, rule=avg_total_flow_rule)
 
-    # Objective value per stage 3 scenario
-    def scenario_objective_rule(m, m_3):
+    def revenue_scenario_rule(m, m_3):
         revenue = sum(
             m.o_n_d[n, m_3] * m.gcv_c[c] * m.f[a, c, m_3]
             for n in m.N_m
             for a in m.A_n_plus[n]
             for c in m.C
         )
-        
+        return revenue
+
+    model.revenue_scenario = pyo.Expression(model.M[3], rule=revenue_scenario_rule)
+
+    def generation_cost_scenario_rule(m, m_3):
         generation_cost = sum(
             m.o_n_g[n, m_3] * sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C)
             for n in m.N_hg
         )
-        
-        pressure_cost = sum(m.o_p_a[a] * m.p_in[a, m_3] for a in m.A)
+        return generation_cost
+    
+    model.generation_scenario = pyo.Expression(model.M[3], rule=generation_cost_scenario_rule)
 
+    def pressure_cost_scenario_rule(m, m_3):
+        pressure_cost = sum(m.o_p_a[a] * m.p_in[a, m_3] for a in m.A)
+        return pressure_cost
+    
+    model.pressure_scenario = pyo.Expression(model.M[3], rule=pressure_cost_scenario_rule)
+
+    def booking_cost_scenario_rule(m, m_3):
         booking_cost = sum(
             m.o_n_x[n, k, m_k] * (m.x_entry[n, k, m_k] + m.x_exit[n, k, m_k])
             for n in m.N
             for k, m_k in m.pred_chain[3, m_3]
         )
-        
+        return booking_cost
+
+    model.booking_scenario = pyo.Expression(model.M[3], rule=booking_cost_scenario_rule)    
+
+
+    # Objective value per stage 3 scenario
+    def scenario_objective_rule(m, m_3):
+        revenue = m.revenue_scenario[m_3]
+        generation_cost = m.generation_scenario[m_3]
+        pressure_cost = m.pressure_scenario[m_3]
+        booking_cost = m.booking_scenario[m_3]
         return revenue - generation_cost - pressure_cost - booking_cost
 
     model.scenario_objective = pyo.Expression(model.M[3], rule=scenario_objective_rule)
@@ -1148,15 +1169,81 @@ def plot_scenario_objectives(model, folder="figures/", show = False):
         plt.show()
     plt.close(fig)
 
+def plot_scenario_revenue_costs(model, folder="figures/", show=False):
+    """
+    Plot revenue and split costs per scenario.
+    Revenue and total costs are shown next to each other.
+    Costs are stacked per type.
+    """
+
+    os.makedirs(folder, exist_ok=True)
+
+    scenarios = list(model.M[3])
+    n_scenarios = len(scenarios)
+
+    revenue = np.zeros(n_scenarios)
+    generation_cost = np.zeros(n_scenarios)
+    pressure_cost = np.zeros(n_scenarios)
+    booking_cost = np.zeros(n_scenarios)
+
+    # Collect values per scenario
+    for j, m_3 in enumerate(scenarios):
+        revenue[j] = pyo.value(model.revenue_scenario[m_3])
+        generation_cost[j] = pyo.value(model.generation_scenario[m_3])
+        pressure_cost[j] = pyo.value(model.pressure_scenario[m_3])
+        booking_cost[j] = pyo.value(model.booking_scenario[m_3])
+
+    x = np.arange(n_scenarios)
+
+    width = 0.35  # width of bars
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Revenue bars (left side of group)
+    ax.bar(x - width/2, revenue, width, label="Revenue")
+
+    # Cost bars (right side of group, stacked)
+    ax.bar(x + width/2, generation_cost, width, label="Generation Cost")
+    ax.bar(
+        x + width/2,
+        pressure_cost,
+        width,
+        bottom=generation_cost,
+        label="Pressure Cost"
+    )
+    ax.bar(
+        x + width/2,
+        booking_cost,
+        width,
+        bottom=generation_cost + pressure_cost,
+        label="Booking Cost"
+    )
+
+    ax.set_xlabel("Scenario Index", fontsize=12)
+    ax.set_ylabel("Value", fontsize=12)
+    ax.set_title("Revenue and Split Costs per Scenario", fontsize=14)
+    ax.set_xticks(x)
+    ax.grid(alpha=0.3, axis="y")
+    ax.legend()
+
+    plt.tight_layout()
+    plt.savefig(folder + "scenario_revenue_costs_grouped.png")
+
+    if show:
+        plt.show()
+
+    plt.close(fig)
+
 def plot_results(model, folder = "figures/"):
     os.makedirs(folder, exist_ok=True)
     plot_average_flows(model, folder)
     plot_component_flows_stacked(model, folder)
     plot_inlet_outlet_pressures(model, folder)
-    plot_total_vs_weymouth_histogram(model, folder, show=True)
+    plot_total_vs_weymouth_histogram(model, folder)
     plot_market_node_component_flow_with_std(model, folder)
     plot_supplier_limit_vs_produced(model, folder + "limit_production/")
     plot_supplier_total_prod_vs_total_demand(model, folder + "contracted_demand/")
+    plot_scenario_revenue_costs(model, folder, show=True)
     plot_scenario_objectives(model, folder)
 
 if __name__ == "__main__":

@@ -80,7 +80,7 @@ def add_supply_capacity(gdf):
 def add_generation_cost(gdf):
     gdf["generation_cost"] = None  # ensures object dtype # Euro per Mscm
     gdf.loc[gdf["location"] == "AASTA HANSTEEN PLEM", "generation_cost"] =  122.85 * 1000  / 11.28 # NOK to EUR Ex rate 23-2-2026
-    gdf.loc[gdf["location"] == "GJØA", "generation_cost"] = 194.50 * 1000  / 11.28 
+    gdf.loc[gdf["location"] == "GJØA", "generation_cost"] = 221.30 * 1000  / 11.28 
     gdf.loc[gdf["location"] == "NORNE ERB", "generation_cost"] = 384.11 * 1000 / 11.28
     gdf.loc[gdf["location"] == "OSEBERG D", "generation_cost"] = 476.97 * 1000 / 11.28
     gdf.loc[gdf["location"] == "VISUND", "generation_cost"] = 295.56  * 1000 / 11.28
@@ -316,7 +316,7 @@ def add_moap(gdf):
 def add_arc_pressure_costs(gdf):
     for idx, row in gdf.iterrows():
         if row["type"] == "edge":
-             gdf.at[idx,"pressure_cost"] = 0.1
+             gdf.at[idx,"pressure_cost"] = 100
     return gdf
 
 def add_arc_max_ratios(gdf):

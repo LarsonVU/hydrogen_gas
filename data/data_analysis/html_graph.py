@@ -20,8 +20,8 @@ output_html = "data/data_analysis_results/graphed_pipeline_network.html"
 # output_html = "data/data_analysis_results/graphed_smaller_network.html"
 
 # Bigger Network
-# input_path = FOLDER + f"bigger_network.geojson"
-# output_html = "data/data_analysis_results/graphed_bigger_network.html"
+input_path = FOLDER + f"bigger_network.geojson"
+output_html = "data/data_analysis_results/graphed_bigger_network.html"
 
 # -------------------------------
 # Load data

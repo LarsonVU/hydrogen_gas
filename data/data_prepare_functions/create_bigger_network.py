@@ -18,6 +18,7 @@ NODE_MERGE_THRESHOLD = 20  # km
 FOLDER = "data/data_analysis_results/Geojson_pipelines/"
 FILE_PATH = FOLDER + "pipLine.geojson"
 REGULAR_GRAPH = FOLDER + "study_case_network.geojson"
+GENERATION_NODES_FILE = "data/data_sources/generation_fields.xlsx"
 
 # ==============================
 # UTILITIES
@@ -65,7 +66,7 @@ def load_and_filter_data(file_path):
     mask = gdf["idPipeline"].isin(pipelines_to_reverse)
     gdf.loc[mask, "geometry"] = gdf.loc[mask, "geometry"].apply(reverse_linestring)
 
-    pipelines_to_remove = [321818, 370369, 326068, 438653]
+    pipelines_to_remove = [321818, 322498, 370369, 326068, 438653] # Lone standing edges, + 322498 Connected to empty field Heimdal HRP
     gdf = gdf[~gdf["idPipeline"].isin(pipelines_to_remove)]
 
     print("Filtered features:", len(gdf))
@@ -263,7 +264,6 @@ def add_node_features(G):
                         break
 
             G.nodes[node]["location_id"] = loc_id
-            print(G.nodes[node]["location"], G.nodes[node]["location_id"] )
     return G
 
 # ==============================
@@ -302,6 +302,105 @@ def add_node_types(G):
 
     return G
 
+def add_supplier(G, node):
+    if G.nodes[node]["location"] in ["TROLL A", "HEIDRUN", "GUDRUN"]:
+        G.nodes[node]["supplier"] = "Equinor Energy AS"
+    elif G.nodes[node]["location"] in ["SKARV ERB"]:
+        G.nodes[node]["supplier"] = "Aker BP ASA"
+    elif G.nodes[node]["location"] in ["ORMEN LANGE B"]:
+        G.nodes[node]["supplier"] = "SHELL"
+    return G
+
+def add_supply_capacity(G, node):
+    if G.nodes[node]["location"] == "TROLL A":
+        G.nodes[node]["supply_capacity"] = 43.75 /365 *1000
+    elif G.nodes[node]["location"] == "HEIDRUN":
+        G.nodes[node]["supply_capacity"] = 1.99 /365 *1000
+    elif G.nodes[node]["location"] == "ORMEN LANGE B":
+        G.nodes[node]["supply_capacity"] = 11.91 /365 *1000
+    elif G.nodes[node]["location"] == "SKARV":
+        G.nodes[node]["supply_capacity"] = 6.53 /365 *1000
+    elif G.nodes[node]["location"] == "GUDRUN":
+        G.nodes[node]["supply_capacity"] = 1.35 /365 *1000
+    return G
+
+def add_generation_cost(G,  node):
+    if G.nodes[node]["location"] == "TROLL A":
+        G.nodes[node]["generation_cost"] = 194.43 * 1000  / 11.28 
+    elif G.nodes[node]["location"] == "HEIDRUN":
+        G.nodes[node]["generation_cost"] = 496.30  * 1000  / 11.28 
+    elif G.nodes[node]["location"] == "ORMEN LANGE B":
+        G.nodes[node]["generation_cost"] = 210.56  * 1000  / 11.28 
+    elif G.nodes[node]["location"] == "SKARV":
+        G.nodes[node]["generation_cost"] = 260.85  * 1000  / 11.28 
+    elif G.nodes[node]["location"] == "GUDRUN":
+        G.nodes[node]["generation_cost"] = 554.97 * 1000  / 11.28 
+    return G
+
+def add_component_ratio(G,  node):
+    if G.nodes[node]["location"] == "TROLL A":
+        G.nodes[node]["component_ratio"] =  {"CO2": 0.02, "H2": 0.00, "NG": 0.98}
+    elif G.nodes[node]["location"] == "HEIDRUN":
+        G.nodes[node]["component_ratio"] =  {"CO2": 0.03, "H2": 0.00, "NG": 0.97}
+    elif G.nodes[node]["location"] == "ORMEN LANGE B":
+        G.nodes[node]["component_ratio"] =  {"CO2": 0.01, "H2": 0.00, "NG": 0.99}
+    elif G.nodes[node]["location"] == "SKARV":
+        G.nodes[node]["component_ratio"] =  {"CO2": 0.02, "H2": 0.00, "NG": 0.98}
+    elif G.nodes[node]["location"] == "GUDRUN":
+        G.nodes[node]["component_ratio"] =  {"CO2": 0.02, "H2": 0.00, "NG": 0.98}
+    return G
+
+def add_generation_features(G, node):
+    G = add_supplier(G, node)
+    G = add_supply_capacity(G,  node)
+    G = add_generation_cost(G,  node)
+    G = add_component_ratio(G,  node)
+    return G
+
+def add_average_demand(G, node):
+    """
+    Adds the average demand (in MWh x 1000) to a NetworkX node based on location.
+    """
+    location = G.nodes[node]["location"]
+    
+    if location == "DUNKERQUE":
+        G.nodes[node]["average_demand_mwh_x1000"] = 50.0 *2 #+ 56.25 + 43.75
+    elif location == "EASINGTON":
+        G.nodes[node]["average_demand_mwh_x1000"] = 12.5 *2
+    elif location == "ST.FERGUS":
+        G.nodes[node]["average_demand_mwh_x1000"] = 12.5 * 2
+    elif location == "EMDEN":
+        G.nodes[node]["average_demand_mwh_x1000"] = 25.0 *2 #+ 56.25
+    elif location == "DORNUM":
+        G.nodes[node]["average_demand_mwh_x1000"] = 25.0 *2 # + 56.25
+    elif location == "ZEEBRUGGE":
+        G.nodes[node]["average_demand_mwh_x1000"] = 25.0 *2  # + 56.25
+    else:
+        G.nodes[node]["average_demand_mwh_x1000"] = 0.0  # fallback if location unknown
+    return G
+
+def change_market_distribution(G,node):
+    if G.nodes[node]["location"] == "DUNKERQUE":
+        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
+        
+    elif G.nodes[node]["location"] == "EASINGTON":
+        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
+        
+    elif G.nodes[node]["location"] == "ST.FERGUS":
+        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
+        
+    elif G.nodes[node]["location"] == "EMDEN":
+        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
+        
+    elif G.nodes[node]["location"] == "DORNUM":
+        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1, "SHELL": 0.0, "Vår Energi ASA": 0, "Aker BP ASA": 0}
+    
+    elif G.nodes[node]["location"] == "ZEEBRUGGE":
+        G.nodes[node]["supplier_ratios"] =  {"Equinor Energy AS": 1, "SHELL": 0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
+    else:
+        G.nodes[node]["supplier_ratios"] ={"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
+    return G
+
 def add_features_from_base_graph(G, filename=REGULAR_GRAPH):
 
     case_study_graph = gpd.read_file(filename)
@@ -317,6 +416,7 @@ def add_features_from_base_graph(G, filename=REGULAR_GRAPH):
 
     for node, data in G.nodes(data=True):
         loc_id = str(data.get("location_id"))
+        node_type = data.get("node_type")
 
         # -------------------------
         # 1️⃣ Direct match by location_id
@@ -327,15 +427,13 @@ def add_features_from_base_graph(G, filename=REGULAR_GRAPH):
 
             # Copy all columns except geometry
             for col in case_study_graph.columns:
-                if col != "geometry":
+                if col not in ["geometry", "location",  "location_id"]:
                     G.nodes[node][col] = base_row[col]
-
+        
         # -------------------------
         # 2️⃣ No match → sample from same node_type
         # -------------------------
         else:
-            node_type = data.get("node_type")
-
             if node_type in nodes_by_type and nodes_by_type[node_type]:
                 print("Sampled node for", G.nodes[node]["location"])
                 # Sample a random node of same type
@@ -343,6 +441,7 @@ def add_features_from_base_graph(G, filename=REGULAR_GRAPH):
                 for col in case_study_graph.columns:
                     if col not in ["geometry", "location",  "location_id"]:
                         G.nodes[node][col] = sampled_row[col]
+                G.nodes[node]["max_flow"] = 40
 
             else:
                 print(f"Warning: No fallback nodes found for type {node_type}")
@@ -368,7 +467,12 @@ def add_edge_features_from_base_graph(G, filename=REGULAR_GRAPH):
 
             # Copy all columns except geometry
             for col in case_study_graph.columns:
-                if col != "geometry":
+                if col not in ["geometry", 'pipName', 'idPipeline', 'mapLabel', 
+                                   'belongs_to', 'curOperNam', 'curPhase', 'curPhDate', 
+                                   'fromFacili', 'toFacility', 'mainGrp', 'dimension',
+                                     'WaterDepth', 'medium', 'idBelongTo', 'idFrmFacil',
+                                       'idToFacili', 'idOperator', 'dtUpdated', 'FactUrl',
+                                         'MapUrl', 'weight']:
                     G.edges[u, v][col] = base_row[col]
 
         # -------------------------
@@ -416,11 +520,6 @@ def export_geojson(G, crs, output_path):
         rec["from_node"] = u
         rec["to_node"] = v
         edge_records.append(rec)
-        print(
-            rec.get("idPipeline"),
-            rec.get("fromFacili"),
-            rec.get("toFacility")
-        )
 
     edges_gdf = gpd.GeoDataFrame(edge_records, geometry="geometry", crs=crs)
 
@@ -500,14 +599,12 @@ def main():
     G = add_node_types(G)
     G = add_features_from_base_graph(G)
     G =add_edge_features_from_base_graph(G)
-    print("Node columns",get_node_attribute_columns(G))
-    print("Edge columns",get_edge_attribute_columns(G))
 
 
     output_path = FOLDER + "bigger_network.geojson"
     export_geojson(G, gdf.crs, output_path)
 
-    plot_graph(G)
+    #plot_graph(G)
 
 
 # ==============================
