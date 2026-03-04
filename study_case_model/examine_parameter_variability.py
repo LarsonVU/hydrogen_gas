@@ -18,7 +18,7 @@ def change_var(G, value_range = (0,0.5), amount_of_points =4, amount_per_point =
             G_changed = G.copy()
             for node in G.nodes:
                 if G.nodes[node][variable_name] is not None:
-                    G.nodes[node][variable_name] = var
+                    G_changed.nodes[node][variable_name] = var
             G_list_part.append(G_changed)
         G_list.append(G_list_part)
     return G_list

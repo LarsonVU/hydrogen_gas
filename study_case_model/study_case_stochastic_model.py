@@ -8,6 +8,9 @@ import numpy as np
 import itertools
 import os
 import re
+import pickle
+from datetime import datetime
+from pathlib import Path
 
 def safe_filename(s):
     return re.sub(r'[\\/*?:"<>|]', "_", str(s))
@@ -15,7 +18,7 @@ def safe_filename(s):
 FOLDER = "study_case_model/figures/"
 
 NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1: 1, 2: 2, 3: 4}
+BRANCHES_PER_STAGE = {1: 1, 2: 4, 3: 2}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
 NUMBER_OF_DENSITY_BOUNDS = 10
@@ -50,7 +53,7 @@ def generate_cutting_plane_pairs(
         if low is None:
             low = max(p_in_low, p_out)  # ensure p_in >= p_out
         t = np.linspace(0, 1, n_points)
-        t_skewed = np.power(t,2)  # adjust exponent for more/less skew
+        t_skewed = np.power(t, 10)  # adjust exponent for more/less skew
         return low + (high - low) * t_skewed
     
     # Create p_in values for each p_out
@@ -415,6 +418,15 @@ def add_expressions(model):
 
     model.scenario_objective_variance = pyo.Expression(rule=scenario_objective_variance_rule)
 
+    # Measure hydrogen production
+    def hydrogen_production_rule(m, m_3):
+        return sum(
+            m.G[n] * m.alpha[n, 'H2']
+            for n in m.N_hg
+        )
+
+    model.h2_production = pyo.Expression(model.M[3], rule=hydrogen_production_rule)
+
 
 def add_objective(model):
     def objective_rule(m):
@@ -733,8 +745,14 @@ def solve_model(model, verbose=True, time_limit=None, precision = 0.0001):
     solver = pyo.SolverFactory('gurobi')  # You can choose a different solver if needed
     solver.options['OutputFlag'] = 1  # ensures full output
     solver.options['MIPGap'] = precision  # set precision for MIP gap
+
     if time_limit is not None:
         solver.options['TimeLimit'] = time_limit  # optional
+
+    solver.options['Threads'] =7  # or number of CPU cores
+    solver.options['Presolve'] = 1  # aggressive presolve
+    solver.options['Cuts'] = 1  # aggressive cuts
+
     results = solver.solve(model, tee=verbose)  # tee=True to display solver output
     return results
 
@@ -899,7 +917,7 @@ def plot_total_vs_weymouth_histogram(model, folder="figures/", show = False):
             total = float(pyo.value(model.total_flow[a, m_3]))
             weymouth = float(pyo.value(model.weymouth_flow[a, m_3]))
             if total > 0:
-                deviation = (total - weymouth) / total
+                deviation = ((total - weymouth) / total)
             else:
                 deviation = 0
             deviations.append(deviation)
@@ -1243,8 +1261,27 @@ def plot_results(model, folder = "figures/"):
     plot_market_node_component_flow_with_std(model, folder)
     plot_supplier_limit_vs_produced(model, folder + "limit_production/")
     plot_supplier_total_prod_vs_total_demand(model, folder + "contracted_demand/")
-    plot_scenario_revenue_costs(model, folder, show=True)
+    plot_scenario_revenue_costs(model, folder)
     plot_scenario_objectives(model, folder)
+
+def save_model_pickle(model, folder="saved_models"):
+    """
+    Saves the Pyomo model (including solved values) as a pickle file.
+    The file is named using the current date and time.
+    """
+    # Ensure folder exists
+    Path(folder).mkdir(parents=True, exist_ok=True)
+    
+    # Filename with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = Path(folder) / f"model_run_{timestamp}.pkl"
+    
+    # Save model
+    with open(filename, 'wb') as f:
+        pickle.dump(model, f)
+    
+    print(f"Model saved to {filename}")
+    return filename
 
 if __name__ == "__main__":
     G = build_base_graph()
@@ -1255,3 +1292,4 @@ if __name__ == "__main__":
     results = solve_model(model, time_limit=20)
     print(results)
     plot_results(model, folder = FOLDER)
+    #save_model_pickle(model)
