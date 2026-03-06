@@ -17,11 +17,10 @@ def change_hydrogen_price(G, value_range = [0, 30, 70], amount_per_point = 5, va
         for i in range(amount_per_point):
             G_changed = G.copy()
             for node in G.nodes:
-                print(node)
                 if G.nodes[node][variable_name] is not None:
+
                     if  G.nodes[node]["component_ratio"]["H2"] >0:
                         G_changed.nodes[node][variable_name] = float(G.nodes[node][variable_name]) - var
-                        print(G.nodes[node]["location"], G_changed.nodes[node][variable_name])
             G_list_part.append(G_changed)
         G_list.append(G_list_part)
     return G_list
@@ -42,8 +41,8 @@ def solve_multiple_problems(G, s_list, verbose = False, time_limit= None):
             model = scsm.create_model(G, scenarios)
             _ = scsm.solve_model(model, verbose, time_limit)
             result_list.append(pyo.value(model.objective))
-
-            avg_hydrogen_production.append(np.mean(pyo.value(model.h2_production)))
+            values = [pyo.value(model.h2_production[i]) for i in model.h2_production]
+            avg_hydrogen_production.append(np.mean(values))
     return result_list, avg_hydrogen_production
 
 def results_from_subsidy(G, s_super_list, verbose = False, time_limit =None):
@@ -63,11 +62,11 @@ def plot_objective_values(objective_averages, value_range, folder, variable = "u
     # Plot 1: Objective averages
     plt.figure(figsize=(10, 5))
     plt.plot(value_range, objective_averages, 'o-')
-    plt.xlabel(f'{variable} standard deviation')
+    plt.xlabel(f'Subsidy (Euro/Mwh)')
     plt.ylabel('Objective Average')
-    plt.title(f'Objective Average vs {variable} standard deviation')
+    plt.title(f'Objective Average vs Subsidy')
     plt.grid(True)
-    plt.savefig(folder+ f"changing_{variable}_objective_values")
+    plt.savefig(folder+ f'Objective Average vs Subsidy')
     plt.show()
 
 def plot_objective_variance(variance, value_range, folder, variable = "unknown"):
@@ -75,7 +74,7 @@ def plot_objective_variance(variance, value_range, folder, variable = "unknown")
     # Plot 2: Objective variance
     plt.figure(figsize=(10, 5))
     plt.plot(value_range, variance, 's-', color='orange')
-    plt.xlabel(f'{variable} standard deviation')
+    plt.xlabel(f'Subsidy (Euro/Mwh)')
     plt.ylabel('Objective Variance')
     plt.title(f'Objective Variance vs {variable} standard deviation')
     plt.grid(True)
@@ -93,14 +92,14 @@ def plot_hydrogen_production(h2_production, value_range, folder, variable="unkno
         'o-',
         color='purple'
     )
-    plt.xlabel(f'{variable} standard deviation')
-    plt.ylabel('Scenario Variance')
-    plt.title(f'Scenario Variance vs {variable} Variance')
+    plt.xlabel(f'Subsidy (Euro/Mwh)')
+    plt.ylabel('Hydrogen Production')
+    plt.title(f'Subsidy and Hydrogen production')
     plt.grid(True)
-    plt.savefig(folder + f"changing_{variable}_scenario_variance")
+    plt.savefig(folder + f"hydrogen_production")
     plt.show()
 
-def subsidy_per_mwh_to_mscm(mwh_subsidies, gcv_mwh_per_kscm=3.35):
+def subsidy_per_mwh_to_mscm(mwh_subsidies, gcv_mwh_per_kscm=2.78):
     mwh_per_mscm = gcv_mwh_per_kscm * 1000  # 3350 MWh per MSCM
     return  [s * mwh_per_mscm for s in mwh_subsidies]
 
@@ -110,7 +109,7 @@ if __name__ == "__main__":
     G = scpf.build_base_graph()
 
     amount_per_point = 2
-    subsidies_mwh = [0, 40] # Euro per MWh
+    subsidies_mwh = [0, 20, 40, 60, 80] # Euro per MWh
     subsidies = subsidy_per_mwh_to_mscm(subsidies_mwh)
 
     G_changed_hydrogen_cost = change_hydrogen_price(G, subsidies, amount_per_point, variable_name= "generation_cost")

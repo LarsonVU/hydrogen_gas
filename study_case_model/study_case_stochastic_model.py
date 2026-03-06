@@ -78,7 +78,7 @@ def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc):
 
     model.N_hg = pyo.Set(
         within=model.N,
-        initialize=[n for n, d in network.nodes(data=True) if  d.get("supply_capacity", None) is not None]
+        initialize=[n for n, d in network.nodes(data=True) if d.get("supply_capacity", None) is not None]
     )
     
     model.N_m = pyo.Set(
@@ -93,9 +93,9 @@ def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc):
 
     model.N_s = pyo.Set(
         within=model.N,
-        initialize=[n for n, d in network.nodes(data=True) if d.get("node_type", False) == "junction"]
+        initialize=[n for n, d in network.nodes(data=True) if d.get("node_type", False) == "Junction"]
     )
-
+    
     # Arc incidence sets
     def A_in_rule(m, n):
         return [a for a in m.A if a[1] == n]
@@ -421,8 +421,9 @@ def add_expressions(model):
     # Measure hydrogen production
     def hydrogen_production_rule(m, m_3):
         return sum(
-            m.G[n] * m.alpha[n, 'H2']
+            m.f[a, "H2", m_3]          
             for n in m.N_hg
+            for a in m.A_n_minus[n]
         )
 
     model.h2_production = pyo.Expression(model.M[3], rule=hydrogen_production_rule)
@@ -756,59 +757,63 @@ def solve_model(model, verbose=True, time_limit=None, precision = 0.0001):
     results = solver.solve(model, tee=verbose)  # tee=True to display solver output
     return results
 
-def plot_average_flows(model, folder= "figures/", show = False):
+
+def plot_average_flows(model, folder="figures/", show=False):
     """
-    Plot average flows per arc and per component with error bars showing range across scenarios
+    Plot average flows per arc and per component with standard deviation across scenarios.
     """
     fig, ax = plt.subplots(figsize=(14, 6))
 
     arcs = list(model.A)
     components = list(model.C)
-    
-    # Calculate average flows per component
-    avg_flows_per_component = {c: [] for c in components}
-    
-    for c in components:
-        for a in arcs:
-            avg_flow = sum(pyo.value(model.f[a, c, m_3]) * pyo.value(model.sp[3, m_3]) for m_3 in model.M[3])
-            avg_flows_per_component[c].append(avg_flow)
 
-    # Calculate min and max flows for each arc and component across scenarios
-    min_flows_per_component = {c: [] for c in components}
-    max_flows_per_component = {c: [] for c in components}
-    
+    avg_flows_per_component = {c: [] for c in components}
+    std_flows_per_component = {c: [] for c in components}
+
     for c in components:
         for a in arcs:
             flows = [pyo.value(model.f[a, c, m_3]) for m_3 in model.M[3]]
-            min_flows_per_component[c].append(min(flows))
-            max_flows_per_component[c].append(max(flows))
+            probs = [pyo.value(model.sp[3, m_3]) for m_3 in model.M[3]]
 
-    # Calculate error bars
+            # weighted average
+            avg_flow = sum(f * p for f, p in zip(flows, probs))
+
+            avg_flows_per_component[c].append(avg_flow)
+            std_flows_per_component[c].append(np.std(flows))
+
     arc_labels = [f"{a[0]}-{a[1]}" for a in arcs]
-    x_pos = range(len(arcs))
+    x_pos = list(range(len(arcs)))
     bar_width = 0.25
-    
-    for i, c in enumerate(components):
-        lower_error = [max(avg_flows_per_component[c][j] - min_flows_per_component[c][j],0) for j in range(len(arcs))]
-        upper_error = [max(max_flows_per_component[c][j] - avg_flows_per_component[c][j],0) for j in range(len(arcs))]
-        
-        offset = (i - len(components) / 2 + 0.5) * bar_width
-        ax.bar([x + offset for x in x_pos], avg_flows_per_component[c], 
-                yerr=[lower_error, upper_error], capsize=5, alpha=0.7, 
-                label=c, width=bar_width, error_kw={'elinewidth': 2})
 
-    ax.set_xlabel('Arc', fontsize=12)
-    ax.set_ylabel('Flow (units)', fontsize=12)
-    ax.set_title('Average Flow per Arc per Component with Range Across Scenarios', fontsize=14)
+    for i, c in enumerate(components):
+        offset = (i - len(components) / 2 + 0.5) * bar_width
+
+        ax.bar(
+            [x + offset for x in x_pos],
+            avg_flows_per_component[c],
+            yerr=std_flows_per_component[c],
+            capsize=5,
+            alpha=0.7,
+            label=c,
+            width=bar_width,
+            error_kw={"elinewidth": 2},
+        )
+
+    ax.set_xlabel("Arc", fontsize=12)
+    ax.set_ylabel("Flow (units)", fontsize=12)
+    ax.set_title("Average Flow per Arc per Component with Scenario Std Dev", fontsize=14)
+
     ax.set_xticks(x_pos)
-    ax.set_xticklabels(arc_labels, rotation=45, ha='right')
-    ax.legend(title='Component')
-    ax.grid(axis='y', alpha=0.3)
+    ax.set_xticklabels(arc_labels, rotation=45, ha="right")
+
+    ax.legend(title="Component")
 
     plt.tight_layout()
     plt.savefig(folder + "average_flows.png")
+
     if show:
         plt.show()
+
     plt.close(fig)
 
 def plot_component_flows_stacked(model, folder="figures/",  show = False):
@@ -1264,24 +1269,70 @@ def plot_results(model, folder = "figures/"):
     plot_scenario_revenue_costs(model, folder)
     plot_scenario_objectives(model, folder)
 
-def save_model_pickle(model, folder="saved_models"):
+def save_model_values(model, filename):
     """
-    Saves the Pyomo model (including solved values) as a pickle file.
-    The file is named using the current date and time.
+    Save parameters, variables, expressions, and objective values of a Pyomo model.
+    Stores only the numeric values, not the Pyomo components.
     """
-    # Ensure folder exists
-    Path(folder).mkdir(parents=True, exist_ok=True)
-    
-    # Filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = Path(folder) / f"model_run_{timestamp}.pkl"
-    
-    # Save model
+    snapshot = {}
+
+    # --- Parameters ---
+    params = {}
+    for pname, param in model.component_map(pyo.Param).items():
+        if param.is_indexed():
+            values = {}
+            for idx in param:
+                try:
+                    values[idx] = pyo.value(param[idx])
+                except TypeError:
+                    values[idx] = param[idx]  # fallback for non-numeric
+            params[pname] = values
+        else:
+            try:
+                params[pname] = pyo.value(param)
+            except TypeError:
+                params[pname] = param
+    snapshot['parameters'] = params
+
+    # --- Variables ---
+    vars_ = {}
+    for vname, var in model.component_map(pyo.Var).items():
+        if var.is_indexed():
+            vars_[vname] = {idx: pyo.value(var[idx]) for idx in var}
+        else:
+            vars_[vname] = pyo.value(var)
+    snapshot['variables'] = vars_
+
+    # --- Expressions ---
+    exprs = {}
+    for ename, expr in model.component_map(pyo.Expression).items():
+        if expr.is_indexed():
+            exprs[ename] = {idx: pyo.value(expr[idx]) for idx in expr}
+        else:
+            exprs[ename] = pyo.value(expr)
+    snapshot['expressions'] = exprs
+
+    # --- Objectives ---
+    objs = {}
+    for oname, obj in model.component_map(pyo.Objective).items():
+        try:
+            objs[oname] = pyo.value(obj)
+        except TypeError:
+            objs[oname] = None
+    snapshot['objectives'] = objs
+
+    # --- Save to pickle ---
     with open(filename, 'wb') as f:
-        pickle.dump(model, f)
+        pickle.dump(snapshot, f)
     
-    print(f"Model saved to {filename}")
-    return filename
+    print(f"Saved model snapshot to {filename}")
+
+def load_param_values(filename):
+    """
+    Load parameter values from a pickle file.
+    """
+    with open(filename, "rb") as f:
+        return pickle.load(f)
 
 if __name__ == "__main__":
     G = build_base_graph()
@@ -1289,7 +1340,10 @@ if __name__ == "__main__":
 
     model = create_model(G, scenarios, cutting_plane_pairs=generate_cutting_plane_pairs())
 
-    results = solve_model(model, time_limit=20)
+    results = solve_model(model, time_limit=120)
     print(results)
     plot_results(model, folder = FOLDER)
-    #save_model_pickle(model)
+    save_model_values(model, "results/basic_model")
+
+    # model_values = load_param_values("results/basic_model")
+    # print(model_values["expressions"])

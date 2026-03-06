@@ -153,7 +153,7 @@ def add_market_prices(gdf):
     gdf.loc[gdf["location"] == "EASINGTON", "average_market_price"] = 26
     gdf.loc[gdf["location"] == "EMDEN", "average_market_price"] = 28
     gdf.loc[gdf["location"] == "DORNUM", "average_market_price"] = 28 
-    gdf.loc[gdf["location"] == "ST. FERGUS", "average_market_price"] = 26 
+    gdf.loc[gdf["location"] == "ST.FERGUS", "average_market_price"] = 26 
     gdf.loc[gdf["location"] == "ZEEBRUGGE", "average_market_price"] = 29 
     return gdf
 
@@ -163,7 +163,7 @@ def add_long_term_std(gdf):
     gdf.loc[gdf["location"] == "EASINGTON", "long_term_price_std"] = 0.15
     gdf.loc[gdf["location"] == "EMDEN", "long_term_price_std"] = 0.10
     gdf.loc[gdf["location"] == "DORNUM", "long_term_price_std"] = 0.10
-    gdf.loc[gdf["location"] == "ST. FERGUS", "long_term_price_std"] = 0.15
+    gdf.loc[gdf["location"] == "ST.FERGUS", "long_term_price_std"] = 0.15
     gdf.loc[gdf["location"] == "ZEEBRUGGE", "long_term_price_std"] = 0.10
     return gdf
 
@@ -173,16 +173,16 @@ def add_day_ahead_std(gdf):
     gdf.loc[gdf["location"] == "EASINGTON", "day_ahead_price_std"] = 0.01
     gdf.loc[gdf["location"] == "EMDEN", "day_ahead_price_std"] = 0.01
     gdf.loc[gdf["location"] == "DORNUM", "day_ahead_price_std"] = 0.01
-    gdf.loc[gdf["location"] == "ST. FERGUS", "day_ahead_price_std"] = 0.01
+    gdf.loc[gdf["location"] == "ST.FERGUS", "day_ahead_price_std"] = 0.01
     gdf.loc[gdf["location"] == "ZEEBRUGGE", "day_ahead_price_std"] = 0.01
     return gdf
 
 def add_average_demand(gdf):
     # Average Demand in Gwh
     gdf["average_demand_mwh_x1000"] = None
-    gdf.loc[gdf["location"] == "DUNKERQUE", "average_demand_mwh_x1000"] = 50.0 #*2 #+ 56.25 + 43.75
+    gdf.loc[gdf["location"] == "DUNKERQUE", "average_demand_mwh_x1000"] =  50.0 #*2 #+ 56.25 + 43.75
     gdf.loc[gdf["location"] == "EASINGTON", "average_demand_mwh_x1000"] = 12.5 #* 4
-    gdf.loc[gdf["location"] == "ST. FERGUS", "average_demand_mwh_x1000"] = 12.5 #* 4
+    gdf.loc[gdf["location"] == "ST.FERGUS", "average_demand_mwh_x1000"] = 12.5 #* 4
     gdf.loc[gdf["location"] == "EMDEN", "average_demand_mwh_x1000"] = 25.0 # *2 + 56.25 
     gdf.loc[gdf["location"] == "DORNUM", "average_demand_mwh_x1000"] = 25.0 #*4 + 56.25 
     gdf.loc[gdf["location"] == "ZEEBRUGGE", "average_demand_mwh_x1000"] = 25.0  # * 4
@@ -191,7 +191,7 @@ def add_average_demand(gdf):
 def add_demand_variance(gdf):
     # Variance expressed as fraction (e.g. 0.3 == 30%)
     gdf["demand_variance"] = None
-    for loc in ["DUNKERQUE", "EASINGTON", "ST. FERGUS", "EMDEN", "DORNUM", "ZEEBRUGGE"]:
+    for loc in ["DUNKERQUE", "EASINGTON", "ST.FERGUS", "EMDEN", "DORNUM", "ZEEBRUGGE"]:
         gdf.loc[gdf["location"] == loc, "demand_variance"] = 0.3
     return gdf
 
@@ -199,7 +199,7 @@ def add_max_component_percentages(gdf):
     gdf["max_fractions"] = None
     gdf.loc[gdf["location"] == "DUNKERQUE", "max_fractions"] = [{"NG": 1, "CO2": 0.025, "H2": 0.06}]
     gdf.loc[gdf["location"] == "EASINGTON", "max_fractions"] = [{"NG": 1, "CO2": 0.025, "H2": 0.001}]
-    gdf.loc[gdf["location"] == "ST. FERGUS", "max_fractions"] = [{"NG": 1, "CO2": 0.04, "H2": 0.001}]
+    gdf.loc[gdf["location"] == "ST.FERGUS", "max_fractions"] = [{"NG": 1, "CO2": 0.04, "H2": 0.001}]
     gdf.loc[gdf["location"] == "EMDEN", "max_fractions"] = [{"NG": 1, "CO2": 0.026, "H2": 0.1}]
     gdf.loc[gdf["location"] == "DORNUM", "max_fractions"] =[ {"NG": 1, "CO2": 0.025, "H2": 0.1}]
     gdf.loc[gdf["location"] == "ZEEBRUGGE", "max_fractions"] = [{"NG": 1, "CO2": 0.025, "H2": 0}]
@@ -210,7 +210,7 @@ def add_min_pressure(gdf):
     # Set minimum outlet pressures (bar)
     gdf.loc[gdf["location"] == "DUNKERQUE", "min_outlet_pressure"] = 60
     gdf.loc[gdf["location"] == "EASINGTON", "min_outlet_pressure"] = 70
-    gdf.loc[gdf["location"] == "ST. FERGUS", "min_outlet_pressure"] = 41
+    gdf.loc[gdf["location"] == "ST.FERGUS", "min_outlet_pressure"] = 41
     gdf.loc[gdf["location"] == "EMDEN", "min_outlet_pressure"] = 45
     gdf.loc[gdf["location"] == "DORNUM", "min_outlet_pressure"] = 84
     gdf.loc[gdf["location"] == "ZEEBRUGGE", "min_outlet_pressure"] = 80
@@ -220,10 +220,10 @@ def add_supplier_ratios(gdf):
     gdf["supplier_ratios"] = None
     gdf.loc[gdf["location"] == "DUNKERQUE", "supplier_ratios"] = [{"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0}]
     gdf.loc[gdf["location"] == "EASINGTON", "supplier_ratios"] = [{"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0}]
-    gdf.loc[gdf["location"] == "ST. FERGUS", "supplier_ratios"] = [{"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0}]
+    gdf.loc[gdf["location"] == "ST.FERGUS", "supplier_ratios"] = [{"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0}]
     gdf.loc[gdf["location"] == "EMDEN", "supplier_ratios"] = [{"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0}]
     gdf.loc[gdf["location"] == "DORNUM", "supplier_ratios"] =  [{"Equinor Energy AS": 0.8, "SHELL": 0.0, "Vår Energi ASA": 0.2}]
-    gdf.loc[gdf["location"] == "ZEEBRUGGE", "supplier_ratios"] = [{"Equinor Energy AS": 0.9, "SHELL": 0.1, "Vår Energi ASA": 0.0}]
+    gdf.loc[gdf["location"] == "ZEEBRUGGE", "supplier_ratios"] = [{"Equinor Energy AS": 1, "SHELL": 0, "Vår Energi ASA": 0.0}]
     return gdf
 
 def add_market_and_demand_parameters(gdf):

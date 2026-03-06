@@ -302,108 +302,119 @@ def add_node_types(G):
 
     return G
 
-def add_supplier(G, node):
-    if G.nodes[node]["location"] in ["TROLL A", "HEIDRUN", "GUDRUN"]:
-        G.nodes[node]["supplier"] = "Equinor Energy AS"
-    elif G.nodes[node]["location"] in ["SKARV ERB"]:
-        G.nodes[node]["supplier"] = "Aker BP ASA"
-    elif G.nodes[node]["location"] in ["ORMEN LANGE B"]:
-        G.nodes[node]["supplier"] = "SHELL"
+def add_generation_features(G):
+    SUPPLIER = {
+        "TROLL A": "Equinor Energy AS",
+        "HEIDRUN": "Equinor Energy AS",
+        "GUDRUN": "Equinor Energy AS",
+        "SKARV ERB": "Aker BP ASA",
+        "ORMEN LANGE B": "SHELL"
+    }
+
+    SUPPLY_CAPACITY = {
+        "TROLL A": 43.75 / 365 * 1000,
+        "HEIDRUN": 1.99 / 365 * 1000,
+        "ORMEN LANGE B": 11.91 / 365 * 1000,
+        "SKARV ERB": 6.53 / 365 * 1000,
+        "GUDRUN": 1.35 / 365 * 1000
+    }
+
+    GENERATION_COST = {
+        "TROLL A": 194.43 * 1000 / 11.28,
+        "HEIDRUN": 496.30 * 1000 / 11.28,
+        "ORMEN LANGE B": 210.56 * 1000 / 11.28,
+        "SKARV ERB": 260.85 * 1000 / 11.28,
+        "GUDRUN": 554.97 * 1000 / 11.28
+    }
+
+    COMPONENT_RATIO = {
+        "TROLL A": {"CO2": 0.02, "H2": 0.00, "NG": 0.98},
+        "HEIDRUN": {"CO2": 0.03, "H2": 0.00, "NG": 0.97},
+        "ORMEN LANGE B": {"CO2": 0.01, "H2": 0.00, "NG": 0.99},
+        "SKARV ERB": {"CO2": 0.02, "H2": 0.00, "NG": 0.98},
+        "GUDRUN": {"CO2": 0.02, "H2": 0.00, "NG": 0.98}
+    }
+
+
+    for n, data in G.nodes(data=True):
+        loc = data.get("location")
+        data["supplier"] = SUPPLIER.get(loc, data["supplier"])
+        data["supply_capacity"] = SUPPLY_CAPACITY.get(loc,data["supply_capacity"])
+        data["generation_cost"] = GENERATION_COST.get(loc,data["generation_cost"] )
+        data["component_ratio"] = COMPONENT_RATIO.get(loc, data["component_ratio"] )
     return G
 
-def add_supply_capacity(G, node):
-    if G.nodes[node]["location"] == "TROLL A":
-        G.nodes[node]["supply_capacity"] = 43.75 /365 *1000
-    elif G.nodes[node]["location"] == "HEIDRUN":
-        G.nodes[node]["supply_capacity"] = 1.99 /365 *1000
-    elif G.nodes[node]["location"] == "ORMEN LANGE B":
-        G.nodes[node]["supply_capacity"] = 11.91 /365 *1000
-    elif G.nodes[node]["location"] == "SKARV":
-        G.nodes[node]["supply_capacity"] = 6.53 /365 *1000
-    elif G.nodes[node]["location"] == "GUDRUN":
-        G.nodes[node]["supply_capacity"] = 1.35 /365 *1000
-    return G
-
-def add_generation_cost(G,  node):
-    if G.nodes[node]["location"] == "TROLL A":
-        G.nodes[node]["generation_cost"] = 194.43 * 1000  / 11.28 
-    elif G.nodes[node]["location"] == "HEIDRUN":
-        G.nodes[node]["generation_cost"] = 496.30  * 1000  / 11.28 
-    elif G.nodes[node]["location"] == "ORMEN LANGE B":
-        G.nodes[node]["generation_cost"] = 210.56  * 1000  / 11.28 
-    elif G.nodes[node]["location"] == "SKARV":
-        G.nodes[node]["generation_cost"] = 260.85  * 1000  / 11.28 
-    elif G.nodes[node]["location"] == "GUDRUN":
-        G.nodes[node]["generation_cost"] = 554.97 * 1000  / 11.28 
-    return G
-
-def add_component_ratio(G,  node):
-    if G.nodes[node]["location"] == "TROLL A":
-        G.nodes[node]["component_ratio"] =  {"CO2": 0.02, "H2": 0.00, "NG": 0.98}
-    elif G.nodes[node]["location"] == "HEIDRUN":
-        G.nodes[node]["component_ratio"] =  {"CO2": 0.03, "H2": 0.00, "NG": 0.97}
-    elif G.nodes[node]["location"] == "ORMEN LANGE B":
-        G.nodes[node]["component_ratio"] =  {"CO2": 0.01, "H2": 0.00, "NG": 0.99}
-    elif G.nodes[node]["location"] == "SKARV":
-        G.nodes[node]["component_ratio"] =  {"CO2": 0.02, "H2": 0.00, "NG": 0.98}
-    elif G.nodes[node]["location"] == "GUDRUN":
-        G.nodes[node]["component_ratio"] =  {"CO2": 0.02, "H2": 0.00, "NG": 0.98}
-    return G
-
-def add_generation_features(G, node):
-    G = add_supplier(G, node)
-    G = add_supply_capacity(G,  node)
-    G = add_generation_cost(G,  node)
-    G = add_component_ratio(G,  node)
-    return G
-
-def add_average_demand(G, node):
+def add_average_demand(G):
     """
-    Adds the average demand (in MWh x 1000) to a NetworkX node based on location.
+    Adds the average demand (in MWh x 1000) to each node based on location.
     """
-    location = G.nodes[node]["location"]
     
-    if location == "DUNKERQUE":
-        G.nodes[node]["average_demand_mwh_x1000"] = 50.0 *2 #+ 56.25 + 43.75
-    elif location == "EASINGTON":
-        G.nodes[node]["average_demand_mwh_x1000"] = 12.5 *2
-    elif location == "ST.FERGUS":
-        G.nodes[node]["average_demand_mwh_x1000"] = 12.5 * 2
-    elif location == "EMDEN":
-        G.nodes[node]["average_demand_mwh_x1000"] = 25.0 *2 #+ 56.25
-    elif location == "DORNUM":
-        G.nodes[node]["average_demand_mwh_x1000"] = 25.0 *2 # + 56.25
-    elif location == "ZEEBRUGGE":
-        G.nodes[node]["average_demand_mwh_x1000"] = 25.0 *2  # + 56.25
-    else:
-        G.nodes[node]["average_demand_mwh_x1000"] = 0.0  # fallback if location unknown
+    AVERAGE_DEMAND = {
+        "DUNKERQUE": 50.0 * 2,
+        "EASINGTON": 12.5 * 2,
+        "ST.FERGUS": 12.5 * 2,
+        "EMDEN": 25.0 * 2,
+        "DORNUM": 25.0 * 2,
+        "ZEEBRUGGE": 25.0 * 2
+    }
+
+    for n, data in G.nodes(data=True):
+        loc = data.get("location")
+        print(data.keys())
+        data["average_demand_mwh_x1000"] = AVERAGE_DEMAND.get(loc, data["average_demand_mwh_x1000"])
+
     return G
 
-def change_market_distribution(G,node):
-    if G.nodes[node]["location"] == "DUNKERQUE":
-        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
-        
-    elif G.nodes[node]["location"] == "EASINGTON":
-        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
-        
-    elif G.nodes[node]["location"] == "ST.FERGUS":
-        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
-        
-    elif G.nodes[node]["location"] == "EMDEN":
-        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
-        
-    elif G.nodes[node]["location"] == "DORNUM":
-        G.nodes[node]["supplier_ratios"] = {"Equinor Energy AS": 1, "SHELL": 0.0, "Vår Energi ASA": 0, "Aker BP ASA": 0}
-    
-    elif G.nodes[node]["location"] == "ZEEBRUGGE":
-        G.nodes[node]["supplier_ratios"] =  {"Equinor Energy AS": 1, "SHELL": 0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
-    else:
-        G.nodes[node]["supplier_ratios"] ={"Equinor Energy AS": 1.0, "SHELL": 0.0, "Vår Energi ASA": 0.0, "Aker BP ASA": 0.0}
+
+def change_market_distribution(G):
+    """
+    Sets supplier ratios for nodes based on location.
+    """
+
+    DEFAULT_RATIOS = [{
+        "Equinor Energy AS": 1.0,
+        "SHELL": 0.0,
+        "Vår Energi ASA": 0.0,
+        "Aker BP ASA": 0.0
+    }]
+
+    DUNKERQUE_RATIOS = [{
+        "Equinor Energy AS": 0.7,
+        "SHELL": 0.3,
+        "Vår Energi ASA": 0.0,
+        "Aker BP ASA": 0.0
+    }]
+
+    DORNUM_RATIOS = [{
+        "Equinor Energy AS": 0.7,
+        "SHELL": 0,
+        "Vår Energi ASA": 0.1,
+        "Aker BP ASA": 0.2
+    }]
+
+    MARKET_DISTRIBUTION = {
+        "DUNKERQUE": DUNKERQUE_RATIOS,
+        "EASINGTON": DEFAULT_RATIOS,
+        "ST.FERGUS": DEFAULT_RATIOS,
+        "EMDEN": DEFAULT_RATIOS,
+        "DORNUM": DORNUM_RATIOS,
+        "ZEEBRUGGE": DEFAULT_RATIOS
+    }
+
+    for n, data in G.nodes(data=True):
+        loc = data.get("location")
+        data["supplier_ratios"] = MARKET_DISTRIBUTION.get(loc, data["supplier_ratios"])
+    return G
+
+def replace_location(G):
+    for n, data in G.nodes(data=True):
+        if data.get("location_id") == "286141A":
+            data["location"] = "DORNUM"
     return G
 
 def add_features_from_base_graph(G, filename=REGULAR_GRAPH):
-
     case_study_graph = gpd.read_file(filename)
+    G = replace_location(G)
 
     # Ensure fast lookup by location_id
     base_lookup = case_study_graph["location_id"].unique()
@@ -429,6 +440,7 @@ def add_features_from_base_graph(G, filename=REGULAR_GRAPH):
             for col in case_study_graph.columns:
                 if col not in ["geometry", "location",  "location_id"]:
                     G.nodes[node][col] = base_row[col]
+                    print(col)   
         
         # -------------------------
         # 2️⃣ No match → sample from same node_type
@@ -445,6 +457,7 @@ def add_features_from_base_graph(G, filename=REGULAR_GRAPH):
 
             else:
                 print(f"Warning: No fallback nodes found for type {node_type}")
+    G = add_generation_features(G)
 
     return G
 
@@ -525,6 +538,10 @@ def export_geojson(G, crs, output_path):
 
     nodes_gdf["type"] = "node"
     edges_gdf["type"] = "edge"
+
+
+
+    combined = pd.concat([nodes_gdf, edges_gdf], ignore_index=True)
 
     combined = gpd.GeoDataFrame(
         pd.concat([nodes_gdf, edges_gdf], ignore_index=True),

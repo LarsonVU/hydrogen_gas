@@ -64,7 +64,7 @@ def plot_objective_values(var_range, amount_of_points, folder, variable = "unkno
     plt.title(f'Objective Average vs {variable} standard deviation')
     plt.grid(True)
     plt.savefig(folder+ f"changing_{variable}_objective_values")
-    plt.show()
+    #plt.show()
 
 def plot_objective_variance(var_range, amount_of_points, folder, variable = "unknown"):
     os.makedirs(folder, exist_ok=True)
@@ -76,7 +76,7 @@ def plot_objective_variance(var_range, amount_of_points, folder, variable = "unk
     plt.title(f'Objective Variance vs {variable} standard deviation')
     plt.grid(True)
     plt.savefig(folder+ f"changing_{variable}_objective_variance")
-    plt.show()
+    #plt.show()
 
 
 def plot_scenario_variance(var_range, amount_of_points, folder, variable="unknown"):
@@ -94,22 +94,22 @@ def plot_scenario_variance(var_range, amount_of_points, folder, variable="unknow
     plt.title(f'Scenario Variance vs {variable} Variance')
     plt.grid(True)
     plt.savefig(folder + f"changing_{variable}_scenario_variance")
-    plt.show()
+    #plt.show()
 
 
 if __name__ == "__main__":
     G = scpf.build_base_graph()
 
     var_range = (0,0.5)
-    amount_of_points = 2
-    amount_per_point = 2
+    amount_of_points = 6
+    amount_per_point = 5
 
     G_changed_var_demand = change_var(G, var_range, amount_of_points, amount_per_point, variable_name= "demand_variance")
     s_list = create_scenario_trees(G_changed_var_demand)
-    objective_averages, variance, scenario_variance = results_from_variance(G, s_list, False, 20)
+    objective_averages, variance, scenario_variance = results_from_variance(G, s_list, False, 200)
     plot_objective_values(var_range, amount_of_points, folder = FIGURES_FOLDER, variable="Demand")
     plot_objective_variance(var_range, amount_of_points, folder = FIGURES_FOLDER,  variable="Demand")
-    plot_scenario_variance(var_range, amount_of_points, folder=FIGURES_FOLDER, variable="Price Long Term")
+    plot_scenario_variance(var_range, amount_of_points, folder=FIGURES_FOLDER, variable="Demand")
 
     var_range = (0,0.5)
     amount_of_points = 6
@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     G_changed_var_price = change_var(G, var_range, amount_of_points, amount_per_point, variable_name= "long_term_price_std")
     s_list = create_scenario_trees(G_changed_var_price)
-    objective_averages, variance, scenario_variance = results_from_variance(G, s_list, False, 20)
+    objective_averages, variance, scenario_variance = results_from_variance(G, s_list, False, 200)
     plot_objective_values(var_range, amount_of_points, folder = FIGURES_FOLDER, variable="Price Long Term")
     plot_objective_variance(var_range, amount_of_points, folder = FIGURES_FOLDER,  variable="Price Long Term")
     plot_scenario_variance(var_range, amount_of_points, folder=FIGURES_FOLDER, variable="Price Long Term")  
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
     G_changed_var_price = change_var(G, var_range, amount_of_points, amount_per_point, variable_name= "day_ahead_price_std")
     s_list = create_scenario_trees(G_changed_var_price)
-    objective_averages, variance, scenario_variance = results_from_variance(G, s_list, False, 20)
+    objective_averages, variance, scenario_variance = results_from_variance(G, s_list, False, 200)
     plot_objective_values(var_range, amount_of_points, folder = FIGURES_FOLDER, variable="Price Day Ahead")
     plot_objective_variance(var_range, amount_of_points, folder = FIGURES_FOLDER,  variable="Price Day Ahead")
     plot_scenario_variance(var_range, amount_of_points, folder=FIGURES_FOLDER, variable="Price Day Ahead")  

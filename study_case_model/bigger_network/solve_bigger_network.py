@@ -18,6 +18,6 @@ if __name__ == "__main__":
 
     model = scsm.create_model(G, scenarios)
 
-    results = scsm.solve_model(model, time_limit=100)
+    results = scsm.solve_model(model, time_limit=1000)
     print(results)
     scsm.plot_results(model, folder = FOLDER)
