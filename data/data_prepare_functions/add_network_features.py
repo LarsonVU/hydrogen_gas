@@ -124,8 +124,8 @@ def add_compression_factor(gdf):
 def add_compression_constants(gdf):
     gdf["compression_constants"] = None  # ensures object dtype
     compression_nodes = ["B-11", "EUROPIPE-SCP", "NORPIPE Y", "ZEEPIPE-SCP"]
-    normal_inlet_pressure = 100# 40  # bar
-    normal_flow  = 25# 8
+    normal_inlet_pressure = 100  # bar
+    normal_flow  = 25
     T = 288.15
     T_std = 288.15
     eta =0.72

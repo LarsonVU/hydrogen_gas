@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_c61f6364b5f33e6ea576aee21980a3f0 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+    <div style="position: fixed; 
+         bottom: 50px; right: 50px; width: 200px; height: 200px; 
+         background-color: white; border:2px solid grey; z-index:9999; 
+         font-size:14px; padding: 10px">
+         <p style="margin: 0 0 10px 0; font-weight: bold;">Node Types</p>
+         <p style="margin: 5px 0;"><span style="background-color: #FFB3BA; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Generation</p>
+         <p style="margin: 5px 0;"><span style="background-color: #BAFFC9; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Processing</p>
+         <p style="margin: 5px 0;"><span style="background-color: #BAE1FF; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Market</p>
+         <p style="margin: 5px 0;"><span style="background-color: #FFFFBA; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Compression</p>
+         <p style="margin: 5px 0;"><span style="background-color: #E0BBE4; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Junction</p>
+    </div>
+    
+    
+            <div class="folium-map" id="map_c61f6364b5f33e6ea576aee21980a3f0" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_c61f6364b5f33e6ea576aee21980a3f0 = L.map(
+                "map_c61f6364b5f33e6ea576aee21980a3f0",
+                {
+                    center: [55.9253604425, 3.9999758866666664],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 6,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_7bb548a8d11d46178604997e97940d7a = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_7bb548a8d11d46178604997e97940d7a.addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            var poly_line_2e6da7c471c657221a64a37f81ef67ed = L.polyline(
+                [[61.136872355, 1.791104828333333], [53.6797, 7.32642]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_2e6da7c471c657221a64a37f81ef67ed.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 42" Gas KÅRSTØ, EMDEN<br><b>idPipeline</b>: 323212.0<br><b>mapLabel</b>: Europipe II<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: KÅRSTØ<br><b>toFacility</b>: EMDEN<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 42.0<br><b>WaterDepth</b>: 347.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 286169.0<br><b>idToFacili</b>: 286141.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/323212<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=323212<br><b>weight</b>: 6.418115856643556<br><b>from_node</b>: GJØA-T<br><b>to_node</b>: DORNUM<br><b>max_flow</b>: 73.5<br><b>weymouth_constant</b>: 0.29508360944733714<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_661fc0f7bb138f340c39cc19e4ae0e31 = L.polyline(
+                [[61.136872355, 1.791104828333333], [55.706969, 4.222622]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_661fc0f7bb138f340c39cc19e4ae0e31.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 40" Gas DRAUPNER E, EUROPIPE-SCP<br><b>idPipeline</b>: 326340.0<br><b>mapLabel</b>: Europipe I<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: DRAUPNER E<br><b>toFacility</b>: EUROPIPE-SCP<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 40.0<br><b>WaterDepth</b>: 76.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 278357.0<br><b>idToFacili</b>: 286841.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/326340<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=326340<br><b>weight</b>: 3.2016759487511677<br><b>from_node</b>: GJØA-T<br><b>to_node</b>: EUROPIPE-SCP<br><b>max_flow</b>: 45.7<br><b>weymouth_constant</b>: 0.3809004362612685<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_def2691e19b30106c55d270e799b7657 = L.polyline(
+                [[61.136872355, 1.791104828333333], [51.046406, 2.252709]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_def2691e19b30106c55d270e799b7657.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 42" Gas DRAUPNER E, DUNKERQUE<br><b>idPipeline</b>: 326374.0<br><b>mapLabel</b>: Franpipe<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: DRAUPNER E<br><b>toFacility</b>: DUNKERQUE<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 42.0<br><b>WaterDepth</b>: 85.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 278357.0<br><b>idToFacili</b>: 286757.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/326374<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=326374<br><b>weight</b>: 8.026701378841642<br><b>from_node</b>: GJØA-T<br><b>to_node</b>: DUNKERQUE<br><b>max_flow</b>: 54.2<br><b>weymouth_constant</b>: 0.26473903460176296<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_870d4256b3efd66583a1f721e486fd6d = L.polyline(
+                [[61.136872355, 1.791104828333333], [55.46230198, 4.551624825]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_870d4256b3efd66583a1f721e486fd6d.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 36" Gas NORPIPE Y, B-11<br><b>idPipeline</b>: 319166.0<br><b>mapLabel</b>: Norpipe Gassledning<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: NORPIPE Y<br><b>toFacility</b>: B-11<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 36.0<br><b>WaterDepth</b>: 75.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 287065.0<br><b>idToFacili</b>: 277265.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/319166<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=319166<br><b>weight</b>: 1.6006336638958458<br><b>from_node</b>: GJØA-T<br><b>to_node</b>: B-11<br><b>max_flow</b>: 44.4<br><b>weymouth_constant</b>: 0.4188778779051852<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_5ad6df1cd1adc4312d8c882677fd4897 = L.polyline(
+                [[55.46230198, 4.551624825], [54.50901641, 6.03530475]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_5ad6df1cd1adc4312d8c882677fd4897.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 36" Gas B-11, H-7 BP<br><b>idPipeline</b>: 324844.0<br><b>mapLabel</b>: Norpipe Gassledning<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: B-11<br><b>toFacility</b>: H-7 BP<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 36.0<br><b>WaterDepth</b>: 75.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 277265.0<br><b>idToFacili</b>: 377218.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/324844<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=324844<br><b>weight</b>: 1.7552024696695707<br><b>from_node</b>: B-11<br><b>to_node</b>: H-7 BP<br><b>max_flow</b>: 44.4<br><b>weymouth_constant</b>: 0.41497791770096887<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_71fee78319a923dabed454d00faa5a09 = L.polyline(
+                [[55.706969, 4.222622], [53.6797, 7.32642]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_71fee78319a923dabed454d00faa5a09.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 40" Gas EUROPIPE-SCP, EMDEN<br><b>idPipeline</b>: 327394.0<br><b>mapLabel</b>: Europipe I<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: EUROPIPE-SCP<br><b>toFacility</b>: EMDEN<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 40.0<br><b>WaterDepth</b>: 45.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 286841.0<br><b>idToFacili</b>: 286141.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/327394<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=327394<br><b>weight</b>: 3.9741095764833347<br><b>from_node</b>: EUROPIPE-SCP<br><b>to_node</b>: DORNUM<br><b>max_flow</b>: 45.7<br><b>weymouth_constant</b>: 0.3776713575243169<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_d0d4d9c093b5c2e3f800e226d146d05c = L.polyline(
+                [[61.072123795, 2.52020569], [55.706969, 4.222622]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_d0d4d9c093b5c2e3f800e226d146d05c.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 40" Gas DRAUPNER E, EUROPIPE-SCP<br><b>idPipeline</b>: 326340.0<br><b>mapLabel</b>: Europipe I<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: DRAUPNER E<br><b>toFacility</b>: EUROPIPE-SCP<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 40.0<br><b>WaterDepth</b>: 76.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 278357.0<br><b>idToFacili</b>: 286841.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/326340<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=326340<br><b>weight</b>: 3.2016759487511677<br><b>from_node</b>: VISUND T<br><b>to_node</b>: EUROPIPE-SCP<br><b>max_flow</b>: 45.7<br><b>weymouth_constant</b>: 0.3809004362612685<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_77bf1971c94cf7da6d556d428c273b37 = L.polyline(
+                [[61.072123795, 2.52020569], [51.046406, 2.252709]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_77bf1971c94cf7da6d556d428c273b37.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 42" Gas DRAUPNER E, DUNKERQUE<br><b>idPipeline</b>: 326374.0<br><b>mapLabel</b>: Franpipe<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: DRAUPNER E<br><b>toFacility</b>: DUNKERQUE<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 42.0<br><b>WaterDepth</b>: 85.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 278357.0<br><b>idToFacili</b>: 286757.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/326374<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=326374<br><b>weight</b>: 8.026701378841642<br><b>from_node</b>: VISUND T<br><b>to_node</b>: DUNKERQUE<br><b>max_flow</b>: 54.2<br><b>weymouth_constant</b>: 0.26473903460176296<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_5d14940c4c1728816980023abed7e589 = L.polyline(
+                [[61.072123795, 2.52020569], [55.46230198, 4.551624825]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_5d14940c4c1728816980023abed7e589.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 36" Gas NORPIPE Y, B-11<br><b>idPipeline</b>: 319166.0<br><b>mapLabel</b>: Norpipe Gassledning<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: NORPIPE Y<br><b>toFacility</b>: B-11<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 36.0<br><b>WaterDepth</b>: 75.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 287065.0<br><b>idToFacili</b>: 277265.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/319166<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=319166<br><b>weight</b>: 1.6006336638958458<br><b>from_node</b>: VISUND T<br><b>to_node</b>: B-11<br><b>max_flow</b>: 44.4<br><b>weymouth_constant</b>: 0.4188778779051852<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var poly_line_7963788f50e65b8e773b9335c13a2cb6 = L.polyline(
+                [[61.072123795, 2.52020569], [54.789494, 3.299816]],
+                {"bubblingMouseEvents": true, "color": "black", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "black", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            poly_line_7963788f50e65b8e773b9335c13a2cb6.bindTooltip(
+                `<div>
+                     <b>location_id</b>: None<br><b>type</b>: edge<br><b>pipName</b>: 40" Gas SLEIPNER R, ZEEPIPE-SCP<br><b>idPipeline</b>: 321002.0<br><b>mapLabel</b>: Zeepipe I<br><b>belongs_to</b>: GASSLED<br><b>curOperNam</b>: Gassco AS<br><b>curPhase</b>: IN SERVICE<br><b>fromFacili</b>: SLEIPNER R<br><b>toFacility</b>: ZEEPIPE-SCP<br><b>mainGrp</b>: Transportation<br><b>dimension</b>: 40.0<br><b>WaterDepth</b>: 90.0<br><b>medium</b>: Gas<br><b>idBelongTo</b>: 2252643.0<br><b>idFrmFacil</b>: 277797.0<br><b>idToFacili</b>: 286533.0<br><b>idOperator</b>: 1944954.0<br><b>FactUrl</b>: https://factpages.sodir.no/tuf/pageview/pipeline/all/321002<br><b>MapUrl</b>: https://factmaps.sodir.no/map/redirect/pipLine.ashx?id=321002<br><b>weight</b>: 4.098591690911761<br><b>from_node</b>: VISUND T<br><b>to_node</b>: ZEEPIPE-SCP<br><b>max_flow</b>: 55.0<br><b>weymouth_constant</b>: 0.3248193139227601<br><b>max_inlet_pressure</b>: 150.0<br><b>pressure_cost</b>: 100.0<br><b>max_pipe_fractions</b>: [{'NG': 1, 'CO2': 1, 'H2': 0.2}]
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4a63b138e13423e4f793bd5a0c7497ad = L.circleMarker(
+                [54.789494, 3.299816],
+                {"bubblingMouseEvents": true, "color": "#FFFFBA", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FFFFBA", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            circle_marker_4a63b138e13423e4f793bd5a0c7497ad.bindTooltip(
+                `<div>
+                     <b>location</b>: ZEEPIPE-SCP<br><b>location_id</b>: 286533<br><b>type</b>: node<br><b>curPhDate</b>: NaT<br><b>dtUpdated</b>: NaT<br><b>max_flow</b>: 100000.0<br><b>node_type</b>: Compression<br><b>base_booking_cost</b>: 0.003277748226950355<br><b>compression_increase</b>: 1.9<br><b>node_id</b>: ZEEPIPE-SCP
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_02746216039f5b2d6cb9c06713c6475c = L.circleMarker(
+                [61.136872355, 1.791104828333333],
+                {"bubblingMouseEvents": true, "color": "#E0BBE4", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E0BBE4", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            circle_marker_02746216039f5b2d6cb9c06713c6475c.bindTooltip(
+                `<div>
+                     <b>location</b>: GJØA-T<br><b>location_id</b>: 406731<br><b>type</b>: node<br><b>curPhDate</b>: NaT<br><b>dtUpdated</b>: NaT<br><b>max_flow</b>: 100000.0<br><b>node_type</b>: Junction<br><b>base_booking_cost</b>: 0.0008932624113475178<br><b>node_id</b>: GJØA-T
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_3c37c8f45fd0a69132a03f6a9e7d78db = L.circleMarker(
+                [55.46230198, 4.551624825],
+                {"bubblingMouseEvents": true, "color": "#FFFFBA", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FFFFBA", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            circle_marker_3c37c8f45fd0a69132a03f6a9e7d78db.bindTooltip(
+                `<div>
+                     <b>location</b>: B-11<br><b>location_id</b>: 277265<br><b>type</b>: node<br><b>curPhDate</b>: NaT<br><b>dtUpdated</b>: NaT<br><b>max_flow</b>: 100000.0<br><b>node_type</b>: Compression<br><b>base_booking_cost</b>: 0.003277748226950355<br><b>compression_increase</b>: 1.9<br><b>node_id</b>: B-11
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_642cc15f09c30a0010a7f78d084ad112 = L.circleMarker(
+                [54.50901641, 6.03530475],
+                {"bubblingMouseEvents": true, "color": "#E0BBE4", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E0BBE4", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            circle_marker_642cc15f09c30a0010a7f78d084ad112.bindTooltip(
+                `<div>
+                     <b>location</b>: H-7 BP<br><b>location_id</b>: 377218<br><b>type</b>: node<br><b>curPhDate</b>: NaT<br><b>dtUpdated</b>: NaT<br><b>max_flow</b>: 100000.0<br><b>node_type</b>: Junction<br><b>base_booking_cost</b>: 0.003277748226950355<br><b>node_id</b>: H-7 BP
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_218ff8fe2092fda51650768ec993e45b = L.circleMarker(
+                [53.6797, 7.32642],
+                {"bubblingMouseEvents": true, "color": "#BAE1FF", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#BAE1FF", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            circle_marker_218ff8fe2092fda51650768ec993e45b.bindTooltip(
+                `<div>
+                     <b>location</b>: DORNUM<br><b>location_id</b>: 286141A<br><b>type</b>: node<br><b>curPhDate</b>: NaT<br><b>dtUpdated</b>: NaT<br><b>max_flow</b>: 100000.0<br><b>node_type</b>: Market<br><b>base_booking_cost</b>: 0.003277748226950355<br><b>average_market_price</b>: 28<br><b>long_term_price_std</b>: 0.1<br><b>day_ahead_price_std</b>: 0.01<br><b>average_demand_mwh_x1000</b>: 0.0<br><b>demand_variance</b>: 0.3<br><b>max_fractions</b>: {'NG': 1, 'CO2': 0.025, 'H2': 0.1}<br><b>min_outlet_pressure</b>: 84<br><b>supplier_ratios</b>: {'Equinor Energy AS': 0.8, 'SHELL': 0.0, 'Vår Energi ASA': 0.2}<br><b>node_id</b>: DORNUM
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_aca3d004af4255d031f1b04e4fe641cb = L.circleMarker(
+                [55.706969, 4.222622],
+                {"bubblingMouseEvents": true, "color": "#FFFFBA", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FFFFBA", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            circle_marker_aca3d004af4255d031f1b04e4fe641cb.bindTooltip(
+                `<div>
+                     <b>location</b>: EUROPIPE-SCP<br><b>location_id</b>: 286841<br><b>type</b>: node<br><b>curPhDate</b>: NaT<br><b>dtUpdated</b>: NaT<br><b>max_flow</b>: 100000.0<br><b>node_type</b>: Compression<br><b>base_booking_cost</b>: 0.003277748226950355<br><b>compression_increase</b>: 1.9<br><b>node_id</b>: EUROPIPE-SCP
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ce0669c9695819e6e3ffb5c3fed999bd = L.circleMarker(
+                [51.046406, 2.252709],
+                {"bubblingMouseEvents": true, "color": "#BAE1FF", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#BAE1FF", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            circle_marker_ce0669c9695819e6e3ffb5c3fed999bd.bindTooltip(
+                `<div>
+                     <b>location</b>: DUNKERQUE<br><b>location_id</b>: 286757<br><b>type</b>: node<br><b>curPhDate</b>: NaT<br><b>dtUpdated</b>: NaT<br><b>max_flow</b>: 100000.0<br><b>node_type</b>: Market<br><b>base_booking_cost</b>: 0.003277748226950355<br><b>average_market_price</b>: 30<br><b>long_term_price_std</b>: 0.1<br><b>day_ahead_price_std</b>: 0.01<br><b>average_demand_mwh_x1000</b>: 0.0<br><b>demand_variance</b>: 0.3<br><b>max_fractions</b>: {'NG': 1, 'CO2': 0.025, 'H2': 0.06}<br><b>min_outlet_pressure</b>: 60<br><b>supplier_ratios</b>: {'Equinor Energy AS': 1.0, 'SHELL': 0.0, 'Vår Energi ASA': 0.0}<br><b>node_id</b>: DUNKERQUE
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ac1b923bc632d0adb57d6c01f68c154f = L.circleMarker(
+                [61.072123795, 2.52020569],
+                {"bubblingMouseEvents": true, "color": "#E0BBE4", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E0BBE4", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5, "stroke": true, "weight": 3}
+            ).addTo(map_c61f6364b5f33e6ea576aee21980a3f0);
+        
+    
+            circle_marker_ac1b923bc632d0adb57d6c01f68c154f.bindTooltip(
+                `<div>
+                     <b>location</b>: VISUND T<br><b>location_id</b>: 364607<br><b>type</b>: node<br><b>curPhDate</b>: NaT<br><b>dtUpdated</b>: NaT<br><b>max_flow</b>: 100000.0<br><b>node_type</b>: Junction<br><b>base_booking_cost</b>: 0.0017312056737588653<br><b>node_id</b>: VISUND T
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+</script>
+</html>

@@ -99,24 +99,6 @@ for _, row in edges.iterrows():
             tooltip=folium.Tooltip(tooltip, sticky=True),
         ).add_to(m)
 
-        # Add directional arrows
-        # loc = ((coords[0][0] + coords[-1][0]) / 2, (coords[0][1] + coords[-1][1]) / 2)
-        # bearing = calculate_bearing(coords[0], coords[-1])
-        # folium.Marker(
-        #     location=loc,
-        #     icon=DivIcon(
-        #         html=f'''
-        #         <div style="
-        #             font-size:16px;
-        #             transform: rotate({bearing}deg);
-        #             transform-origin: center;
-        #         ">➤</div>
-        #         ''',
-        #         icon_size=(20, 20),      # give it a box
-        #         icon_anchor=(10, 10),    # center of that box
-        #     )
-        # ).add_to(m)
-
 # -------------------------------
 # Add nodes
 # -------------------------------

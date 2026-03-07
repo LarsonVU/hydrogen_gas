@@ -18,10 +18,10 @@ def safe_filename(s):
 FOLDER = "study_case_model/figures/"
 
 NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1: 1, 2: 4, 3: 2}
+BRANCHES_PER_STAGE = {1: 1, 2: 4, 3: 4}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
-NUMBER_OF_DENSITY_BOUNDS = 10
+NUMBER_OF_DENSITY_BOUNDS = 1
 RHO_LOW = 0.55
 RHO_HIGH = 0.70
 
@@ -609,35 +609,37 @@ def add_pressure_constraints(model):
 def add_compression_constraints(model):
 
     def fuel_consumption_rule(m, n, c, m_3):
-        if n in m.N_gamma:
+        if n in m.N_gamma and len(m.A_n_minus[n]) >0 and len(m.A_n_plus[n]) >0:
             a = m.A_n_minus[n].first()
             a_prime = m.A_n_plus[n].first()
             return (
                 m.w[n, c, m_3]
-                == m.K_out_pipe[n, c] * m.p_in[a, m_3]
-                - m.K_into_pipe[n, c] * m.p_out[a_prime, m_3]
-                + m.K_flow[n, c] * m.f[a, c, m_3]
+                == m.K_into_pipe[n, c] * m.p_in[a, m_3]
+                - m.K_out_pipe[n, c] * m.p_out[a_prime, m_3]
+                + m.K_flow[n, c] * m.f[a_prime, c, m_3]
             )
         return pyo.Constraint.Skip
 
     model.fuel_consumption = pyo.Constraint(model.N_gamma, model.C, model.M[3], rule=fuel_consumption_rule)
 
     def fuel_flow_balance_rule(m, n, c, m_3):
-        if n in m.N_gamma:
-            return sum(m.f[a, c, m_3] for a in m.A_n_minus[n]) == sum(m.f[a, c, m_3] for a in m.A_n_plus[n]) - m.w[n, c, m_3]
+        if n in m.N_gamma :
+            if len(m.A_n_minus[n]) >0 and len(m.A_n_plus[n]) >0:
+                return sum(m.f[a, c, m_3] for a in m.A_n_minus[n]) == sum(m.f[a, c, m_3] for a in m.A_n_plus[n]) - m.w[n, c, m_3]
+            else: 
+                return sum(m.f[a, c, m_3] for a in m.A_n_minus[n]) == sum(m.f[a, c, m_3] for a in m.A_n_plus[n])
         return pyo.Constraint.Skip
 
     model.fuel_flow_balance = pyo.Constraint(model.N_gamma, model.C, model.M[3], rule=fuel_flow_balance_rule)
 
     def compression_increase_rule(m, n, m_3):
-        if n in m.N_gamma:
+        if n in m.N_gamma and len(m.A_n_minus[n]) >0 and len(m.A_n_plus[n]) >0:
             a = m.A_n_minus[n].first()
             a_prime = m.A_n_plus[n].first()
             return m.p_in[a, m_3] == m.P_hat[n] * m.p_out[a_prime, m_3]
         return pyo.Constraint.Skip
 
     model.compression_increase = pyo.Constraint(model.N_gamma, model.M[3], rule=compression_increase_rule)
-
 
 def add_quality_constraints(model):
 
@@ -673,16 +675,23 @@ def add_quality_constraints(model):
 def add_homogeneous_splitting_constraints(model):
 
     def SOS1_v(m, n, m_3):
+        if len(model.Z_v[n]) == 0:
+            return pyo.Constraint.Skip
+
         return sum(m.v[n, z, m_3] for z in m.Z_v[n]) == 1
 
     model.S1_v = pyo.Constraint(model.N_s, model.M[3], rule=SOS1_v)
 
     def choice_v_flow_rule(m, n, z, m_3):
+        if len(model.Z_v[n]) == 0:
+            return pyo.Constraint.Skip
         return sum(m.e[n, c, z, m_3] for c in m.C) <= m.v[n, z, m_3] * m.M_n[n]
 
     model.choice_v_flow = pyo.Constraint(model.v_index, model.M[3], rule=choice_v_flow_rule)
 
     def homogeneous_split_rule(m, a1, a2, n, c, m_3):
+        if len(model.Z_v[n]) == 0:
+            return pyo.Constraint.Skip
         if (a1, a2) in m.A_n_minus[n]:
             return m.f[a1, a2, c, m_3] == sum(m.e[n, c, z, m_3] * m.E_nza[n, z, a1, a2] for z in m.Z_v[n])
         return pyo.Constraint.Skip
@@ -734,6 +743,8 @@ def create_model(network: networkx.Graph, scenarios=None,
     build_sets(model, network, scenarios=scenarios, cutting_plane_pairs=cutting_plane_pairs, splits_per_arc=splits_per_arc)
     build_parameters(model, network, scenarios=scenarios, cutting_plane_pairs=cutting_plane_pairs, allowed_deviation=allowed_deviation)
     build_variables(model)
+    if len(model.N) ==0 or len(model.A) ==0:
+        return model
 
     add_constraints(model)
 
@@ -1334,16 +1345,22 @@ def load_param_values(filename):
     with open(filename, "rb") as f:
         return pickle.load(f)
 
+def print_select_model_values(value_dict = {}):
+    for key, value in value_dict.items():
+        if value != 0:
+            print(key, value)
+    return
+
 if __name__ == "__main__":
     G = build_base_graph()
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
 
     model = create_model(G, scenarios, cutting_plane_pairs=generate_cutting_plane_pairs())
 
-    results = solve_model(model, time_limit=120)
+    results = solve_model(model, time_limit= 20)
     print(results)
     plot_results(model, folder = FOLDER)
     save_model_values(model, "results/basic_model")
 
     # model_values = load_param_values("results/basic_model")
-    # print(model_values["expressions"])
+    # print(model_values["variables"]["w"])

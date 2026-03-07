@@ -49,7 +49,7 @@ def build_base_graph(geojspn_file = GEOJSON_FILE):
     for _, row in node_rows.iterrows():
         node_id = row["location"]  # use readable name as node id
         # Convert row to dict and remove geometry
-        attributes = row.drop("geometry").to_dict()
+        attributes = row.to_dict()
         G.add_node(node_id, **attributes)
 
     # -----------------------------
@@ -62,7 +62,7 @@ def build_base_graph(geojspn_file = GEOJSON_FILE):
         from_node = find_node_by_coords(node_rows, row["from_node"])
         to_node = find_node_by_coords(node_rows, row["to_node"])
 
-        attributes = row.drop("geometry").to_dict()
+        attributes = row.to_dict()
 
         G.add_edge(from_node, to_node, **attributes)
     
