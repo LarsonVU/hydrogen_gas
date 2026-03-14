@@ -6,6 +6,7 @@ import ast
 import numpy as np
 import pandas as pd
 import os
+from scipy.optimize import minimize
 
 np.random.seed(42)
 
@@ -13,6 +14,194 @@ GEOJSON_FILE = "data/data_analysis_results/Geojson_pipelines/study_case_network.
 
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1 : 1, 2 : 5, 3: 1}
+
+NUMBER_OF_CUTTING_PLANES_P_IN = 10
+P_IN_LOW = 40
+P_IN_HIGH = 150
+
+NUMBER_OF_CUTTING_PLANES_P_OUT = 10
+P_OUT_LOW = 40
+P_OUT_HIGH = 150
+
+def plot_grid(pairs, file_path):
+    os.makedirs(file_path, exist_ok=True)
+    # Extract p_in and p_out values
+    p_in_values = [pair[0] for pair in pairs]
+    p_out_values = [pair[1] for pair in pairs]
+
+    # Calculate Weymouth cutting constant for each pair
+    flow = [np.sqrt(pair[0]**2 - pair[1]**2) for pair in pairs]
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    scatter = plt.scatter(p_out_values, p_in_values, c=flow, marker='.', 
+                        s=200, cmap='viridis')
+    plt.xlabel(r'$P_{\text{out},l}$')
+    plt.ylabel(r'$P_{\text{in},l}$')
+    plt.title('Cutting Plane Points')
+    plt.grid(True, alpha=0.3)
+    colorbar = plt.colorbar(scatter)
+    colorbar.set_label('Linearize approximation values')
+
+    plt.tight_layout()
+    plt.savefig(file_path, dpi=300)
+    plt.show()
+
+
+def skewed_cutting_plane_pairs(n_p_out=NUMBER_OF_CUTTING_PLANES_P_OUT,
+    p_out_low=P_OUT_LOW,
+    p_out_high=P_OUT_HIGH,
+    n_p_in=NUMBER_OF_CUTTING_PLANES_P_IN,
+    p_in_low=P_IN_LOW,
+    p_in_high=P_IN_HIGH):
+
+    # Evenly spaced p_out
+    p_out_values = np.linspace(p_out_low, p_out_high, n_p_out)
+    
+    # Function to skew p_in toward lower values (denser near p_out)
+    def skew_p_in(p_out, n_points=n_p_in, low=None, high=p_in_high):
+        if low is None:
+            low = max(p_in_low, p_out)  # ensure p_in >= p_out
+        t = np.linspace(0, 1, n_points)
+        t_skewed = np.power(t, 10)  # adjust exponent for more/less skew
+        return low + (high - low) * t_skewed
+    
+    # Create p_in values for each p_out
+    p_in_grid = [skew_p_in(p_out) for p_out in p_out_values]
+    
+    # Flatten into pairs (p_in, p_out), only take p_in > p_out
+    cutting_plane_pairs = [
+        (p_in, p_out)
+        for p_out, p_in_list in zip(p_out_values, p_in_grid)
+        for p_in in p_in_list
+        if p_in > p_out
+    ]
+    
+    return cutting_plane_pairs
+
+def max_cutting_plane_pairs(
+    n_p_out=NUMBER_OF_CUTTING_PLANES_P_OUT,
+    p_out_low=P_OUT_LOW,
+    p_out_high=P_OUT_HIGH,
+    n_p_in=NUMBER_OF_CUTTING_PLANES_P_IN,
+    p_in_low=P_IN_LOW,
+    p_in_high=P_IN_HIGH,
+    num_approx_points=50
+):
+    pin_grid = np.linspace(p_in_low, p_in_high, num_approx_points)
+    pout_grid = np.linspace(p_out_low, p_out_high, num_approx_points)
+
+    sample_points = [
+        (pin, pout)
+        for pin in pin_grid
+        for pout in pout_grid
+        if pin > pout
+    ]
+
+    def f(pin, pout):
+        return np.sqrt(pin**2 - pout**2)
+
+    def plane(pin, pout, Pin, Pout):
+        denom = np.sqrt(max(Pin**2 - Pout**2, 1e-7))
+        return (Pin / denom) * pin - (Pout / denom) * pout
+
+    def unpack(params):
+        Pin = params[:L]
+        Pout = params[L:]
+        return Pin, Pout
+
+    def max_error(params):
+
+        Pin, Pout = unpack(params)
+
+        worst = 0
+
+        for pin, pout in sample_points:
+
+            true_val = f(pin, pout)
+
+            for i in range(L):
+                val = plane(pin, pout, Pin[i], Pout[i])
+                approx = val
+
+            err = approx - true_val
+            worst = max(worst, err)
+        print(worst)
+        return worst
+
+    # callback to print objective
+    iteration = {"k": 0}
+
+    def callback(xk):
+        iteration["k"] += 1
+        obj = max_error(xk)
+        print(f"Iteration {iteration['k']}: objective = {obj}")
+
+    # initial guess from skewed planes
+    init_pairs = skewed_cutting_plane_pairs(
+        n_p_out=n_p_out,
+        p_out_low=p_out_low,
+        p_out_high=p_out_high,
+        n_p_in=n_p_in,
+        p_in_low=p_in_low,
+        p_in_high=p_in_high
+    )
+
+    L = len(init_pairs)
+
+    Pin_init = np.array([p[0] for p in init_pairs])
+    Pout_init = np.array([p[1] for p in init_pairs])
+
+    x0 = np.concatenate([Pin_init, Pout_init])
+
+    res = minimize(
+        max_error,
+        x0,
+        method="Powell",
+        callback=callback,
+        options={"maxiter": 50},
+        tol=1e-6
+    )
+
+    Pin, Pout = unpack(res.x)
+
+    pairs = [
+        (float(Pin[i]), float(Pout[i]))
+        for i in range(L)
+        if Pin[i] > Pout[i]
+    ]
+
+    return pairs
+
+
+# Function to generate cutting plane pairs using the constants
+def generate_cutting_plane_pairs(n_p_out=NUMBER_OF_CUTTING_PLANES_P_OUT,
+    p_out_low=P_OUT_LOW,
+    p_out_high=P_OUT_HIGH,
+    n_p_in=NUMBER_OF_CUTTING_PLANES_P_IN,
+    p_in_low=P_IN_LOW,
+    p_in_high=P_IN_HIGH,
+    method = "skewed"
+    ):
+    if method == "skewed":
+        return skewed_cutting_plane_pairs(n_p_out,
+                                            p_out_low,
+                                            p_out_high,
+                                            n_p_in,
+                                            p_in_low,
+                                            p_in_high)
+    elif method == "max":
+        return max_cutting_plane_pairs(n_p_out,
+                                            p_out_low,
+                                            p_out_high,
+                                            n_p_in,
+                                            p_in_low,
+                                            p_in_high)
+    else:
+        raise ValueError(f"Unknown cutting plane generation method: {method}")
+
+
+
 
 def find_node_by_coords(node_rows, coords, tol=1e-6):
     try:
@@ -177,7 +366,7 @@ def add_scenario_attributes(scenarios, branches_per_stage = BRANCHES_PER_STAGE, 
     add_generation_costs(scenarios, branches_per_stage=branches_per_stage)
     add_booking_costs(scenarios, branches_per_stage=branches_per_stage)
 
-def create_scenarios(n_stages, b_stages, G, folder = "study_case_model/scenario_variables/"):
+def create_scenarios(n_stages, b_stages, G, folder = "study_case_model/scenario_variables/other_experiment_data/"):
     # Ensure the folder exists
     os.makedirs(folder, exist_ok=True)
     
@@ -219,6 +408,11 @@ if __name__ == "__main__":
     G = build_base_graph()
     print(G)
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, folder="study_case_model/scenario_variables/")
+    cutting_plane = generate_cutting_plane_pairs(method= "skewed")
+    plot_grid(cutting_plane, file = "study_case_model/figures/cutting_plane_grid/cut_plane_skewed")
+
+    # cutting_plane = generate_cutting_plane_pairs(method= "max")
+    # plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/cut_plane_max")
 
     #Print a specific scenario for verification
     #print_nodes_network_scenario(scenarios[3][4])

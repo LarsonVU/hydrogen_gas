@@ -1,4 +1,4 @@
-from study_case_problem_file import build_base_graph, create_scenarios
+from study_case_problem_file import build_base_graph, create_scenarios, generate_cutting_plane_pairs
 import matplotlib.pyplot as plt
 import matplotlib
 #matplotlib.use('Agg')  # Ensure it works in Codespaces terminal
@@ -15,7 +15,7 @@ from pathlib import Path
 def safe_filename(s):
     return re.sub(r'[\\/*?:"<>|]', "_", str(s))
 
-FOLDER = "study_case_model/figures/"
+FOLDER = "study_case_model/figures/main_run/"
 
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1: 1, 2: 4, 3: 4}
@@ -28,51 +28,10 @@ RHO_HIGH = 0.70
 NUMBER_OF_HOMOGENEOUS_SPLITS =11
 splits_per_arc = np.linspace(0, 1, NUMBER_OF_HOMOGENEOUS_SPLITS)
 
-NUMBER_OF_CUTTING_PLANES_P_IN = 10
-P_IN_LOW = 40
-P_IN_HIGH = 150
 
-NUMBER_OF_CUTTING_PLANES_P_OUT = 10
-P_OUT_LOW = 40
-P_OUT_HIGH = 150
 
-# Function to generate cutting plane pairs using the constants
-def generate_cutting_plane_pairs(
-    n_p_out=NUMBER_OF_CUTTING_PLANES_P_OUT,
-    p_out_low=P_OUT_LOW,
-    p_out_high=P_OUT_HIGH,
-    n_p_in=NUMBER_OF_CUTTING_PLANES_P_IN,
-    p_in_low=P_IN_LOW,
-    p_in_high=P_IN_HIGH
-):
-    # Evenly spaced p_out
-    p_out_values = np.linspace(p_out_low, p_out_high, n_p_out)
-    
-    # Function to skew p_in toward lower values (denser near p_out)
-    def skew_p_in(p_out, n_points=n_p_in, low=None, high=p_in_high):
-        if low is None:
-            low = max(p_in_low, p_out)  # ensure p_in >= p_out
-        t = np.linspace(0, 1, n_points)
-        t_skewed = np.power(t, 10)  # adjust exponent for more/less skew
-        return low + (high - low) * t_skewed
-    
-    # Create p_in values for each p_out
-    p_in_grid = [skew_p_in(p_out) for p_out in p_out_values]
-    
-    # Flatten into pairs (p_in, p_out), only take p_in > p_out
-    cutting_plane_pairs = [
-        (p_in, p_out)
-        for p_out, p_in_list in zip(p_out_values, p_in_grid)
-        for p_in in p_in_list
-        if p_in > p_out
-    ]
-    
-    return cutting_plane_pairs
 
-# Usage
-cutting_plane_pairs = generate_cutting_plane_pairs()
-
-def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc):
+def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc, number_of_density_bounds):
     model.N = pyo.Set(initialize=list(network.nodes))
     model.A = pyo.Set(initialize=list(network.edges), dimen=2)
 
@@ -108,7 +67,7 @@ def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc):
 
     model.C = pyo.Set(initialize=['NG', 'CO2', 'H2'])
 
-    model.Z_theta = pyo.Set(initialize=range(NUMBER_OF_DENSITY_BOUNDS))
+    model.Z_theta = pyo.Set(initialize=range(number_of_density_bounds))
     model.L = pyo.Set(initialize=range(len(cutting_plane_pairs)))
 
     # Suppliers
@@ -176,7 +135,7 @@ def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc):
     model.v_index = pyo.Set(dimen=2, initialize=v_index_init)
 
 
-def build_parameters(model, network, scenarios, cutting_plane_pairs, allowed_deviation=ALLOWED_DEVIATION):
+def build_parameters(model, network, scenarios, cutting_plane_pairs, allowed_deviation=ALLOWED_DEVIATION, number_of_density_bounds = NUMBER_OF_DENSITY_BOUNDS):
     # Prices and costs
     model.o_n_d = pyo.Param(model.N_m, model.M[3], initialize=lambda model, n, m: scenarios[3][m-1].G.nodes[n]['price'] if n in scenarios[3][m-1].G.nodes else 0)
     model.o_n_g = pyo.Param(model.N_hg, model.M[3], initialize=lambda model, n, m: float(scenarios[3][m-1].G.nodes[n]['generation_cost']) if n in scenarios[3][m-1].G.nodes else 0)
@@ -211,7 +170,7 @@ def build_parameters(model, network, scenarios, cutting_plane_pairs, allowed_dev
     model.rho_c = pyo.Param(model.C, initialize={"NG": 0.65, "CO2": 1.53, "H2": 0.07})
     model.gcv_c = pyo.Param(model.C, initialize={"NG": 39.8 /3.6 *1000, "H2": 12.7 / 3.6 * 1000, "CO2": 0}) #MWh/Mscm
 
-    rho_values = np.linspace(RHO_LOW, RHO_HIGH, NUMBER_OF_DENSITY_BOUNDS + 1)[1:]
+    rho_values = np.linspace(RHO_LOW, RHO_HIGH, number_of_density_bounds + 1)[1:]
     model.rho_Z = pyo.Param(model.Z_theta, initialize={z: rho_values[i] for i, z in enumerate(model.Z_theta)})
 
     # Weymouth
@@ -701,10 +660,12 @@ def add_homogeneous_splitting_constraints(model):
 def add_booking_constraints(model):
     # Booking-flow consistency
     def sufficient_entry_booking_rule(m, n, m_3):
-        return sum(m.x_entry[n, k_prime, m_prime] for k_prime, m_prime in m.pred_chain[3, m_3]) >= sum(m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C) - sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C)
+        return sum(m.x_entry[n, k_prime, m_prime] for k_prime, m_prime in m.pred_chain[3, m_3]) >= sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C) - sum(m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C)
 
     def sufficient_exit_booking_rule(m, n, m_3):
-        return sum(m.x_exit[n, k_prime, m_prime] for k_prime, m_prime in m.pred_chain[3, m_3]) >= sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C) - sum(m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C)
+        if n in m.N_gamma :
+            return pyo.Constraint.Skip
+        return sum(m.x_exit[n, k_prime, m_prime] for k_prime, m_prime in m.pred_chain[3, m_3]) >= sum(m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C) - sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C)
 
     model.sufficient_entry_booking = pyo.Constraint(model.N, model.M[3], rule=sufficient_entry_booking_rule)
     model.sufficient_exit_booking = pyo.Constraint(model.N, model.M[3], rule=sufficient_exit_booking_rule) 
@@ -734,14 +695,17 @@ def add_constraints(model):
     add_quality_deviation_constraints(model)
 
 def create_model(network: networkx.Graph, scenarios=None,
-                  cutting_plane_pairs=generate_cutting_plane_pairs(), splits_per_arc=splits_per_arc, allowed_deviation=ALLOWED_DEVIATION):
+                  cutting_plane_pairs=generate_cutting_plane_pairs(), 
+                  splits_per_arc=splits_per_arc, 
+                  allowed_deviation=ALLOWED_DEVIATION,
+                  number_of_density_bounds = NUMBER_OF_DENSITY_BOUNDS):
     if scenarios is None:
         raise ValueError("Scenarios must be provided to create the stochastic model. For a deterministic model, create a single scenario, or consult the deterministic_model folder.")
 
     model = pyo.ConcreteModel()
 
-    build_sets(model, network, scenarios=scenarios, cutting_plane_pairs=cutting_plane_pairs, splits_per_arc=splits_per_arc)
-    build_parameters(model, network, scenarios=scenarios, cutting_plane_pairs=cutting_plane_pairs, allowed_deviation=allowed_deviation)
+    build_sets(model, network, scenarios=scenarios, cutting_plane_pairs=cutting_plane_pairs, splits_per_arc=splits_per_arc, number_of_density_bounds=number_of_density_bounds)
+    build_parameters(model, network, scenarios=scenarios, cutting_plane_pairs=cutting_plane_pairs, allowed_deviation=allowed_deviation, number_of_density_bounds= number_of_density_bounds)
     build_variables(model)
     if len(model.N) ==0 or len(model.A) ==0:
         return model
@@ -1269,6 +1233,9 @@ def plot_scenario_revenue_costs(model, folder="figures/", show=False):
     plt.close(fig)
 
 def plot_results(model, folder = "figures/"):
+    if len(model.N) == 0:
+        print("Warning: No plots were made as there are no nodes in the model")
+        return None
     os.makedirs(folder, exist_ok=True)
     plot_average_flows(model, folder)
     plot_component_flows_stacked(model, folder)
@@ -1333,6 +1300,7 @@ def save_model_values(model, filename):
     snapshot['objectives'] = objs
 
     # --- Save to pickle ---
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'wb') as f:
         pickle.dump(snapshot, f)
     
@@ -1355,12 +1323,12 @@ if __name__ == "__main__":
     G = build_base_graph()
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
 
-    model = create_model(G, scenarios, cutting_plane_pairs=generate_cutting_plane_pairs())
+    model = create_model(G, scenarios, cutting_plane_pairs=generate_cutting_plane_pairs(method = "skewed"))
 
-    results = solve_model(model, time_limit= 20)
+    results = solve_model(model, time_limit= 100)
     print(results)
     plot_results(model, folder = FOLDER)
-    save_model_values(model, "results/basic_model")
+    save_model_values(model, "study_case_model/scenario_variables/main_model.pkl")
 
     # model_values = load_param_values("results/basic_model")
     # print(model_values["variables"]["w"])

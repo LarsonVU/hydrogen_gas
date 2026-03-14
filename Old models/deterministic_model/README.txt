@@ -1,0 +1,1 @@
+This constitutes the model formulation and results of a deterministic variant of the model. As it is an old model, it may contain errors, and should not be used in any productional setting without heavy revision

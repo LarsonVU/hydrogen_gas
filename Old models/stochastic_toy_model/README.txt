@@ -1,0 +1,1 @@
+This constitutes the model formulation and results of a toy model variant of the model. As it is an old model, it may contain errors and does not concern itself with units. As such, it should not be used in any productional setting without heavy revision

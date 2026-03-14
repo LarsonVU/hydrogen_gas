@@ -61,11 +61,11 @@ def print_objectives():
             print(model_values["objectives"])
 
 if __name__ == "__main__":
-    solve_small_networks()
-    #print_objectives()
+    #solve_small_networks()
+    print_objectives()
 
-    #solve_small_network(os.path.join(NETWORK_FOLDER, "002_Ivysaur.pkl"), "002_Ivysaur.pkl")
-    # model_values = scsm.load_param_values(PICKLE_FOLDER + "027_Sandshrew.pkl")
+    # solve_small_network(os.path.join(NETWORK_FOLDER, "021_Spearow.pkl"), "021_Spearow.pkl")
+    # model_values = scsm.load_param_values(PICKLE_FOLDER + "021_Spearow.pkl")
     # print("fuel")
     # scsm.print_select_model_values(value_dict = model_values["variables"]["w"])
     # print("flow")
