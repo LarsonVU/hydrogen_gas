@@ -327,7 +327,7 @@ def add_expressions(model):
 
     def generation_cost_scenario_rule(m, m_3):
         generation_cost = sum(
-            m.o_n_g[n, m_3] * sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C)
+            m.o_n_g[n, m_3] * (sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C) - sum(m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C))
             for n in m.N_hg
         )
         return generation_cost
@@ -398,7 +398,7 @@ def add_objective(model):
         )
 
         generation_cost = sum(
-            m.sp[3,m_3] * m.o_n_g[n, m_3] * sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C)
+            m.sp[3,m_3] * m.o_n_g[n, m_3] * (sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C) - sum(m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C))
             for n in m.N_hg for m_3 in m.M[3]
         )
 

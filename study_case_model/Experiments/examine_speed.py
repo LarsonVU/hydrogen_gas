@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 from pyomo.opt import TerminationCondition
 import numpy as np
+import pyomo.environ as pyo
 import time
 import os
 import sys
@@ -21,9 +22,9 @@ NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1 : 1, 2 : 3, 3: 3}
 PRECISION = 0.001
 
-def time_model(model):
+def time_model(model, precision = PRECISION):
     start_time = time.time()
-    results = solve_model(model, verbose=True, precision=PRECISION)
+    results = solve_model(model, verbose=False, precision = precision)
     end_time = time.time()
     return end_time - start_time
 
@@ -125,11 +126,11 @@ def density_solve_times(network, scenarios, densities):
 
     for density in densities:
         model = create_model(G, scenarios, number_of_density_bounds=density)
-        solve_times[density] = time_model(model)
+        solve_times[density] = time_model(model, precision=0.01)
         print(f"Amount of upperbounds: {density}, Solve Time: {solve_times[density]} seconds")
     return solve_times
 
-def plot_density_solve_times(solve_times):
+def plot_density_solve_times(solve_times, precision = 0.01):
     deviations = list(solve_times.keys())
     times = list(solve_times.values())
 
@@ -137,10 +138,89 @@ def plot_density_solve_times(solve_times):
     plt.plot(deviations, times, marker='o')
     plt.xlabel('Amount of upperbounds')
     plt.ylabel('Solve Time (seconds)')
-    plt.title(f'Solve Time vs Allowed Deviation (Tolerance = {PRECISION *100}%)')
+    plt.title(f'Solve Time vs Amount of Upperbounds (Tolerance = {precision*100}%)')
     plt.grid()
     plt.tight_layout()
     plt.savefig(FOLDER + 'upperbounds_solve_times.png')
+    plt.show()
+
+def splits_per_arc_experiment(network, splits_values, runs=5):
+    G = network.copy()
+    
+    # Store raw values first
+    raw_results = {s: {"times": [], "objectives": []} for s in splits_values}
+
+    for r in range(runs):
+        print("run ", r )
+        # --- Common Random Numbers ---
+        scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
+
+        for splits in splits_values:
+
+            model = create_model(
+                G,
+                scenarios,
+                splits_per_arc=np.linspace(0, 1, splits)
+            )
+
+            solve_time = time_model(model, precision=0.01)
+            obj_value = pyo.value(model.objective)
+
+            raw_results[splits]["times"].append(solve_time)
+            raw_results[splits]["objectives"].append(obj_value)
+
+    # --- Compute statistics ---
+    results = {}
+
+    for splits in splits_values:
+        times = raw_results[splits]["times"]
+        objectives = raw_results[splits]["objectives"]
+
+        results[splits] = {
+            "time_mean": np.mean(times),
+            "time_std": np.std(times),
+            "objective_mean": np.mean(objectives),
+            "objective_std": np.std(objectives),
+        }
+
+        print(
+            f"Splits per arc: {splits} | "
+            f"Time: {results[splits]['time_mean']:.3f} ± {results[splits]['time_std']/np.sqrt(runs):.3f} s | "
+            f"Objective: {results[splits]['objective_mean']:.3f} ± {results[splits]['objective_std']/np.sqrt(runs):.3f}"
+        )
+
+    return results
+
+def plot_splits_solve_times(results, precision=0.01, runs =5):
+    splits = list(results.keys())
+    time_means = [results[s]["time_mean"] for s in splits]
+    time_err = [results[s]["time_std"]/np.sqrt(runs) for s in splits]
+
+    plt.figure(figsize=(10, 6))
+    plt.errorbar(splits, time_means, yerr=time_err, marker='o', capsize=5)
+    plt.xlabel('Splits per Arc')
+    plt.ylabel('Solve Time (seconds)')
+    plt.title(f'Solve Time vs Splits per Arc (Tolerance = {precision*100}%)')
+    plt.grid()
+    plt.ylim(bottom = 0)
+    plt.tight_layout()
+    plt.savefig(FOLDER + 'splits_per_arc_solve_times.png')
+    plt.show()
+
+def plot_splits_objective(results, precision=0.01, runs =5):
+    splits = list(results.keys())
+    obj_means = [results[s]["objective_mean"] for s in splits]
+    obj_err = [results[s]["objective_std"]/np.sqrt(runs) for s in splits]
+
+    plt.figure(figsize=(10, 6))
+    plt.errorbar(splits, obj_means, yerr=obj_err, marker='o', capsize=5)
+    plt.xlabel('Splits per Arc')
+    plt.ylabel('Objective Value')
+    plt.title(f'Objective Value vs Splits per Arc (Tolerance = {precision*100}%)')
+    plt.grid()
+    plt.ylim(bottom = 0)
+    plt.tight_layout()
+    plt.savefig(FOLDER + 'splits_per_arc_objective.png')
     plt.show()
 
 if __name__ == "__main__":
@@ -158,9 +238,14 @@ if __name__ == "__main__":
     # cutting_plane_times = cutting_planes_solve_times(G, scenarios, 10, 10)
     # plot_cutting_plane_solve_times(cutting_plane_times)
 
-    density_bounds = [1, 2, 3, 4]
-    solve_times = density_solve_times(G, scenarios, density_bounds)
-    plot_density_solve_times(solve_times)
+    # density_bounds = [1, 2, 3, 4]
+    # solve_times = density_solve_times(G, scenarios, density_bounds)
+    # plot_density_solve_times(solve_times)
+
+    results = splits_per_arc_experiment(G, splits_values=[6,11,16,21,26], runs= 10)
+
+    plot_splits_solve_times(results, runs= 10)
+    plot_splits_objective(results, runs= 10)
 
 
 
