@@ -300,6 +300,7 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
                 if "supplier_ratios" in node_data and node_data["supplier_ratios"]:
                     supplier_ratios = node_data["supplier_ratios"][0] if isinstance(node_data["supplier_ratios"], list) else node_data["supplier_ratios"]
                     scenario.G.nodes[node]["demand"] = {supplier: sampled_demand * ratio for supplier, ratio in supplier_ratios.items()}
+                    print(supplier_ratios)
                     for supplier, demand_value in scenario.G.nodes[node]["demand"].items():
                         demand_df.loc[len(demand_df)] = [scenario.stage, scenario.index, node, supplier, demand_value]
 
@@ -409,7 +410,7 @@ if __name__ == "__main__":
     print(G)
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, folder="study_case_model/scenario_variables/")
     cutting_plane = generate_cutting_plane_pairs(method= "skewed")
-    plot_grid(cutting_plane, file = "study_case_model/figures/cutting_plane_grid/cut_plane_skewed")
+    plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/cut_plane_skewed")
 
     # cutting_plane = generate_cutting_plane_pairs(method= "max")
     # plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/cut_plane_max")
