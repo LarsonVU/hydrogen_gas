@@ -319,7 +319,7 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
     for scenario in scenarios[2]:
         for node in scenario.G.nodes:
             node_data = scenario.G.nodes[node]
-            if "average_market_price" in node_data and node_data["average_market_price"] is not None:
+            if "average_market_price" in node_data and not pd.isna(node_data["average_market_price"]):
                 avg_price = float(node_data["average_market_price"]) 
                 price_std = float(node_data.get("long_term_price_std", 0))
                 
@@ -333,7 +333,7 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
         predecessor = scenario.predecessor
         for node in scenario.G.nodes:
             if node in predecessor.G.nodes:
-                if  "price" in predecessor.G.nodes[node]:
+                if  "price" in predecessor.G.nodes[node] and not pd.isna(node_data["average_market_price"]):
                     node_data = scenario.G.nodes[node]
                     price_std = float(node_data.get("day_ahead_price_std", 0))
                     # Sample price multiplier from normal distribution
