@@ -299,8 +299,8 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
                 # Apply supplier ratios if available
                 if "supplier_ratios" in node_data and node_data["supplier_ratios"]:
                     supplier_ratios = node_data["supplier_ratios"][0] if isinstance(node_data["supplier_ratios"], list) else node_data["supplier_ratios"]
-                    scenario.G.nodes[node]["demand"] = {supplier: sampled_demand * ratio for supplier, ratio in supplier_ratios.items()}
                     print(supplier_ratios)
+                    scenario.G.nodes[node]["demand"] = {supplier: sampled_demand * ratio for supplier, ratio in supplier_ratios.items()}
                     for supplier, demand_value in scenario.G.nodes[node]["demand"].items():
                         demand_df.loc[len(demand_df)] = [scenario.stage, scenario.index, node, supplier, demand_value]
 
