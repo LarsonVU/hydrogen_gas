@@ -289,7 +289,7 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
         for node in scenario.G.nodes:
             node_data = scenario.G.nodes[node]
             print(node, node_data["average_demand_mwh_x1000"], node_data["supplier_ratios"])
-            if "average_demand_mwh_x1000" in node_data and node_data["average_demand_mwh_x1000"] is not None:
+            if "average_demand_mwh_x1000" in node_data and not pd.isna(node_data["average_demand_mwh_x1000"]):
                 avg_demand =  float(node_data["average_demand_mwh_x1000"]) *1000
                 variance = float(node_data.get("demand_variance", 0))
                 
@@ -298,7 +298,7 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
                 sampled_demand = max(avg_demand * variance_multiplier,0)
                 
                 # Apply supplier ratios if available
-                if "supplier_ratios" in node_data and node_data["supplier_ratios"]:
+                if "supplier_ratios" in node_data and not pd.isna(node_data["average_demand_mwh_x1000"]):
                     supplier_ratios = node_data["supplier_ratios"][0] if isinstance(node_data["supplier_ratios"], list) else node_data["supplier_ratios"]
                     print(supplier_ratios)
                     scenario.G.nodes[node]["demand"] = {supplier: sampled_demand * ratio for supplier, ratio in supplier_ratios.items()}
