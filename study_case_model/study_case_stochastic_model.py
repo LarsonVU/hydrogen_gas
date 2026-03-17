@@ -22,7 +22,7 @@ NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1: 1, 2: 2, 3: 2}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
-NUMBER_OF_DENSITY_BOUNDS = 1
+NUMBER_OF_DENSITY_BOUNDS = 5
 RHO_LOW = 0.55
 RHO_HIGH = 0.70
 

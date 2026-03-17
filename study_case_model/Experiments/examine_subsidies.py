@@ -24,6 +24,7 @@ parser.add_argument("--branches_stage2", type=int, default=2)
 parser.add_argument("--branches_stage3", type=int, default=2)
 parser.add_argument("--subsidies", type=float, nargs="+", default=[0, 40, 80])
 parser.add_argument("--deviations", type=float, nargs="+", default=[0])
+parser.add_argument("--upper_bounds", type=int, default=1)
 
 parser.add_argument("--time_limit", type=float, default=None)
 
@@ -47,6 +48,7 @@ BRANCHES_PER_STAGE = {
     2: args.branches_stage2,
     3: args.branches_stage3
 }
+UPPER_BOUNDS = args.upper_bounds
 
 
 DATA_FOLDER = args.data_folder
@@ -97,7 +99,7 @@ def solve_multiple_problems(G, s_list, i, verbose=False, time_limit=None, allowe
     for j, scenarios in enumerate(s_list):
         print("run", j)
 
-        model = scsm.create_model(G, scenarios, allowed_deviation=allowed_deviation)
+        model = scsm.create_model(G, scenarios, allowed_deviation=allowed_deviation, number_of_density_bounds=UPPER_BOUNDS)
         _ = scsm.solve_model(model, verbose, time_limit, precision=0.01)
 
         folder = DATA_FOLDER + f"deviation{allowed_deviation}/subsidy{i}/run{j}/"
