@@ -6,8 +6,8 @@
 # --- 1. Load Modules ---
 module purge
 module load 2025
-module load Python/3.13.5-GCCcore-14.3.0
-module load Gurobi/12.0.3-GCCcore-14.2.0 
+module load Python/3.13.1-GCCcore-14.2.0  # Matches Gurobi's requirement
+module load Gurobi/12.0.3-GCCcore-14.2.0
 
 # --- 2. Activate Virtual Environment ---
 source "${HOME}/hydrogen_venv/bin/activate"
