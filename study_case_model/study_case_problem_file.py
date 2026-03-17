@@ -356,7 +356,7 @@ def add_booking_costs(scenarios, branches_per_stage = BRANCHES_PER_STAGE, percen
     for k in range(1, NUMBER_OF_STAGES + 1):
         for scenario in scenarios[k]:
             for node in scenario.G.nodes:
-                if scenario.G.nodes[node]["compression_increase"] is None:  # Compression node
+                if pd.isna(scenario.G.nodes[node]["compression_increase"]):  # Compression node
                     scenario.G.nodes[node]["booking_cost"] = scenario.G.nodes[node]["base_booking_cost"] * (1+percentage_increase.get(k, 0)) * 1000000 # Cost in euro/MScm
                     
                     
