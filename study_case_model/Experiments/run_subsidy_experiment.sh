@@ -1,9 +1,4 @@
 #!/bin/bash
-#SBATCH -p genoa                # Partition for the newest CPU nodes
-#SBATCH -n 1                    # Number of tasks
-#SBATCH -c 16                   # Number of CPU cores
-#SBATCH --mem=32G               # Explicitly set memory (avoids "24 CPU charge" error)
-#SBATCH -t 04:00:00             # Max time (HH:MM:SS)
 #SBATCH --account=vusr121427    # <--- UPDATED: This is your Account ID from accinfo
 #SBATCH --job-name=h2_stoch     
 #SBATCH --output=logs/%j_out.txt 
