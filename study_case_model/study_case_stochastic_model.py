@@ -21,7 +21,7 @@ NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1: 1, 2: 4, 3: 4}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
-NUMBER_OF_DENSITY_BOUNDS = 1
+NUMBER_OF_DENSITY_BOUNDS = 5
 RHO_LOW = 0.55
 RHO_HIGH = 0.70
 
@@ -725,7 +725,7 @@ def solve_model(model, verbose=True, time_limit=None, precision = 0.0001):
     if time_limit is not None:
         solver.options['TimeLimit'] = time_limit  # optional
 
-    solver.options['Threads'] =7  # or number of CPU cores
+    solver.options['Threads'] =15  # or number of CPU cores
     solver.options['Presolve'] = 1  # aggressive presolve
     solver.options['Cuts'] = 1  # aggressive cuts
 
@@ -1325,7 +1325,7 @@ if __name__ == "__main__":
 
     model = create_model(G, scenarios, cutting_plane_pairs=generate_cutting_plane_pairs(method = "skewed"))
 
-    results = solve_model(model, time_limit= 100)
+    results = solve_model(model, time_limit= None)
     print(results)
     plot_results(model, folder = FOLDER)
     save_model_values(model, "study_case_model/scenario_variables/main_model.pkl")
