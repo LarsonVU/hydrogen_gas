@@ -297,7 +297,7 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
                 sampled_demand = max(avg_demand * variance_multiplier,0)
                 
                 # Apply supplier ratios if available
-                if "supplier_ratios" in node_data and not pd.isna(node_data["average_demand_mwh_x1000"]):
+                if "supplier_ratios" in node_data and not pd.isna(node_data["supplier_ratios"]):
                     supplier_ratios = node_data["supplier_ratios"][0] if isinstance(node_data["supplier_ratios"], list) else node_data["supplier_ratios"]
                     scenario.G.nodes[node]["demand"] = {supplier: sampled_demand * ratio for supplier, ratio in supplier_ratios.items()}
                     for supplier, demand_value in scenario.G.nodes[node]["demand"].items():
@@ -317,7 +317,7 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
     for scenario in scenarios[2]:
         for node in scenario.G.nodes:
             node_data = scenario.G.nodes[node]
-            if "average_market_price" in node_data and not pd.isna(node_data["average_market_price"]):
+            if "average_market_price" in node_data and not pd.isna(node_data["average_market_price"] ):
                 avg_price = float(node_data["average_market_price"]) 
                 price_std = float(node_data.get("long_term_price_std", 0))
                 
@@ -331,7 +331,7 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
         predecessor = scenario.predecessor
         for node in scenario.G.nodes:
             if node in predecessor.G.nodes:
-                if  "price" in predecessor.G.nodes[node] and not pd.isna(node_data["average_market_price"]):
+                if  "price" in predecessor.G.nodes[node] and not pd.isna(predecessor.G.nodes[node]["price"]):
                     node_data = scenario.G.nodes[node]
                     price_std = float(node_data.get("day_ahead_price_std", 0))
                     # Sample price multiplier from normal distribution
