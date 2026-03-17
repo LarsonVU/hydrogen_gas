@@ -11,7 +11,7 @@ import study_case_stochastic_model as scsm
 import study_case_problem_file as scpf
 
 NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1 : 1, 2 : 3, 3: 3}
+BRANCHES_PER_STAGE = {1 : 1, 2 : 5, 3: 4}
 DATA_FOLDER = "study_case_model/scenario_variables/examine_subsidies/"
 FIGURES_FOLDER = "study_case_model/figures/examine_subsidies/"
 
@@ -30,12 +30,12 @@ def change_hydrogen_price(G, value_range = [0, 30, 70], amount_per_point = 5, va
         G_list.append(G_list_part)
     return G_list
 
-def create_scenario_trees(G_list):
+def create_scenario_trees(G_list, dev):
     scenario_list = []
     for i, G_part in enumerate(G_list):
         s_part =[]
         for j, G in enumerate(G_part):
-            s_part.append(scpf.create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, folder=DATA_FOLDER + f"{i}/run{j}/"))
+            s_part.append(scpf.create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, folder=DATA_FOLDER + f"deviation{dev}/{i}/{j}"))
         scenario_list.append(s_part)
     return scenario_list
 
@@ -49,7 +49,7 @@ def solve_multiple_problems(G, s_list, i, verbose=False, time_limit=None, allowe
         _ = scsm.solve_model(model, verbose, time_limit, precision=0.01)
 
         # --- Save solved model ---
-        folder = DATA_FOLDER + f"{i}/run{j}/"
+        folder = DATA_FOLDER + f"deviation{allowed_deviation}/subsidy{i}/run{j}/"
         filename = folder + "model_snapshot.pkl"
         scsm.save_model_values(model, filename)
 
@@ -84,50 +84,58 @@ def results_from_subsidy(G, s_super_list, subsidies, verbose=False, time_limit=N
 
     return objective_means, objective_se, hydrogen_means, hydrogen_se
 
-def plot_objective_values(objective_means, objective_se, value_range, folder):
-
+def plot_objective_values(objective_dict, value_range, folder):
     os.makedirs(folder, exist_ok=True)
 
-    plt.figure(figsize=(10,5))
+    plt.figure(figsize=(10, 5))
 
-    plt.errorbar(
-        value_range,
-        objective_means,
-        yerr=objective_se,
-        fmt='o-',
-        capsize=5
-    )
+    for label, stats in objective_dict.items():
+        means = stats["mean"]
+        se = stats["se"]
+
+        plt.errorbar(
+            value_range,
+            means,
+            yerr=se,
+            fmt='o-',
+            capsize=5,
+            label=f"Deviation {label}"
+        )
 
     plt.xlabel('Subsidy (Euro/MWh)')
     plt.ylabel('Objective Value')
     plt.title('Objective Value vs Subsidy')
-
     plt.grid(True)
+    plt.legend()
 
-    plt.savefig(folder + "objective_vs_subsidy.png")
+    plt.savefig(os.path.join(folder, "objective_vs_subsidy.png"))
     plt.show()
 
-def plot_hydrogen_production(h2_means, h2_se, value_range, folder):
-
+def plot_hydrogen_production(h2_dict, value_range, folder):
     os.makedirs(folder, exist_ok=True)
 
-    plt.figure(figsize=(10,5))
+    plt.figure(figsize=(10, 5))
 
-    plt.errorbar(
-        value_range,
-        h2_means,
-        yerr=h2_se,
-        fmt='o-',
-        capsize=5
-    )
+    for label, stats in h2_dict.items():
+        means = stats["mean"]
+        se = stats["se"]
+
+        plt.errorbar(
+            value_range,
+            means,
+            yerr=se,
+            fmt='o-',
+            capsize=5,
+            label=f"Deviation {label}"
+        )
 
     plt.xlabel('Subsidy (Euro/MWh)')
     plt.ylabel('Hydrogen Production')
     plt.title('Hydrogen Production vs Subsidy')
-
     plt.grid(True)
+    plt.legend()
 
-    plt.savefig(folder + "hydrogen_production_vs_subsidy.png")
+    plt.savefig(os.path.join(folder, "hydrogen_production_vs_subsidy.png"))
     plt.show()
 
 
@@ -136,41 +144,60 @@ def subsidy_per_mwh_to_mscm(mwh_subsidies, gcv_mwh_per_kscm=2.78):
     return  [s * mwh_per_mscm for s in mwh_subsidies]
 
 
-def subsidy_experiment(G, subsidies, deviation):
+def subsidy_experiment(G, subsidies_mwh, deviation = 0):
     G_changed_hydrogen_cost = change_hydrogen_price(G, subsidies, amount_per_point, variable_name= "generation_cost")
-    s_list = create_scenario_trees(G_changed_hydrogen_cost)
+    s_list = create_scenario_trees(G_changed_hydrogen_cost, dev=deviation)
 
     objective_means, objective_se, h2_means, h2_se = results_from_subsidy(
         G, s_list, subsidies_mwh, False, deviation=deviation
     )
     return objective_means, objective_se, h2_means, h2_se
 
-def sub_dev_experiment(G, subsidies, deviation):
-    obj_dict ={}
-    h2_dict ={}
-    return obj_dict, h2_dict 
+def sub_dev_experiment(G, subsidies, deviations):
+    obj_dict = {}
+    h2_dict = {}
+
+    for dev in deviations:
+        print("deviation", dev)
+        objective_means, objective_se, h2_means, h2_se = subsidy_experiment(
+            G, subsidies, deviation=dev
+        )
+
+        obj_dict[dev] = {
+            "mean": objective_means,
+            "se": objective_se
+        }
+
+        h2_dict[dev] = {
+            "mean": h2_means,
+            "se": h2_se
+        }
+
+    return obj_dict, h2_dict
 
 if __name__ == "__main__":
     G = scpf.build_base_graph()
 
-    amount_per_point = 8
-    subsidies_mwh = [5 * i for i in range(16)] # Euro per MWh
+    amount_per_point = 2
+    subsidies_mwh = [40 * i for i in range(3)] # Euro per MWh
     subsidies = subsidy_per_mwh_to_mscm(subsidies_mwh)
 
-    objective_means, objective_se, h2_means, h2_se = subsidy_experiment(G, subsidies)
+    # objective_means, objective_se, h2_means, h2_se = subsidy_experiment(G, subsidies)
 
+    # obj_dict = {"0%" : {"mean" : objective_means, "se" : objective_se}}
+    # h2_dict = {"0%" : {"mean" : h2_means, "se" : h2_se}}
+
+    obj_dict, h2_dict = sub_dev_experiment(G, subsidies_mwh, [0, 0.05, 0.1])
 
 
     plot_objective_values(
-        objective_means,
-        objective_se,
+        obj_dict,
         subsidies_mwh,
         folder=FIGURES_FOLDER
     )
 
     plot_hydrogen_production(
-        h2_means,
-        h2_se,
+        h2_dict,
         subsidies_mwh,
         folder=FIGURES_FOLDER
     )
