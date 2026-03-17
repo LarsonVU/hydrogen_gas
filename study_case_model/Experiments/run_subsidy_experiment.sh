@@ -12,6 +12,13 @@ module load Gurobi/12.0.3-GCCcore-14.2.0
 # --- 2. Activate Virtual Environment ---
 source "${HOME}/hydrogen_venv/bin/activate"
 
+# --- Verification Check ---
+echo "--- Environment Check ---"
+which python3               # Should point to ~/hydrogen_venv/bin/python3
+python3 --version           # Should be 3.13.5
+pip list | grep -E "numpy|pyomo|gurobipy" # Verify your key libraries are present
+echo "--------------------------"
+
 # --- 3. Dynamic Path Branching ---
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 UNIQUE_ID="${GIT_BRANCH}_job${SLURM_JOB_ID}"
