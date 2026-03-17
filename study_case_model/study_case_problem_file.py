@@ -288,6 +288,7 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
     for scenario in scenarios[2]:
         for node in scenario.G.nodes:
             node_data = scenario.G.nodes[node]
+            print(node, node_data["average_demand_mwh_x1000"], node_data["supplier_ratios"])
             if "average_demand_mwh_x1000" in node_data and node_data["average_demand_mwh_x1000"] is not None:
                 avg_demand =  float(node_data["average_demand_mwh_x1000"]) *1000
                 variance = float(node_data.get("demand_variance", 0))
