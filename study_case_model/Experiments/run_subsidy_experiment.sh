@@ -1,9 +1,10 @@
 #!/bin/bash
-#SBATCH -p genoa                
-#SBATCH -n 1                    
-#SBATCH -c 16                   
-#SBATCH -t 04:00:00             
-#SBATCH --account=2307090_25    
+#SBATCH -p genoa                # Partition for the newest CPU nodes
+#SBATCH -n 1                    # Number of tasks
+#SBATCH -c 16                   # Number of CPU cores
+#SBATCH --mem=32G               # Explicitly set memory (avoids "24 CPU charge" error)
+#SBATCH -t 04:00:00             # Max time (HH:MM:SS)
+#SBATCH --account=vusr121427    # <--- UPDATED: This is your Account ID from accinfo
 #SBATCH --job-name=h2_stoch     
 #SBATCH --output=logs/%j_out.txt 
 
@@ -17,27 +18,23 @@ module load Gurobi/12.0.3-GCCcore-14.2.0
 source ~/hydrogen_venv/bin/activate
 
 # --- 3. Dynamic Path Branching ---
+# Ensures we don't overwrite different git branch results
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 UNIQUE_ID="${GIT_BRANCH}_job${SLURM_JOB_ID}"
 
-# Define the NEW base directory in your HOME folder
-# This will result in: /home/[user]/results/[branch]_job[id]/...
-HOME_BASE="$HOME"
+# Define the paths (relative to your hydrogen_gas directory)
+DATA_PATH="study_case_model/scenario_variables/examine_subsidies/${UNIQUE_ID}/"
+FIG_PATH="study_case_model/figures/examine_subsidies/${UNIQUE_ID}/"
 
-# Construct the full paths to match your script's structure but inside the unique folder
-DATA_PATH="$HOME_BASE/study_case_model/scenario_variables/examine_subsidies/$UNIQUE_ID/"
-FIG_PATH="$HOME_BASE/study_case_model/figures/examine_subsidies/$UNIQUE_ID/"
-
-# Create the directories before running the Python script
 mkdir -p "$DATA_PATH"
 mkdir -p "$FIG_PATH"
 
 echo "Running Branch: $GIT_BRANCH"
-echo "Saving results directly to HOME: $HOME_BASE"
+echo "Results will be saved in: $DATA_PATH"
 
 # --- 4. Execution ---
-# We override your Python defaults by passing these new paths as arguments
-srun python3 your_script_name.py \
+# Note: Using the full path to the python script
+srun python3 study_case_model/Experiments/examine_subsidies.py \
     --amount_per_point 2 \
     --branches_stage2 2 \
     --branches_stage3 2 \
@@ -46,4 +43,4 @@ srun python3 your_script_name.py \
     --data_folder "$DATA_PATH" \
     --figures_folder "$FIG_PATH"
 
-echo "Experiment complete. Find your results in $HOME_BASE"
+echo "Experiment complete."
