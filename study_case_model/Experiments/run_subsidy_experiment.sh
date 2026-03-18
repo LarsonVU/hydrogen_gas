@@ -9,6 +9,7 @@
 #SBATCH --account=vusr121427    
 #SBATCH --job-name=h2_stoch     
 #SBATCH --output=logs/%j_out.txt 
+#SBATCH --time=08:00:00
 
 # --- 1. Load Modules ---
 module purge
