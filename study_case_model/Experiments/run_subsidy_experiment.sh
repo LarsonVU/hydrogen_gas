@@ -40,8 +40,11 @@ echo "Running Branch: $GIT_BRANCH"
 echo "Saving results directly to HOME: $HOME_BASE"
 
 # --- 4. Execution ---
+# Ensure the Python script is executable
+chmod +x $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py
+
 # We override your Python defaults by passing these new paths as arguments
-srun $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py \
+srun python $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py \
     --amount_per_point 2 \
     --branches_stage2 2 \
     --branches_stage3 2 \
