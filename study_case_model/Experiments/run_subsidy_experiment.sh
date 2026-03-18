@@ -18,7 +18,7 @@ module load Gurobi/12.0.3-GCCcore-14.2.0
 
 # --- 2. Activate Virtual Environment + License ---
 export GRB_LICENSE_FILE="${HOME}/gurobi.lic"
-source  activate hydrogen_venv
+source ${HOME}/hydrogen_venv/bin/activate
 
 # --- 3. Dynamic Path Branching ---
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -43,8 +43,10 @@ echo "Saving results directly to HOME: $HOME_BASE"
 # Ensure the Python script is executable
 chmod +x $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py
 
+cd $HOME/projects/hydrogen_gas
+
 # We override your Python defaults by passing these new paths as arguments
-srun python $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py \
+srun python Experiments/examine_subsidies.py \
     --amount_per_point 2 \
     --branches_stage2 2 \
     --branches_stage3 2 \
