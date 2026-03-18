@@ -5,6 +5,7 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --partition=rome
 #SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-user=l.m.j.beemster@student.vu.nl
 #SBATCH --account=vusr121427    
 #SBATCH --job-name=h2_stoch     
 #SBATCH --output=logs/%j_out.txt 
