@@ -48,7 +48,7 @@ echo "Saving results directly to HOME: $HOME_BASE"
 
 # --- 4. Execution ---
 # We override your Python defaults by passing these new paths as arguments
-srun python3 your_script_name.py \
+srun $HOME_BASE/study_case_model/Experiments/examine_subsidies.py \
     --amount_per_point 2 \
     --branches_stage2 2 \
     --branches_stage3 2 \
