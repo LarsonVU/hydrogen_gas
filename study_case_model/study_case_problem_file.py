@@ -288,7 +288,7 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
     for scenario in scenarios[2]:
         for node in scenario.G.nodes:
             node_data = scenario.G.nodes[node]
-            if "average_demand_mwh_x1000" in node_data and node_data["average_demand_mwh_x1000"] is not None:
+            if "average_demand_mwh_x1000" in node_data and not pd.isna(node_data["average_demand_mwh_x1000"]):
                 avg_demand =  float(node_data["average_demand_mwh_x1000"]) *1000
                 variance = float(node_data.get("demand_variance", 0))
                 
@@ -297,7 +297,7 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
                 sampled_demand = max(avg_demand * variance_multiplier,0)
                 
                 # Apply supplier ratios if available
-                if "supplier_ratios" in node_data and node_data["supplier_ratios"]:
+                if "supplier_ratios" in node_data and not pd.isna(node_data["supplier_ratios"]):
                     supplier_ratios = node_data["supplier_ratios"][0] if isinstance(node_data["supplier_ratios"], list) else node_data["supplier_ratios"]
                     scenario.G.nodes[node]["demand"] = {supplier: sampled_demand * ratio for supplier, ratio in supplier_ratios.items()}
                     for supplier, demand_value in scenario.G.nodes[node]["demand"].items():
@@ -317,7 +317,7 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
     for scenario in scenarios[2]:
         for node in scenario.G.nodes:
             node_data = scenario.G.nodes[node]
-            if "average_market_price" in node_data and node_data["average_market_price"] is not None:
+            if "average_market_price" in node_data and not pd.isna(node_data["average_market_price"] ):
                 avg_price = float(node_data["average_market_price"]) 
                 price_std = float(node_data.get("long_term_price_std", 0))
                 
@@ -331,7 +331,7 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
         predecessor = scenario.predecessor
         for node in scenario.G.nodes:
             if node in predecessor.G.nodes:
-                if  "price" in predecessor.G.nodes[node]:
+                if  "price" in predecessor.G.nodes[node] and not pd.isna(predecessor.G.nodes[node]["price"]):
                     node_data = scenario.G.nodes[node]
                     price_std = float(node_data.get("day_ahead_price_std", 0))
                     # Sample price multiplier from normal distribution
@@ -356,7 +356,7 @@ def add_booking_costs(scenarios, branches_per_stage = BRANCHES_PER_STAGE, percen
     for k in range(1, NUMBER_OF_STAGES + 1):
         for scenario in scenarios[k]:
             for node in scenario.G.nodes:
-                if scenario.G.nodes[node]["compression_increase"] is None:  # Compression node
+                if pd.isna(scenario.G.nodes[node]["compression_increase"]):  # Compression node
                     scenario.G.nodes[node]["booking_cost"] = scenario.G.nodes[node]["base_booking_cost"] * (1+percentage_increase.get(k, 0)) * 1000000 # Cost in euro/MScm
                     
                     
@@ -409,7 +409,7 @@ if __name__ == "__main__":
     print(G)
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, folder="study_case_model/scenario_variables/")
     cutting_plane = generate_cutting_plane_pairs(method= "skewed")
-    plot_grid(cutting_plane, file = "study_case_model/figures/cutting_plane_grid/cut_plane_skewed")
+    plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/cut_plane_skewed")
 
     # cutting_plane = generate_cutting_plane_pairs(method= "max")
     # plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/cut_plane_max")

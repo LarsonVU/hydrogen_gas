@@ -4,6 +4,7 @@ import matplotlib
 #matplotlib.use('Agg')  # Ensure it works in Codespaces terminal
 import pyomo.environ as pyo
 import networkx
+import pandas as pd
 import numpy as np
 import itertools
 import os
@@ -18,10 +19,10 @@ def safe_filename(s):
 FOLDER = "study_case_model/figures/main_run/"
 
 NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1: 1, 2: 4, 3: 4}
+BRANCHES_PER_STAGE = {1: 1, 2: 2, 3: 2}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
-NUMBER_OF_DENSITY_BOUNDS = 1
+NUMBER_OF_DENSITY_BOUNDS = 5
 RHO_LOW = 0.55
 RHO_HIGH = 0.70
 
@@ -34,20 +35,28 @@ splits_per_arc = np.linspace(0, 1, NUMBER_OF_HOMOGENEOUS_SPLITS)
 def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc, number_of_density_bounds):
     model.N = pyo.Set(initialize=list(network.nodes))
     model.A = pyo.Set(initialize=list(network.edges), dimen=2)
-
     model.N_hg = pyo.Set(
         within=model.N,
-        initialize=[n for n, d in network.nodes(data=True) if d.get("supply_capacity", None) is not None]
+        initialize=[
+            n for n, d in network.nodes(data=True)
+            if pd.notna(d.get("supply_capacity", None))
+        ]
     )
-    
+
     model.N_m = pyo.Set(
         within=model.N,
-        initialize=[n for n, d in network.nodes(data=True) if d.get("max_fractions", None) is not None ]
+        initialize=[
+            n for n, d in network.nodes(data=True)
+            if pd.notna(d.get("max_fractions", None))
+        ]
     )
 
     model.N_gamma = pyo.Set(
         within=model.N,
-        initialize=[n for n, d in network.nodes(data=True) if d.get("compression_increase", None) is not None  ]
+        initialize=[
+            n for n, d in network.nodes(data=True)
+            if pd.notna(d.get("compression_increase", None))
+        ]
     )
 
     model.N_s = pyo.Set(
@@ -725,7 +734,7 @@ def solve_model(model, verbose=True, time_limit=None, precision = 0.0001):
     if time_limit is not None:
         solver.options['TimeLimit'] = time_limit  # optional
 
-    solver.options['Threads'] =7  # or number of CPU cores
+    solver.options['Threads'] =15  # or number of CPU cores
     solver.options['Presolve'] = 1  # aggressive presolve
     solver.options['Cuts'] = 1  # aggressive cuts
 
@@ -1325,7 +1334,7 @@ if __name__ == "__main__":
 
     model = create_model(G, scenarios, cutting_plane_pairs=generate_cutting_plane_pairs(method = "skewed"))
 
-    results = solve_model(model, time_limit= 100)
+    results = solve_model(model, time_limit= None)
     print(results)
     plot_results(model, folder = FOLDER)
     save_model_values(model, "study_case_model/scenario_variables/main_model.pkl")
