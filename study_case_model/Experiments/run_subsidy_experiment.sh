@@ -18,7 +18,7 @@ module load Gurobi/12.0.3-GCCcore-14.2.0
 
 # --- 2. Activate Virtual Environment + License ---
 export GRB_LICENSE_FILE="${HOME}/gurobi.lic"
-source  $HOME/hydrogen_venv/bin/activate
+source  activate hydrogen_venv
 
 # --- 3. Dynamic Path Branching ---
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
