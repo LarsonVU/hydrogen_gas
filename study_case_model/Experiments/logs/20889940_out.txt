@@ -1,0 +1,38 @@
+Gurobi shell based on Python 3.13.1 can be launched with command `gurobi.sh`
+Gurobi Python Interface can be loaded in Python 3.13.1 with 'import gurobipy'
+/var/spool/slurm/slurmd/job20889940/slurm_script: line 21: activate: No such file or directory
+Running Branch: main
+Saving results directly to HOME: /home/lbeemster
+Running full experiment...
+deviation 0.0
+Traceback (most recent call last):
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py", line 300, in <module>
+    obj_dict, h2_dict = sub_dev_experiment(
+                        ~~~~~~~~~~~~~~~~~~^
+        G,
+        ^^
+    ...<2 lines>...
+        args.amount_per_point
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py", line 275, in sub_dev_experiment
+    obj_means, obj_se, h2_means, h2_se = subsidy_experiment(
+                                         ~~~~~~~~~~~~~~~~~~^
+        G, subsidies, amount_per_point, deviation=dev
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py", line 254, in subsidy_experiment
+    G_changed = change_hydrogen_price(
+        G,
+    ...<2 lines>...
+        variable_name="generation_cost"
+    )
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py", line 67, in change_hydrogen_price
+    if G.nodes[node]["component_ratio"]["H2"] > 0:
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+TypeError: 'float' object is not subscriptable
+srun: error: tcn396: task 0: Exited with exit code 1
+srun: Terminating StepId=20889940.0
+Experiment complete. Find your results in /home/lbeemster
