@@ -20,13 +20,6 @@ module load Gurobi/12.0.3-GCCcore-14.2.0
 export GRB_LICENSE_FILE="${HOME}/gurobi.lic"
 source activate hydrogen_venv
 
-# --- Verification Check ---
-echo "--- Environment Check ---"
-which python3               # Should point to ~/hydrogen_venv/bin/python3
-python3 --version           # Should be 3.13.5
-pip list | grep -E "numpy|pyomo|gurobipy" # Verify your key libraries are present
-echo "--------------------------"
-
 # --- 3. Dynamic Path Branching ---
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 UNIQUE_ID="${GIT_BRANCH}_job${SLURM_JOB_ID}"
@@ -48,7 +41,7 @@ echo "Saving results directly to HOME: $HOME_BASE"
 
 # --- 4. Execution ---
 # We override your Python defaults by passing these new paths as arguments
-srun $HOME_BASE/study_case_model/Experiments/examine_subsidies.py \
+srun $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py \
     --amount_per_point 2 \
     --branches_stage2 2 \
     --branches_stage3 2 \
