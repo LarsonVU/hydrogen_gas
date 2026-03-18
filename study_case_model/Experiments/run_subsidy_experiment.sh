@@ -46,7 +46,7 @@ chmod +x $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/examine_s
 cd $HOME/projects/hydrogen_gas
 
 # We override your Python defaults by passing these new paths as arguments
-srun python Experiments/examine_subsidies.py \
+srun python study_case_model/Experiments/examine_subsidies.py \
     --amount_per_point 2 \
     --branches_stage2 2 \
     --branches_stage3 2 \
