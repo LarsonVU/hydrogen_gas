@@ -10,38 +10,44 @@
 #SBATCH --job-name=h2_stoch     
 #SBATCH --output=logs/%j_out.txt 
 
+# --- 1. Load Modules ---
 module purge
 module load 2025
-module load Anaconda3/2025.06-1
+module load Python/3.13.1-GCCcore-14.2.0  # Matches Gurobi's requirement
 module load Gurobi/12.0.3-GCCcore-14.2.0
 
+# --- 2. Activate Virtual Environment + License ---
 export GRB_LICENSE_FILE="${HOME}/gurobi.lic"
+source  $HOME/hydrogen_venv/bin/activate
 
-# --- TMPDIR setup (template style) ---
-mkdir -p "$TMPDIR"/data
-mkdir -p "$TMPDIR"/figures
+# --- 3. Dynamic Path Branching ---
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+UNIQUE_ID="${GIT_BRANCH}_job${SLURM_JOB_ID}"
 
-# --- Activate environment (same syntax as template) ---
-source activate hydrogen_venv
+# Define the NEW base directory in your HOME folder
+# This will result in: /home/[user]/results/[branch]_job[id]/...
+HOME_BASE="$HOME"
 
-# --- Ensure logs folder exists ---
-mkdir -p logs
+# Construct the full paths to match your script's structure but inside the unique folder
+DATA_PATH="$HOME_BASE/study_case_model/scenario_variables/examine_subsidies/$UNIQUE_ID/"
+FIG_PATH="$HOME_BASE/study_case_model/figures/examine_subsidies/$UNIQUE_ID/"
 
-# --- Run experiment (NO loops) ---
-python $HOME/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py \
+# Create the directories before running the Python script
+mkdir -p "$DATA_PATH"
+mkdir -p "$FIG_PATH"
+
+echo "Running Branch: $GIT_BRANCH"
+echo "Saving results directly to HOME: $HOME_BASE"
+
+# --- 4. Execution ---
+# We override your Python defaults by passing these new paths as arguments
+srun $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py \
     --amount_per_point 2 \
     --branches_stage2 2 \
     --branches_stage3 2 \
     --subsidies 0 40 80 \
     --deviations 0 0.1 \
-    --data_folder "$TMPDIR/data/" \
-    --figures_folder "$TMPDIR/figures/"
+    --data_folder "$DATA_PATH" \
+    --figures_folder "$FIG_PATH"
 
-# --- Copy results back (template style) ---
-mkdir -p $HOME/study_case_model/scenario_variables/examine_subsidies
-mkdir -p $HOME/study_case_model/figures/examine_subsidies
-
-cp -r "$TMPDIR"/data/* $HOME/study_case_model/scenario_variables/examine_subsidies/
-cp -r "$TMPDIR"/figures/* $HOME/study_case_model/figures/examine_subsidies/
-
-echo "Experiment complete. Results copied to HOME."
+echo "Experiment complete. Find your results in $HOME_BASE"
