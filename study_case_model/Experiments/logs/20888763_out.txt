@@ -1,0 +1,36 @@
+Gurobi shell based on Python 3.13.1 can be launched with command `gurobi.sh`
+Gurobi Python Interface can be loaded in Python 3.13.1 with 'import gurobipy'
+/var/spool/slurm/slurmd/job20888763/slurm_script: line 21: activate: No such file or directory
+Running Branch: main
+Saving results directly to HOME: /home/lbeemster
+Running full experiment...
+Traceback (most recent call last):
+  File "/home/lbeemster/projects/hydrogen_gas/study_case_model/Experiments/examine_subsidies.py", line 298, in <module>
+    G = scpf.build_base_graph()
+  File "/home/lbeemster/projects/hydrogen_gas/study_case_model/study_case_problem_file.py", line 230, in build_base_graph
+    gdf = gpd.read_file(geojspn_file)
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/geopandas/io/file.py", line 316, in _read_file
+    return _read_file_pyogrio(
+        filename, bbox=bbox, mask=mask, columns=columns, rows=rows, **kwargs
+    )
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/geopandas/io/file.py", line 576, in _read_file_pyogrio
+    return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyogrio/geopandas.py", line 382, in read_dataframe
+    result = read_func(
+        path_or_buffer,
+    ...<15 lines>...
+        **kwargs,
+    )
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyogrio/raw.py", line 200, in read
+    return ogr_read(
+        get_vsi_path_or_buffer(path_or_buffer),
+    ...<15 lines>...
+        datetime_as_string=datetime_as_string,
+    )
+  File "pyogrio/_io.pyx", line 1412, in pyogrio._io.ogr_read
+  File "pyogrio/_io.pyx", line 262, in pyogrio._io.ogr_open
+pyogrio.errors.DataSourceError: data/data_analysis_results/Geojson_pipelines/study_case_network.geojson: No such file or directory
+srun: error: tcn481: task 0: Exited with exit code 1
+srun: Terminating StepId=20888763.0
+Experiment complete. Find your results in /home/lbeemster
