@@ -47,12 +47,13 @@ cd $HOME/projects/hydrogen_gas
 
 # We override your Python defaults by passing these new paths as arguments
 srun python study_case_model/Experiments/examine_subsidies.py \
-    --amount_per_point 2 \
-    --branches_stage2 2 \
-    --branches_stage3 2 \
-    --subsidies 0 40 80 \
-    --deviations 0 0.1 \
+    --amount_per_point 4 \
+    --branches_stage2 8 \
+    --branches_stage3 8 \
+    --subsidies $(seq 0 5 80) \
+    --deviations 0 0.05 0.1 \
     --data_folder "$DATA_PATH" \
-    --figures_folder "$FIG_PATH"
+    --figures_folder "$FIG_PATH" \
+    --upper_bounds 5 
 
 echo "Experiment complete. Find your results in $HOME_BASE"
