@@ -29,8 +29,8 @@ UNIQUE_ID="${GIT_BRANCH}_job${SLURM_JOB_ID}"
 HOME_BASE="$HOME"
 
 # Construct the full paths to match your script's structure but inside the unique folder
-DATA_PATH="$HOME_BASE/study_case_model/scenario_variables/examine_subsidies/$UNIQUE_ID/"
-FIG_PATH="$HOME_BASE/study_case_model/figures/examine_subsidies/$UNIQUE_ID/"
+DATA_PATH="$HOME_BASE/projects/hydrogen_gas/study_case_model/scenario_variables/examine_subsidies/$UNIQUE_ID/"
+FIG_PATH="$HOME_BASE/projects/hydrogen_gas/study_case_model/figures/examine_subsidies/$UNIQUE_ID/"
 
 # Create the directories before running the Python script
 mkdir -p "$DATA_PATH"
