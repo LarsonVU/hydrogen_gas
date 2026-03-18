@@ -18,7 +18,6 @@ import study_case_problem_file as scpf
 # =========================
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--")
 parser.add_argument("--amount_per_point", type=int, default=2)
 parser.add_argument("--branches_stage2", type=int, default=2)
 parser.add_argument("--branches_stage3", type=int, default=2)
