@@ -1,6 +1,7 @@
 import numpy as np
 import pyomo.environ as pyo
 import matplotlib.pyplot as plt
+import pandas as pd
 import sys
 import os
 import argparse
@@ -63,7 +64,7 @@ def change_hydrogen_price(G, value_range, amount_per_point, variable_name="unkno
         for _ in range(amount_per_point):
             G_changed = G.copy()
             for node in G.nodes:
-                if G.nodes[node][variable_name] is not None:
+                if not pd.isna(G.nodes[node][variable_name]) :
                     if G.nodes[node]["component_ratio"]["H2"] > 0:
                         G_changed.nodes[node][variable_name] = (
                             float(G.nodes[node][variable_name]) - var
