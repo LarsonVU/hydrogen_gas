@@ -52,10 +52,10 @@ echo "CPUs: $SLURM_CPUS_PER_TASK"
 # =========================
 chmod +x study_case_model/Experiments/python_files/examine_parallel_subsidies.py
 srun python -u study_case_model/Experiments/python_files/examine_parallel_subsidies.py \
-    --amount_per_point 4 \
+    --amount_per_point 1 \
     --branches_stage2 8 \
     --branches_stage3 8 \
-    --subsidies $(seq 0 5 80) \
+    --subsidies $(seq 0 40 80) \
     --deviations 0 0.05 0.1 \
     --upper_bounds 4 \
     --data_folder "$DATA_PATH"
