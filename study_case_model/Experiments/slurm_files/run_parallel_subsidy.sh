@@ -51,7 +51,7 @@ echo "CPUs: $SLURM_CPUS_PER_TASK"
 # =========================
 # 4. Run experiment
 # =========================
-srun python -u study_case_model/Experiments/examine_subsidies.py \
+srun python -u study_case_model/Experiments/examine_parallel_subsidies.py \
     --amount_per_point 4 \
     --branches_stage2 8 \
     --branches_stage3 8 \
