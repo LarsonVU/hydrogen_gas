@@ -39,7 +39,7 @@ source activate hydrogen_venv
 # =========================
 cd $HOME/projects/hydrogen_gas
 
-DATA_PATH="$HOME/projects/hydrogen_gas/study_case_model/scenario_variables/examine_subsidies"
+DATA_PATH="$HOME/projects/hydrogen_gas/study_case_model/scenario_variables/parallel_subsidies"
 
 mkdir -p logs
 
@@ -51,8 +51,8 @@ echo "CPUs: $SLURM_CPUS_PER_TASK"
 # =========================
 # 4. Run experiment
 # =========================
-chmod +x study_case_model/Experiments/examine_parallel_subsidies.py
-srun python -u study_case_model/Experiments/examine_parallel_subsidies.py \
+chmod +x study_case_model/Experiments/python_files/examine_parallel_subsidies.py
+srun python -u study_case_model/Experiments/python_files/examine_parallel_subsidies.py \
     --amount_per_point 4 \
     --branches_stage2 8 \
     --branches_stage3 8 \
