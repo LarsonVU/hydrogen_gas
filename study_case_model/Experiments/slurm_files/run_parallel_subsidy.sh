@@ -36,6 +36,9 @@ source activate hydrogen_venv
 # =========================
 # 3. Paths
 # =========================
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+UNIQUE_ID="${GIT_BRANCH}_job${SLURM_JOB_ID}"
+
 DATA_PATH="$HOME/projects/hydrogen_gas/study_case_model/scenario_variables/parallel_subsidies"
 
 mkdir -p logs
@@ -48,8 +51,11 @@ echo "CPUs: $SLURM_CPUS_PER_TASK"
 # =========================
 # 4. Run experiment
 # =========================
-chmod +x $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/python_files/examine_parallel_subsidies.py
-srun python $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/python_files/examine_parallel_subsidies.py \
+chmod +x $HOME/projects/hydrogen_gas/study_case_model/study_case_model/Experiments/python_files/examine_parallel_subsidies.py
+
+cd $HOME/projects/hydrogen_gas
+
+srun python study_case_model/Experiments/python_files/examine_parallel_subsidies.py \
     --amount_per_point 1 \
     --branches_stage2 8 \
     --branches_stage3 8 \
@@ -57,3 +63,5 @@ srun python $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/python
     --deviations 0 0.05 0.1 \
     --upper_bounds 4 \
     --data_folder "$DATA_PATH"
+
+echo "Experiment complete. Find your results in the folder"
