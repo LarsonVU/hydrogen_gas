@@ -12,7 +12,6 @@
 #SBATCH --array=0-203%40
 
 #SBATCH --output=logs/%A_%a.out
-#SBATCH --error=logs/%A_%a.err
 
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=l.m.j.beemster@student.vu.nl
