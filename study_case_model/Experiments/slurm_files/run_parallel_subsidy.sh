@@ -50,8 +50,8 @@ echo "CPUs: $SLURM_CPUS_PER_TASK"
 # =========================
 # 4. Run experiment
 # =========================
-chmod +x study_case_model/Experiments/python_files/examine_parallel_subsidies.py
-srun python study_case_model/Experiments/python_files/examine_parallel_subsidies.py \
+chmod +x $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/python_files/examine_parallel_subsidies.py
+srun python $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/python_files/examine_parallel_subsidies.py \
     --amount_per_point 1 \
     --branches_stage2 8 \
     --branches_stage3 8 \
