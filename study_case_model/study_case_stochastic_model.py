@@ -726,7 +726,7 @@ def create_model(network: networkx.Graph, scenarios=None,
 
     return model
 
-def solve_model(model, verbose=True, time_limit=None, precision = 0.0001):
+def solve_model(model, verbose=True, time_limit=None, threads = 8, precision = 0.0001):
     solver = pyo.SolverFactory('gurobi')  # You can choose a different solver if needed
     solver.options['OutputFlag'] = 1  # ensures full output
     solver.options['MIPGap'] = precision  # set precision for MIP gap
@@ -734,7 +734,7 @@ def solve_model(model, verbose=True, time_limit=None, precision = 0.0001):
     if time_limit is not None:
         solver.options['TimeLimit'] = time_limit  # optional
 
-    solver.options['Threads'] =15  # or number of CPU cores
+    solver.options['Threads'] =threads  # or number of CPU cores
     solver.options['Presolve'] = 1  # aggressive presolve
     solver.options['Cuts'] = 1  # aggressive cuts
 
