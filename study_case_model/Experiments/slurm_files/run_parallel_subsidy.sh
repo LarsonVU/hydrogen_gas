@@ -36,8 +36,6 @@ source activate hydrogen_venv
 # =========================
 # 3. Paths
 # =========================
-cd $HOME/projects/hydrogen_gas
-
 DATA_PATH="$HOME/projects/hydrogen_gas/study_case_model/scenario_variables/parallel_subsidies"
 
 mkdir -p logs
