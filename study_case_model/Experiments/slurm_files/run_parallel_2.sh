@@ -2,9 +2,10 @@
 # Set Job Requirements
 #SBATCH -t 10:00:00
 #SBATCH --nodes=1
-#SBATCH -n 96
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
 #SBATCH --partition=genoa
-#SBATCH --array=1-203
+#SBATCH --array=1-9
 #SBATCH --output=logs/%A_%a.out
 #SBATCH --mail-type=BEGIN,FAIL,END
 #SBATCH --mail-user=l.m.j.beemster@student.vu.nl

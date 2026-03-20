@@ -1,7 +1,8 @@
 #!/bin/bash
 #SBATCH -t 10:00:00
 #SBATCH --nodes=1
-#SBATCH -n 96
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
 #SBATCH --partition=genoa
 #SBATCH --array=1-10
 
