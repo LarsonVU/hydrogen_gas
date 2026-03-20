@@ -1,0 +1,26 @@
+Gurobi shell based on Python 3.13.1 can be launched with command `gurobi.sh`
+Gurobi Python Interface can be loaded in Python 3.13.1 with 'import gurobipy'
+/var/spool/slurm/slurmd/job20987852/slurm_script: line 24: activate: No such file or directory
+Solving model...
+Traceback (most recent call last):
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/Experiments/python_files/examine_parallel_subsidies.py", line 123, in <module>
+    results = scsm.solve_model(model, threads= THREADS, verbose= False, precision=0.001)
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/study_case_stochastic_model.py", line 741, in solve_model
+    results = solver.solve(model, tee=verbose)  # tee=True to display solver output
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/opt/base/solvers.py", line 639, in solve
+    _status = self._apply_solver()
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/solvers/plugins/solvers/GUROBI.py", line 707, in _apply_solver
+    self._soln = GUROBI_RUN.gurobi_run(
+                 ~~~~~~~~~~~~~~~~~~~~~^
+        problem_filename, warmstart_filename, None, options_dict, self._suffixes
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/solvers/plugins/solvers/GUROBI_RUN.py", line 98, in gurobi_run
+    model.setParam(key, value)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "src/gurobipy/_model.pyx", line 2004, in gurobipy._model.Model.setParam
+  File "src/gurobipy/env.pxi", line 404, in gurobipy._core.Env.setParam
+  File "src/gurobipy/env.pxi", line 294, in gurobipy._core.Env.__setone
+gurobipy._exception.GurobiError: Unable to set parameter Threads to value -1 (minimum is 0)
+Warning: environment still referenced so free is deferred (Continue to use WLS)
