@@ -41,12 +41,12 @@ echo "Saving results directly to HOME: $HOME_BASE"
 
 # --- 4. Execution ---
 # Ensure the Python script is executable
-chmod +x $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/examine_speed.py
+chmod +x $HOME_BASE/projects/hydrogen_gas/study_case_model/Experiments/python_files/examine_speed.py
 
 cd $HOME/projects/hydrogen_gas
 
 # We override your Python defaults by passing these new paths as arguments
-srun python study_case_model/Experiments/examine_speed.py \
+srun python study_case_model/Experiments/python_files/examine_speed.py \
     --folder "$FIG_PATH" \
     --branches_stage1 1 \
     --branches_stage2 4 \

@@ -11,7 +11,8 @@ import sys
 import argparse
 
 # Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT))
 
 from study_case_stochastic_model import solve_model, create_model, generate_cutting_plane_pairs
 from study_case_problem_file import build_base_graph,  create_scenarios
