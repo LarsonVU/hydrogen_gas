@@ -3,9 +3,12 @@ import matplotlib.pyplot as plt
 from pyomo.opt import TerminationCondition
 import numpy as np
 import pyomo.environ as pyo
+from pathlib import Path
+import pandas as pd
 import time
 import os
 import sys
+import argparse
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -13,14 +16,51 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from study_case_stochastic_model import solve_model, create_model, generate_cutting_plane_pairs
 from study_case_problem_file import build_base_graph,  create_scenarios
 
+# =========================
+# Argument parser
+# =========================
+parser = argparse.ArgumentParser(description="Solve times experiments")
 
 # Folder
-FOLDER = "study_case_model/figures/solve_times/"
+parser.add_argument(
+    "--folder",
+    type=str,
+    default="study_case_model/figures/solve_times/",
+    help="Folder to save figures and CSVs"
+)
 
-# Base Parameters
+parser.add_argument(
+    "--branches_stage2",
+    type=int,
+    default=4,
+    help="Number of branches in stage 2"
+)
+parser.add_argument(
+    "--branches_stage3",
+    type=int,
+    default=4,
+    help="Number of branches in stage 3"
+)
+
+parser.add_argument(
+    "--precision",
+    type=float,
+    default=0.001,
+    help="Solver precision / tolerance"
+)
+
+# =========================
+# Parse arguments
+# =========================
+args = parser.parse_args()
+
+# =========================
+# Map to variables
+# =========================
+FOLDER = args.folder
 NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1 : 1, 2 : 3, 3: 3}
-PRECISION = 0.001
+BRANCHES_PER_STAGE = {1: 1, 2: args.branches_stage2, 3: args.branches_stage3}
+PRECISION = args.precision
 
 def time_model(model, precision = PRECISION):
     start_time = time.time()
@@ -34,10 +74,10 @@ def branch_solve_time_matrix(network, max_2, max_3):
 
     solve_times = {}
 
-    for m_2 in range(1, max_2+1):
-        for m_3 in range(1, max_3+1):
+    for m_2 in range(1, max_2+1, 2):
+        for m_3 in range(1, max_3+1, 2):
             scenarios = create_scenarios(NUMBER_OF_STAGES, {1: 1, 2: m_2, 3: m_3}, G)
-            model = create_model(G, scenarios)
+            model = create_model(G, scenarios, number_of_density_bounds=1)
             solve_times[(m_2, m_3)] = time_model(model)
             print(f"Branches Stage 2: {m_2}, Branches Stage 3: {m_3}, Solve Time: {solve_times[(m_2, m_3)]} seconds")
     return solve_times
@@ -61,14 +101,14 @@ def plot_solve_time_matrix(solve_times, folder =FOLDER):
     plt.title(f'Solve Time Matrix (Tolerance = {PRECISION *100}%)')
     plt.tight_layout()
     plt.savefig(folder +'solve_time_matrix.png')
-    plt.show()
+    plt.close()
 
 def allowed_deviation_solve_times(network, scenarios, deviation_values):
     G = network.copy()
     solve_times = {}
 
     for deviation in deviation_values:
-        model = create_model(G, scenarios, allowed_deviation=deviation)
+        model = create_model(G, scenarios, allowed_deviation=deviation, number_of_density_bounds=1)
         solve_times[deviation] = time_model(model)
         print(f"Allowed Deviation: {deviation}, Solve Time: {solve_times[deviation]} seconds")
     return solve_times
@@ -85,16 +125,16 @@ def plot_deviation_solve_times(solve_times):
     plt.grid()
     plt.tight_layout()
     plt.savefig(FOLDER + 'deviation_solve_times.png')
-    plt.show()
+    plt.close()
 
 def cutting_planes_solve_times(network, scenarios, max_cutting_planes_in, max_cutting_planes_out):
     G = network.copy()
     cutting_plane_counts = {}
 
-    for in_planes in range(0, max_cutting_planes_in + 1):
-        for out_planes in range(0, max_cutting_planes_out + 1):
+    for in_planes in range(0, max_cutting_planes_in + 1, 2):
+        for out_planes in range(0, max_cutting_planes_out + 1, 2):
             cutting_plane_pairs = generate_cutting_plane_pairs(n_p_in=in_planes, n_p_out=out_planes)
-            model = create_model(G, scenarios, cutting_plane_pairs=cutting_plane_pairs)
+            model = create_model(G, scenarios, cutting_plane_pairs=cutting_plane_pairs, number_of_density_bounds=1)
             solve_time = time_model(model)
             cutting_plane_counts[(in_planes, out_planes)] = solve_time
             print(f"Cutting Planes In: {in_planes}, Cutting Planes Out: {out_planes}, Solve Time: {solve_time} seconds")
@@ -118,31 +158,64 @@ def plot_cutting_plane_solve_times(cutting_plane_counts):
     plt.title('Solve Time by Cutting Plane Counts')
     plt.tight_layout()
     plt.savefig(FOLDER + 'cutting_plane_solve_times.png')
-    plt.show()
+    plt.close()
 
-def density_solve_times(network, scenarios, densities):
+def density_solve_times(network, densities, runs=5):
     G = network.copy()
-    solve_times = {}
+    
+    # Store raw values
+    raw_results = {d: {"times": []} for d in densities}
+
+    for r in range(runs):
+        print("run", r)
+
+        # --- Common Random Numbers ---
+        scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
+
+        for density in densities:
+            model = create_model(
+                G,
+                scenarios,
+                number_of_density_bounds=density
+            )
+
+            solve_time = time_model(model, precision=0.01)
+            raw_results[density]["times"].append(solve_time)
+
+    # --- Compute statistics ---
+    results = {}
 
     for density in densities:
-        model = create_model(G, scenarios, number_of_density_bounds=density)
-        solve_times[density] = time_model(model, precision=0.01)
-        print(f"Amount of upperbounds: {density}, Solve Time: {solve_times[density]} seconds")
-    return solve_times
+        times = raw_results[density]["times"]
 
-def plot_density_solve_times(solve_times, precision = 0.01):
-    deviations = list(solve_times.keys())
-    times = list(solve_times.values())
+        results[density] = {
+            "time_mean": np.mean(times),
+            "time_std": np.std(times),
+        }
+
+        print(
+            f"Upperbounds: {density} | "
+            f"Time: {results[density]['time_mean']:.3f} ± "
+            f"{results[density]['time_std']/np.sqrt(runs):.3f} s"
+        )
+
+    return results
+
+def plot_density_solve_times(results, precision=0.01, runs=5):
+    densities = list(results.keys())
+    time_means = [results[d]["time_mean"] for d in densities]
+    time_err = [results[d]["time_std"] / np.sqrt(runs) for d in densities]
 
     plt.figure(figsize=(10, 6))
-    plt.plot(deviations, times, marker='o')
+    plt.errorbar(densities, time_means, yerr=time_err, marker='o', capsize=5)
     plt.xlabel('Amount of upperbounds')
     plt.ylabel('Solve Time (seconds)')
     plt.title(f'Solve Time vs Amount of Upperbounds (Tolerance = {precision*100}%)')
     plt.grid()
+    plt.ylim(bottom=0)
     plt.tight_layout()
     plt.savefig(FOLDER + 'upperbounds_solve_times.png')
-    plt.show()
+    plt.close()
 
 def splits_per_arc_experiment(network, splits_values, runs=5):
     G = network.copy()
@@ -160,7 +233,8 @@ def splits_per_arc_experiment(network, splits_values, runs=5):
             model = create_model(
                 G,
                 scenarios,
-                splits_per_arc=np.linspace(0, 1, splits)
+                splits_per_arc=np.linspace(0, 1, splits),
+                number_of_density_bounds= 1
             )
 
             solve_time = time_model(model, precision=0.01)
@@ -205,7 +279,7 @@ def plot_splits_solve_times(results, precision=0.01, runs =5):
     plt.ylim(bottom = 0)
     plt.tight_layout()
     plt.savefig(FOLDER + 'splits_per_arc_solve_times.png')
-    plt.show()
+    plt.close()
 
 def plot_splits_objective(results, precision=0.01, runs =5):
     splits = list(results.keys())
@@ -221,13 +295,28 @@ def plot_splits_objective(results, precision=0.01, runs =5):
     plt.ylim(bottom = 0)
     plt.tight_layout()
     plt.savefig(FOLDER + 'splits_per_arc_objective.png')
-    plt.show()
+    plt.close()
+
+def save_dict_to_csv(data_dict, folder, filename):
+    Path(folder).mkdir(parents=True, exist_ok=True)
+
+    df = pd.DataFrame.from_dict(data_dict, orient="index")
+
+    # If values are scalar → single column
+    if df.shape[1] == 1:
+        df.columns = ["value"]
+
+    file_path = Path(folder) / f"{filename}.csv"
+    df.to_csv(file_path)
+
+    print(f"Saved to {file_path}")
 
 if __name__ == "__main__":
     G = build_base_graph()
 
-    # solve_times = branch_solve_time_matrix(G, max_2=5, max_3=5)
-    # plot_solve_time_matrix(solve_times)
+    solve_times = branch_solve_time_matrix(G, max_2=8, max_3=8)
+    save_dict_to_csv(solve_times, FOLDER, "branch_solve_times")
+    plot_solve_time_matrix(solve_times)
 
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
 
@@ -235,17 +324,20 @@ if __name__ == "__main__":
     # deviation_solve_times = allowed_deviation_solve_times(G, scenarios, deviation_values)
     # plot_deviation_solve_times(deviation_solve_times)
 
-    # cutting_plane_times = cutting_planes_solve_times(G, scenarios, 10, 10)
-    # plot_cutting_plane_solve_times(cutting_plane_times)
+    cutting_plane_times = cutting_planes_solve_times(G, scenarios, 20, 20)
+    save_dict_to_csv(cutting_plane_times, FOLDER, "cut_plane_solve_times")
+    plot_cutting_plane_solve_times(cutting_plane_times)
 
-    # density_bounds = [1, 2, 3, 4]
-    # solve_times = density_solve_times(G, scenarios, density_bounds)
-    # plot_density_solve_times(solve_times)
+    density_bounds = [1, 2, 3, 4]
+    solve_times = density_solve_times(G, scenarios, density_bounds, runs = 10)
+    save_dict_to_csv(solve_times, FOLDER, "density_solve_times")
+    plot_density_solve_times(solve_times, runs=10)
 
-    results = splits_per_arc_experiment(G, splits_values=[6,11,16,21,26], runs= 10)
+    solve_times = splits_per_arc_experiment(G, splits_values=[6,11,16,21,26], runs= 10)
 
-    plot_splits_solve_times(results, runs= 10)
-    plot_splits_objective(results, runs= 10)
+    plot_splits_solve_times(solve_times, runs= 10)
+    save_dict_to_csv(solve_times, FOLDER, "splits_solve_times")
+    plot_splits_objective(solve_times, runs= 10)
 
 
 
