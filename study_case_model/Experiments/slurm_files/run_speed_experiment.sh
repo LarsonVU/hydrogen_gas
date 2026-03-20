@@ -48,7 +48,6 @@ cd $HOME/projects/hydrogen_gas
 # We override your Python defaults by passing these new paths as arguments
 srun python study_case_model/Experiments/python_files/examine_speed.py \
     --folder "$FIG_PATH" \
-    --branches_stage1 1 \
     --branches_stage2 4 \
     --branches_stage3 4 \
     --precision 0.001
