@@ -1,15 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=h2_array
-#SBATCH --account=vusr121427
-#SBATCH --partition=rome
-
+#SBATCH -t 10:00:00
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=8
-
-#SBATCH --time=02:00:00
-
-# 🔥 204 tasks total, max 40 running at once
-#SBATCH --array=0-10%40
+#SBATCH -n 96
+#SBATCH --partition=genoa
+#SBATCH --array=1-10
 
 #SBATCH --output=logs/%A_%a.out
 
@@ -56,10 +50,10 @@ chmod +x $HOME/projects/hydrogen_gas/study_case_model/study_case_model/Experimen
 cd $HOME/projects/hydrogen_gas
 
 srun python study_case_model/Experiments/python_files/examine_parallel_subsidies.py \
-    --amount_per_point 1 \
+    --amount_per_point 4 \
     --branches_stage2 8 \
     --branches_stage3 8 \
-    --subsidies $(seq 0 40 80) \
+    --subsidies $(seq 0 5 80) \
     --deviations 0 0.05 0.1 \
     --upper_bounds 4 \
     --data_folder "$DATA_PATH"

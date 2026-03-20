@@ -4,9 +4,11 @@ import pandas as pd
 import sys
 import os
 import argparse
+from pathlib import Path
 
 # Add parent directory
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT))
 
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scpf
@@ -17,16 +19,18 @@ import study_case_problem_file as scpf
 # =========================
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--amount_per_point", type=int, default=2)
+parser.add_argument("--run", type=int, required=True)
 parser.add_argument("--branches_stage2", type=int, default=2)
 parser.add_argument("--branches_stage3", type=int, default=2)
-parser.add_argument("--subsidies", type=float, nargs="+", default=[0, 40, 80])
-parser.add_argument("--deviations", type=float, nargs="+", default=[0])
+parser.add_argument("--subsidy", type=float, nargs="+", default=0)
+parser.add_argument("--deviation", type=float, nargs="+", default=0)
+
 parser.add_argument("--upper_bounds", type=int, default=1)
 parser.add_argument("--time_limit", type=float, default=None)
 parser.add_argument("--threads", type= int, default= 1)
 
 parser.add_argument("--data_folder", type=str, required=True)
+parser.add_argument("--pickle_folder", type= str, required= True)
 
 args = parser.parse_args()
 
@@ -42,6 +46,9 @@ BRANCHES_PER_STAGE = {
 }
 UPPER_BOUNDS = args.upper_bounds
 THREADS = args.threads
+SUBSIDY = args.subsidy
+DEVIATION = args.deviation
+RUN = args.run
 
 # =========================
 # Helper functions
@@ -61,32 +68,6 @@ def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
                 )
     return G_changed
 
-# =========================
-# SLURM ARRAY INDEXING
-# =========================
-task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-
-n_sub = len(args.subsidies)
-n_dev = len(args.deviations)
-n_runs = args.amount_per_point
-
-total = n_sub * n_dev * n_runs
-
-if task_id >= total:
-    raise ValueError(f"Task ID {task_id} exceeds total jobs {total}")
-
-# Decode index
-dev_idx = task_id // (n_sub * n_runs)
-rem = task_id % (n_sub * n_runs)
-
-sub_idx = rem // n_runs
-run_idx = rem % n_runs
-
-deviation = args.deviations[dev_idx]
-subsidy = args.subsidies[sub_idx]
-
-print(f"[TASK {task_id}] deviation={deviation}, subsidy={subsidy}, run={run_idx}", flush=True)
-
 
 # =========================
 # Main execution
@@ -97,26 +78,35 @@ if __name__ == "__main__":
     G = scpf.build_base_graph()
 
     # Convert subsidy
-    subsidy_mscm = subsidy_per_mwh_to_mscm(subsidy)
+    subsidy_mscm = subsidy_per_mwh_to_mscm(SUBSIDY)
 
     # Apply subsidy
     G_changed = apply_subsidy(G, subsidy_mscm)
 
     # Create scenario folder
-    folder = os.path.join(
+    data_folder = os.path.join(
         args.data_folder,
-        f"dev{deviation}",
-        f"sub{subsidy}",
-        f"run{run_idx}"
+        f"dev{DEVIATION}",
+        f"sub{SUBSIDY}",
+        f"run{RUN}"
     )
-    os.makedirs(folder, exist_ok=True)
+
+    # Create pickle folder
+    pickle_folder = os.path.join(
+        args.pickle_folder,
+        f"dev{DEVIATION}",
+        f"sub{SUBSIDY}",
+        f"run{RUN}"
+    )
+
+    os.makedirs(data_folder, exist_ok=True)
 
     # Create scenarios
     scenarios = scpf.create_scenarios(
         NUMBER_OF_STAGES,
         BRANCHES_PER_STAGE,
         G_changed,
-        folder=folder
+        folder=data_folder
     )
 
     print("Solving model...", flush=True)
@@ -125,7 +115,7 @@ if __name__ == "__main__":
     model = scsm.create_model(
         G_changed,
         scenarios,
-        allowed_deviation=deviation,
+        allowed_deviation=DEVIATION,
         number_of_density_bounds=UPPER_BOUNDS
     )
 
@@ -133,6 +123,6 @@ if __name__ == "__main__":
     results = scsm.solve_model(model, threads= THREADS, verbose= False, precision=0.001)
 
     # Save results
-    scsm.save_model_values(model, os.path.join(folder, "model_snapshot.pkl"))
+    scsm.save_model_values(model, os.path.join(pickle_folder, "model_snapshot.pkl"))
 
     print("Finished successfully!", flush=True)
