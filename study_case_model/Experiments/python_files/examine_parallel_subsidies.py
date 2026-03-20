@@ -27,7 +27,7 @@ parser.add_argument("--deviation", type=float, default=0)
 
 parser.add_argument("--upper_bounds", type=int, default=1)
 parser.add_argument("--time_limit", type=float, default=None)
-parser.add_argument("--threads", type= int, default= -1)
+parser.add_argument("--threads", type= int, default= 16)
 
 parser.add_argument("--data_folder", type=str, required=True)
 parser.add_argument("--pickle_folder", type= str, required= True)
