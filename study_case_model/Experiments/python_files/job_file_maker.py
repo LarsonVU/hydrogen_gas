@@ -3,9 +3,9 @@ import os
 # =========================
 # Parameters (same as your script)
 # =========================
-subsidies = list(range(0, 81, 40))   # 0,5,...,80
+subsidies = list(range(0, 81, 5))   # 0,5,...,80
 deviations = [0, 0.05, 0.1]
-runs = 1
+runs = 4
 
 data_folder = "study_case_model/scenario_variables/subsidy_experiment/"
 pickle_folder = "study_case_model/figures/subsidy_experiment/"
@@ -24,11 +24,11 @@ for dev_idx, dev in enumerate(deviations):
             cmd = (
                 "python study_case_model/Experiments/python_files/examine_parallel_subsidies.py "
                 f"--run {run_idx} "
-                f"--branches_stage2 4 "
-                f"--branches_stage3 4 "
+                f"--branches_stage2 8 "
+                f"--branches_stage3 8 "
                 f"--subsidy {sub} "
                 f"--deviation {dev} "
-                f"--upper_bounds 5 "
+                f"--upper_bounds 4 "
                 f"--data_folder {data_folder} "
                 f"--pickle_folder {pickle_folder} "
             )
