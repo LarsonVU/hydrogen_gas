@@ -19,18 +19,18 @@ import study_case_problem_file as scpf
 # =========================
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--run", type=int, required=True)
-parser.add_argument("--branches_stage2", type=int, default=2)
-parser.add_argument("--branches_stage3", type=int, default=2)
+parser.add_argument("--run", type=int, default= 0 )
+parser.add_argument("--branches_stage2", type=int, default=8)
+parser.add_argument("--branches_stage3", type=int, default=8)
 parser.add_argument("--subsidy", type=float, default=0)
 parser.add_argument("--deviation", type=float, default=0)
 
 parser.add_argument("--upper_bounds", type=int, default=1)
 parser.add_argument("--time_limit", type=float, default=None)
-parser.add_argument("--threads", type= int, default= 16)
+parser.add_argument("--threads", type= int, default= 2)
 
-parser.add_argument("--data_folder", type=str, required=True)
-parser.add_argument("--pickle_folder", type= str, required= True)
+parser.add_argument("--data_folder", type=str, default="scenario_variables/other_experiment_data/")
+parser.add_argument("--pickle_folder", type= str, default= "study_case_model/figures/other_experiments")
 
 args = parser.parse_args()
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     )
 
     # Solve with Gurobi (multithreaded)
-    results = scsm.solve_model(model, threads= THREADS, verbose= False, precision=0.001)
+    results = scsm.solve_model(model, threads= THREADS, verbose= True, precision=0.001)
 
     # Save results
     scsm.save_model_values(model, os.path.join(pickle_folder, "model_snapshot.pkl"))

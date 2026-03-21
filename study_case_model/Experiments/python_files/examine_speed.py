@@ -361,9 +361,9 @@ def save_dict_to_csv(data_dict, folder, filename):
 if __name__ == "__main__":
     G = build_base_graph()
 
-    solve_times = branch_solve_time_matrix(G, max_2=8, max_3=8, runs=4)
-    save_dict_to_csv(solve_times, FOLDER, "branch_solve_times")
-    plot_solve_time_matrix(solve_times)
+    # solve_times = branch_solve_time_matrix(G, max_2=8, max_3=8, runs=4)
+    # save_dict_to_csv(solve_times, FOLDER, "branch_solve_times")
+    # plot_solve_time_matrix(solve_times)
 
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
 
@@ -371,12 +371,12 @@ if __name__ == "__main__":
     # deviation_solve_times = allowed_deviation_solve_times(G, scenarios, deviation_values)
     # plot_deviation_solve_times(deviation_solve_times)
 
-    cutting_plane_times = cutting_planes_solve_times(G, scenarios, 20, 20)
-    save_dict_to_csv(cutting_plane_times, FOLDER, "cut_plane_solve_times")
-    plot_cutting_plane_solve_times(cutting_plane_times)
+    # cutting_plane_times = cutting_planes_solve_times(G, scenarios, 20, 20)
+    # save_dict_to_csv(cutting_plane_times, FOLDER, "cut_plane_solve_times")
+    # plot_cutting_plane_solve_times(cutting_plane_times)
 
     density_bounds = [1, 2, 3, 4]
-    solve_times = density_solve_times(G, scenarios, density_bounds, runs = 4)
+    solve_times = density_solve_times(G, density_bounds, runs = 4)
     save_dict_to_csv(solve_times, FOLDER, "density_solve_times")
     plot_density_solve_times(solve_times, runs=4)
 
