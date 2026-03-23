@@ -12,6 +12,7 @@ import re
 import pickle
 from datetime import datetime
 from pathlib import Path
+import shutil
 
 def safe_filename(s):
     return re.sub(r'[\\/*?:"<>|]', "_", str(s))
@@ -22,7 +23,7 @@ NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1: 1, 2: 2, 3: 2}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
-NUMBER_OF_DENSITY_BOUNDS = 5
+NUMBER_OF_DENSITY_BOUNDS = 1
 RHO_LOW = 0.55
 RHO_HIGH = 0.70
 
@@ -679,11 +680,11 @@ def add_booking_constraints(model):
     model.sufficient_entry_booking = pyo.Constraint(model.N, model.M[3], rule=sufficient_entry_booking_rule)
     model.sufficient_exit_booking = pyo.Constraint(model.N, model.M[3], rule=sufficient_exit_booking_rule) 
 
-    # Booking balance
-    def booking_balance_rule(m, k, m_index):
-        return sum(m.x_entry[n, k, m_index] for n in m.N) == sum(m.x_exit[n, k, m_index] for n in m.N)
+    # Booking balance (optional constraint)
+    def booking_balance_rule(m, m_3):
+        return sum(m.x_entry[n, k_prime, m_prime] for k_prime, m_prime in m.pred_chain[3, m_3] for n in m.N) >= sum(m.x_exit[n, k_prime, m_prime] for k_prime, m_prime in m.pred_chain[3, m_3] for n in model.N)
 
-    model.booking_balance = pyo.Constraint(model.KM, rule=booking_balance_rule)
+    model.booking_balance = pyo.Constraint(model.M[3], rule=booking_balance_rule)
 
 def add_quality_deviation_constraints(model):
 
@@ -768,6 +769,19 @@ def solve_model(
 
     # --- Solve ---
     results = solver.solve(model, tee=verbose)
+
+    if os.path.exists(nodefile_dir):
+        try:
+            # Only remove contents, keep the folder
+            for filename in os.listdir(nodefile_dir):
+                file_path = os.path.join(nodefile_dir, filename)
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)  # remove file or symlink
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)  # remove subdirectory
+            print(f"Cleared contents of {nodefile_dir}")
+        except Exception as e:
+            print(f"Error while clearing {nodefile_dir}: {e}")
 
     return results
 
@@ -1271,6 +1285,142 @@ def plot_scenario_revenue_costs(model, folder="figures/", show=False):
 
     plt.close(fig)
 
+def plot_entry_exit_capacity(model, folder="figures/", show=False):
+    """
+    Plot entry and exit capacity bought per node.
+
+    - Separate plots for entry and exit
+    - Bars are stacked by stage (capacity bought)
+    - Line overlay = actual flow
+    - Nodes included only if respective capacity > 0
+    - Nodes sorted by total capacity (descending)
+    """
+    os.makedirs(folder, exist_ok=True)
+
+    data = []
+
+    # =========================
+    # Collect capacity data
+    # =========================
+    for n in model.N:
+        for k in model.K:
+            values = [
+                pyo.value(model.x_entry[n, k, m_k])
+                for m_k in model.M[k]
+                ]
+            entry = np.mean(values)
+            values = [
+                pyo.value(model.x_exit[n, k, m_k])
+                for m_k in model.M[k]
+                ]
+            exit_ = np.mean(values)
+
+            data.append({
+                "node": n,
+                "stage": k,
+                "entry": entry,
+                "exit": exit_
+            })
+
+    df = pd.DataFrame(data)
+
+    # =========================
+    # Collect FLOW data
+    # =========================
+    flow_dif = {}
+
+    for n in model.N:
+        values = [sum(pyo.value(model.f[a, c, m_3]) for a in model.A_n_minus[n] for c in model.C) - sum(pyo.value(model.f[a, c, m_3]) for a in model.A_n_plus[n] for c in model.C) for m_3 in model.M[3]]
+        flow_dif[n] = np.mean(values)
+
+    # =========================
+    # ENTRY CAPACITY PLOT
+    # =========================
+    entry_totals = df.groupby("node")["entry"].sum()
+    entry_nodes = entry_totals[entry_totals > 0].sort_values(ascending=False).index
+
+    if len(entry_nodes) > 0:
+        entry_df = df[df["node"].isin(entry_nodes)]
+
+        entry_pivot = entry_df.pivot(index="node", columns="stage", values="entry").fillna(0)
+        entry_pivot = entry_pivot.loc[entry_nodes]
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        # Stacked bars (capacity)
+        entry_pivot.plot(kind="bar", stacked=True, ax=ax)
+
+        # Flow line
+        flow_values = [flow_dif[n] for n in entry_nodes]
+        ax.plot(
+            range(len(entry_nodes)),
+            flow_values,
+            marker="o",
+            linestyle="None",
+            label="Actual Entry Flow"
+        )
+
+        ax.set_title("Entry Capacity vs Actual Flow per Node")
+        ax.set_xlabel("Node")
+        ax.set_ylabel("Entry Capacity / Flow")
+        ax.legend()
+        ax.grid(alpha=0.3, axis="y")
+
+        plt.tight_layout()
+        plt.savefig(folder + "entry_capacity_per_node.png")
+
+        if show:
+            plt.show()
+
+        plt.close(fig)
+
+    else:
+        print("No entry capacity bought at any node.")
+
+    # =========================
+    # EXIT CAPACITY PLOT
+    # =========================
+    exit_totals = df.groupby("node")["exit"].sum()
+    exit_nodes = exit_totals[exit_totals > 0].sort_values(ascending=False).index
+
+    if len(exit_nodes) > 0:
+        exit_df = df[df["node"].isin(exit_nodes)]
+
+        exit_pivot = exit_df.pivot(index="node", columns="stage", values="exit").fillna(0)
+        exit_pivot = exit_pivot.loc[exit_nodes]
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        # Stacked bars (capacity)
+        exit_pivot.plot(kind="bar", stacked=True, ax=ax)
+
+        # Flow line
+        flow_values = [-flow_dif[n] for n in exit_nodes]
+        ax.plot(
+            range(len(exit_nodes)),
+            flow_values,
+            marker="o",
+            linestyle="None",
+            label="Actual Exit Flow"
+        )
+
+        ax.set_title("Exit Capacity vs Actual Flow per Node")
+        ax.set_xlabel("Node")
+        ax.set_ylabel("Exit Capacity / Flow")
+        ax.legend()
+        ax.grid(alpha=0.3, axis="y")
+
+        plt.tight_layout()
+        plt.savefig(folder + "exit_capacity_per_node.png")
+
+        if show:
+            plt.show()
+
+        plt.close(fig)
+
+    else:
+        print("No exit capacity bought at any node.")
+
 def plot_results(model, folder = "figures/"):
     if len(model.N) == 0:
         print("Warning: No plots were made as there are no nodes in the model")
@@ -1285,6 +1435,7 @@ def plot_results(model, folder = "figures/"):
     plot_supplier_total_prod_vs_total_demand(model, folder + "contracted_demand/")
     plot_scenario_revenue_costs(model, folder)
     plot_scenario_objectives(model, folder)
+    plot_entry_exit_capacity(model, folder, show = True)
 
 def save_model_values(model, filename):
     """
