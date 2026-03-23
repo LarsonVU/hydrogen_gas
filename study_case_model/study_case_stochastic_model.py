@@ -144,7 +144,7 @@ def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc, n
     model.v_index = pyo.Set(dimen=2, initialize=v_index_init)
 
 
-def build_parameters(model, network, scenarios, cutting_plane_pairs, allowed_deviation=ALLOWED_DEVIATION, number_of_density_bounds = NUMBER_OF_DENSITY_BOUNDS):
+def build_parameters(model, network, scenarios, cutting_plane_pairs, allowed_deviation=ALLOWED_DEVIATION, number_of_density_bounds = NUMBER_OF_DENSITY_BOUNDS, rho_low = RHO_LOW, rho_high = RHO_HIGH):
     # Prices and costs
     model.o_n_d = pyo.Param(model.N_m, model.M[3], initialize=lambda model, n, m: scenarios[3][m-1].G.nodes[n]['price'] if n in scenarios[3][m-1].G.nodes else 0)
     model.o_n_g = pyo.Param(model.N_hg, model.M[3], initialize=lambda model, n, m: float(scenarios[3][m-1].G.nodes[n]['generation_cost']) if n in scenarios[3][m-1].G.nodes else 0)
@@ -179,7 +179,7 @@ def build_parameters(model, network, scenarios, cutting_plane_pairs, allowed_dev
     model.rho_c = pyo.Param(model.C, initialize={"NG": 0.65, "CO2": 1.53, "H2": 0.07})
     model.gcv_c = pyo.Param(model.C, initialize={"NG": 39.8 /3.6 *1000, "H2": 12.7 / 3.6 * 1000, "CO2": 0}) #MWh/Mscm
 
-    rho_values = np.linspace(RHO_LOW, RHO_HIGH, number_of_density_bounds + 1)[1:]
+    rho_values = np.linspace(rho_low, rho_high, number_of_density_bounds + 1)[1:]
     model.rho_Z = pyo.Param(model.Z_theta, initialize={z: rho_values[i] for i, z in enumerate(model.Z_theta)})
 
     # Weymouth
@@ -707,14 +707,16 @@ def create_model(network: networkx.Graph, scenarios=None,
                   cutting_plane_pairs=generate_cutting_plane_pairs(), 
                   splits_per_arc=splits_per_arc, 
                   allowed_deviation=ALLOWED_DEVIATION,
-                  number_of_density_bounds = NUMBER_OF_DENSITY_BOUNDS):
+                  number_of_density_bounds = NUMBER_OF_DENSITY_BOUNDS,
+                  rho_low = RHO_LOW,
+                  rho_high = RHO_HIGH):
     if scenarios is None:
         raise ValueError("Scenarios must be provided to create the stochastic model. For a deterministic model, create a single scenario, or consult the deterministic_model folder.")
 
     model = pyo.ConcreteModel()
 
     build_sets(model, network, scenarios=scenarios, cutting_plane_pairs=cutting_plane_pairs, splits_per_arc=splits_per_arc, number_of_density_bounds=number_of_density_bounds)
-    build_parameters(model, network, scenarios=scenarios, cutting_plane_pairs=cutting_plane_pairs, allowed_deviation=allowed_deviation, number_of_density_bounds= number_of_density_bounds)
+    build_parameters(model, network, scenarios=scenarios, cutting_plane_pairs=cutting_plane_pairs, allowed_deviation=allowed_deviation, number_of_density_bounds= number_of_density_bounds,rho_low=rho_low, rho_high=rho_high)
     build_variables(model)
     if len(model.N) ==0 or len(model.A) ==0:
         return model
