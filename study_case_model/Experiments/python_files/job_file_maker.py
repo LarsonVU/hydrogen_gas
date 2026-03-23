@@ -9,18 +9,16 @@ runs = 4
 
 data_folder = "study_case_model/scenario_variables/subsidy_experiment/"
 pickle_folder = "study_case_model/figures/subsidy_experiment/"
-
+threads = 32
 output_file = "study_case_model/Experiments/slurm_files/jobs.txt"
 
 # =========================
 # Generate jobs
 # =========================
 lines = []
-
-for dev_idx, dev in enumerate(deviations):
-    for sub_idx, sub in enumerate(subsidies):
-        for run_idx in range(runs):
-
+for run_idx in range(runs):
+    for dev_idx, dev in enumerate(deviations):
+        for sub_idx, sub in enumerate(subsidies):
             cmd = (
                 "python study_case_model/Experiments/python_files/examine_parallel_subsidies.py "
                 f"--run {run_idx} "
@@ -31,6 +29,7 @@ for dev_idx, dev in enumerate(deviations):
                 f"--upper_bounds 4 "
                 f"--data_folder {data_folder} "
                 f"--pickle_folder {pickle_folder} "
+                f"--threads {threads}"
             )
 
             lines.append(cmd)

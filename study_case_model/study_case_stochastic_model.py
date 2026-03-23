@@ -726,19 +726,47 @@ def create_model(network: networkx.Graph, scenarios=None,
 
     return model
 
-def solve_model(model, verbose=True, time_limit=None, threads = 8, precision = 0.0001):
-    solver = pyo.SolverFactory('gurobi')  # You can choose a different solver if needed
-    solver.options['OutputFlag'] = 1  # ensures full output
-    solver.options['MIPGap'] = precision  # set precision for MIP gap
+def solve_model(
+    model,
+    verbose=True,
+    time_limit=None,
+    threads=8,
+    precision=0.0001,
+    nodefile_start=1,   # GB before spilling to disk
+    nodefile_dir=None
+):
+    solver = pyo.SolverFactory('gurobi')
+
+    # --- Basic solver settings ---
+    solver.options['OutputFlag'] = 1
+    solver.options['MIPGap'] = precision
+    solver.options['Threads'] = threads
+    solver.options['Presolve'] = 1
+    solver.options['Cuts'] = 1
 
     if time_limit is not None:
-        solver.options['TimeLimit'] = time_limit  # optional
+        solver.options['TimeLimit'] = time_limit
 
-    solver.options['Threads'] =threads  # or number of CPU cores
-    solver.options['Presolve'] = 1  # aggressive presolve
-    solver.options['Cuts'] = 1  # aggressive cuts
+    # --- Determine nodefile directory (portable) ---
+    if nodefile_dir is None:
+        if os.path.exists("/scratch"):
+            nodefile_dir = "/scratch"
+        else:
+            nodefile_dir = "./nodefiles"
 
-    results = solver.solve(model, tee=verbose)  # tee=True to display solver output
+    # --- Ensure directory exists ---
+    os.makedirs(nodefile_dir, exist_ok=True)
+
+    # --- Gurobi memory management ---
+    solver.options['NodefileStart'] = nodefile_start
+    solver.options['NodefileDir'] = nodefile_dir
+
+    # Optional: safer memory cap (in GB)
+    solver.options['MemLimit'] = 60  # slightly below your 64GB total
+
+    # --- Solve ---
+    results = solver.solve(model, tee=verbose)
+
     return results
 
 

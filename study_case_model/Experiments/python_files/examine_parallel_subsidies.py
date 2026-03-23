@@ -27,7 +27,7 @@ parser.add_argument("--deviation", type=float, default=0)
 
 parser.add_argument("--upper_bounds", type=int, default=1)
 parser.add_argument("--time_limit", type=float, default=None)
-parser.add_argument("--threads", type= int, default= 2)
+parser.add_argument("--threads", type= int, default= 8)
 
 parser.add_argument("--data_folder", type=str, default="scenario_variables/other_experiment_data/")
 parser.add_argument("--pickle_folder", type= str, default= "study_case_model/figures/other_experiments")

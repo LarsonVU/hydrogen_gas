@@ -62,10 +62,11 @@ FOLDER = args.folder
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1: 1, 2: args.branches_stage2, 3: args.branches_stage3}
 PRECISION = args.precision
+RUNS = 10
 
 def time_model(model, precision = PRECISION):
     start_time = time.time()
-    results = solve_model(model, verbose=False, precision = precision)
+    results = solve_model(model, verbose=False, precision = precision, threads = 32)
     end_time = time.time()
     return end_time - start_time
 
@@ -361,9 +362,9 @@ def save_dict_to_csv(data_dict, folder, filename):
 if __name__ == "__main__":
     G = build_base_graph()
 
-    # solve_times = branch_solve_time_matrix(G, max_2=8, max_3=8, runs=4)
-    # save_dict_to_csv(solve_times, FOLDER, "branch_solve_times")
-    # plot_solve_time_matrix(solve_times)
+    solve_times = branch_solve_time_matrix(G, max_2=8, max_3=8, runs=RUNS)
+    save_dict_to_csv(solve_times, FOLDER, "branch_solve_times")
+    plot_solve_time_matrix(solve_times)
 
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
 
@@ -376,15 +377,15 @@ if __name__ == "__main__":
     # plot_cutting_plane_solve_times(cutting_plane_times)
 
     density_bounds = [1, 2, 3, 4]
-    solve_times = density_solve_times(G, density_bounds, runs = 4)
+    solve_times = density_solve_times(G, density_bounds, runs = RUNS)
     save_dict_to_csv(solve_times, FOLDER, "density_solve_times")
-    plot_density_solve_times(solve_times, runs=4)
+    plot_density_solve_times(solve_times, runs=RUNS)
 
-    solve_times = splits_per_arc_experiment(G, splits_values=[6,11,16,21,26], runs= 4)
+    solve_times = splits_per_arc_experiment(G, splits_values=[6,11,16,21,26], runs= RUNS)
 
-    plot_splits_solve_times(solve_times, runs= 4)
+    plot_splits_solve_times(solve_times, runs= RUNS)
     save_dict_to_csv(solve_times, FOLDER, "splits_solve_times")
-    plot_splits_objective(solve_times, runs= 4)
+    plot_splits_objective(solve_times, runs= RUNS)
 
 
 
