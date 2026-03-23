@@ -27,4 +27,4 @@ source activate hydrogen_venv
 cd $HOME/projects/hydrogen_gas
 
 i=${SLURM_ARRAY_TASK_ID}
-$(head -$i study_case_model/Experiments/slurm_files/speed_jobs.txt | tail -1)
+$(head -$i study_case_model/Experiments/slurm_files/density_jobs.txt | tail -1)
