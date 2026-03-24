@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import os
 from scipy.optimize import minimize
+import matplotlib.colors as mcolors
 
 np.random.seed(42)
 
@@ -32,10 +33,19 @@ def plot_grid(pairs, file_path):
     # Calculate Weymouth cutting constant for each pair
     flow = [np.sqrt(pair[0]**2 - pair[1]**2) for pair in pairs]
 
+    # Define your pastel colors (example palette)
+    pastel_colors = ["#82C9FF", "#7AFF97",]
+
+    # Create a continuous colormap
+    continuous_pastel = mcolors.LinearSegmentedColormap.from_list(
+        "continuous_pastel", pastel_colors
+)
+
+
     # Create the plot
     plt.figure(figsize=(10, 6))
     scatter = plt.scatter(p_out_values, p_in_values, c=flow, marker='.', 
-                        s=200, cmap='viridis')
+                        s=200, cmap=continuous_pastel)
     plt.xlabel(r'$P_{\text{out},l}$')
     plt.ylabel(r'$P_{\text{in},l}$')
     plt.title('Cutting Plane Points')

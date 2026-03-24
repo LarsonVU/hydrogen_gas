@@ -64,6 +64,15 @@ def load_and_plot(csv_path, folder="figures/", runs=None):
     - runs: if provided, assumes std column is SD and converts to SE via /sqrt(runs)
             if None, assumes std column is already SE
     """
+    # Soft pastel palette
+    pastel_colors = [
+        "#FF8692",  # pastel red
+        "#7AFF97",  # pastel green
+        "#82C9FF",  # pastel blue
+        "#DB97E3",  # pastel purple
+        "#FFFF82",  # pastel yellow
+    ]
+
 
     df = pd.read_csv(csv_path)
 
@@ -107,17 +116,18 @@ def load_and_plot(csv_path, folder="figures/", runs=None):
     # ---- H2 ----
     plt.figure(figsize=(10, 6))
 
-    for s in subsidies:
+    for i,s in enumerate(subsidies):
         means = [results[s][d]["h2_mean"] for d in densities]
         errs = [get_err(results[s][d]["h2_std"]) for d in densities]
 
-        plt.errorbar(densities, means, yerr=errs, marker="o", capsize=5, label=f"Subsidy {s}")
+        plt.errorbar(densities, means, yerr=errs, marker="o", capsize=5, label=f"Subsidy {s}",
+        color=pastel_colors[i % len(pastel_colors)])
 
     plt.xlabel("Density Bounds")
     plt.ylabel("Hydrogen Production")
-    plt.title("H2 Production vs Density Bounds (CRN)")
+    plt.title("H2 Production vs Density Bounds")
     plt.grid()
-    plt.legend()
+    plt.legend(loc="lower right")
     plt.tight_layout()
     plt.savefig(folder + "h2_vs_density.png")
     plt.show()
@@ -125,17 +135,17 @@ def load_and_plot(csv_path, folder="figures/", runs=None):
     # ---- Pressure ----
     plt.figure(figsize=(10, 6))
 
-    for s in subsidies:
+    for i,s in enumerate(subsidies):
         means = [results[s][d]["pressure_mean"] for d in densities]
         errs = [get_err(results[s][d]["pressure_std"]) for d in densities]
 
-        plt.errorbar(densities, means, yerr=errs, marker="o", capsize=5, label=f"Subsidy {s}")
+        plt.errorbar(densities, means, yerr=errs, marker="o", capsize=5, label=f"Subsidy {s}", color=pastel_colors[i % len(pastel_colors)])
 
     plt.xlabel("Density Bounds")
     plt.ylabel("Pressure Cost")
-    plt.title("Pressure Cost vs Density Bounds (CRN)")
+    plt.title("Pressure Cost vs Density Bounds")
     plt.grid()
-    plt.legend()
+    plt.legend(loc="lower right")
     plt.tight_layout()
     plt.savefig(folder + "pressure_vs_density.png")
     plt.show()
