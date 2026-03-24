@@ -14,7 +14,7 @@ import argparse
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
 
-from study_case_stochastic_model import solve_model, create_model, generate_cutting_plane_pairs
+from study_case_stochastic_model import solve_model, create_model, generate_cutting_plane_pairs, save_model_values
 from study_case_problem_file import build_base_graph, create_scenarios
 
 # =========================
@@ -113,6 +113,7 @@ def density_experiment_crn(G, densities, subsidies, runs):
                 )
 
                 solve_model(model, verbose=False, precision=PRECISION, threads=16)
+                save_model_values(model, FOLDER + f"model_pickles/model_run{r}_sub{subsidy}_den{d}" )
 
                 h2 = compute_h2(model)
                 pressure = compute_pressure_cost(model)
