@@ -146,8 +146,9 @@ def main():
     files = [
         "study_case_model/figures/density_impact/run23326/density_impact.csv",
         "study_case_model/figures/density_impact/run24326/density_impact.csv",
+        "study_case_model/figures/density_impact/run24326_2/density_impact.csv",
     ]
-    sample_number = [10,20]
+    sample_number = [10,20,20]
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--files", nargs="+", default =files, help="CSV files")
