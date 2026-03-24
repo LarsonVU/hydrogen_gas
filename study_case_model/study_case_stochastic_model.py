@@ -736,7 +736,6 @@ def solve_model(
     threads=8,
     precision=0.0001,
     nodefile_start=1,   # GB before spilling to disk
-    nodefile_dir=None
 ):
     solver = pyo.SolverFactory('gurobi')
 
@@ -750,38 +749,14 @@ def solve_model(
     if time_limit is not None:
         solver.options['TimeLimit'] = time_limit
 
-    # --- Determine nodefile directory (portable) ---
-    if nodefile_dir is None:
-        if os.path.exists("/scratch"):
-            nodefile_dir = "/scratch"
-        else:
-            nodefile_dir = "./nodefiles"
-
-    # --- Ensure directory exists ---
-    os.makedirs(nodefile_dir, exist_ok=True)
-
     # --- Gurobi memory management ---
     solver.options['NodefileStart'] = nodefile_start
-    solver.options['NodefileDir'] = nodefile_dir
 
     # Optional: safer memory cap (in GB)
     solver.options['MemLimit'] = 60  # slightly below your 64GB total
 
     # --- Solve ---
     results = solver.solve(model, tee=verbose)
-
-    if os.path.exists(nodefile_dir):
-        try:
-            # Only remove contents, keep the folder
-            for filename in os.listdir(nodefile_dir):
-                file_path = os.path.join(nodefile_dir, filename)
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)  # remove file or symlink
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)  # remove subdirectory
-            print(f"Cleared contents of {nodefile_dir}")
-        except Exception as e:
-            print(f"Error while clearing {nodefile_dir}: {e}")
 
     return results
 

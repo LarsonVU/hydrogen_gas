@@ -34,7 +34,7 @@ def combine_group(group):
         ns = group["n"]
 
         # convert SE -> SD
-        sds = ses * np.sqrt(ns)
+        sds = ses # * np.sqrt(ns)
 
         # pooled mean
         weighted_mean = np.sum(ns * means) / N

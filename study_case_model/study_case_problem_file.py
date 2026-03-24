@@ -39,7 +39,7 @@ def plot_grid(pairs, file_path):
     # Create a continuous colormap
     continuous_pastel = mcolors.LinearSegmentedColormap.from_list(
         "continuous_pastel", pastel_colors
-)
+        )
 
 
     # Create the plot
