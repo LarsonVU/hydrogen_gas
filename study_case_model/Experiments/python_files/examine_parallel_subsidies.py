@@ -109,7 +109,7 @@ if __name__ == "__main__":
         folder=data_folder
     )
 
-    print("Solving model...", flush=True)
+    print("Solving model:" + f" dev{DEVIATION}, sub{SUBSIDY}, run{RUN}", flush=True)
 
     # Build model
     model = scsm.create_model(

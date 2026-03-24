@@ -5,10 +5,10 @@ import os
 # =========================
 subsidies = list(range(0, 81, 5))   # 0,5,...,80
 deviations = [0, 0.05, 0.1]
-runs = 4
+runs = 10
 
-data_folder = "study_case_model/scenario_variables/subsidy_experiment/"
-pickle_folder = "study_case_model/figures/subsidy_experiment/"
+data_folder = "study_case_model/scenario_variables/subsidy_experiment/run_24326/"
+pickle_folder = "study_case_model/figures/subsidy_experiment/run_24326/"
 threads = 32
 output_file = "study_case_model/Experiments/slurm_files/jobs.txt"
 
@@ -26,7 +26,7 @@ for run_idx in range(runs):
                 f"--branches_stage3 8 "
                 f"--subsidy {sub} "
                 f"--deviation {dev} "
-                f"--upper_bounds 4 "
+                f"--upper_bounds 1 "
                 f"--data_folder {data_folder} "
                 f"--pickle_folder {pickle_folder} "
                 f"--threads {threads}"
