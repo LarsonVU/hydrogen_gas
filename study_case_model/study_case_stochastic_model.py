@@ -1410,7 +1410,7 @@ def plot_results(model, folder = "figures/"):
     plot_supplier_total_prod_vs_total_demand(model, folder + "contracted_demand/")
     plot_scenario_revenue_costs(model, folder)
     plot_scenario_objectives(model, folder)
-    plot_entry_exit_capacity(model, folder, show = True)
+    plot_entry_exit_capacity(model, folder)
 
 def save_model_values(model, filename):
     """
