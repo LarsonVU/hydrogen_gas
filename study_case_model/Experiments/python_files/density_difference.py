@@ -109,7 +109,8 @@ def density_experiment_crn(G, densities, subsidies, runs):
                     G_sub,
                     scenarios,
                     number_of_density_bounds=d,
-                    cutting_plane_pairs=generate_cutting_plane_pairs(method="skewed")
+                    cutting_plane_pairs=generate_cutting_plane_pairs(method="skewed"),
+                    allowed_deviation=1                    
                 )
 
                 solve_model(model, verbose=False, precision=PRECISION, threads=16)

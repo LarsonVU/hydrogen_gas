@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 
+MSCM_to_GWH = 27.8
+
 def load_data(files, sample_sizes):
     dfs = []
     for file, n in zip(files, sample_sizes):
@@ -117,14 +119,14 @@ def load_and_plot(csv_path, folder="figures/", runs=None):
     plt.figure(figsize=(10, 6))
 
     for i,s in enumerate(subsidies):
-        means = [results[s][d]["h2_mean"] for d in densities]
-        errs = [get_err(results[s][d]["h2_std"]) for d in densities]
+        means = [results[s][d]["h2_mean"] *MSCM_to_GWH for d in densities]
+        errs = [get_err(results[s][d]["h2_std"]) *MSCM_to_GWH for d in densities]
 
         plt.errorbar(densities, means, yerr=errs, marker="o", capsize=5, label=f"Subsidy {s}",
         color=pastel_colors[i % len(pastel_colors)])
 
     plt.xlabel("Density Bounds")
-    plt.ylabel("Hydrogen Production")
+    plt.ylabel("Hydrogen Production (Gwh)")
     plt.title("H2 Production vs Density Bounds")
     plt.grid()
     plt.legend(loc="lower right")
@@ -142,7 +144,7 @@ def load_and_plot(csv_path, folder="figures/", runs=None):
         plt.errorbar(densities, means, yerr=errs, marker="o", capsize=5, label=f"Subsidy {s}", color=pastel_colors[i % len(pastel_colors)])
 
     plt.xlabel("Density Bounds")
-    plt.ylabel("Pressure Cost")
+    plt.ylabel("Pressure Cost (Euro)")
     plt.title("Pressure Cost vs Density Bounds")
     plt.grid()
     plt.legend(loc="lower right")
