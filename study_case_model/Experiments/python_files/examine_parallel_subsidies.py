@@ -106,6 +106,7 @@ if __name__ == "__main__":
         NUMBER_OF_STAGES,
         BRANCHES_PER_STAGE,
         G_changed,
+        seed= RUN,
         folder=data_folder
     )
 

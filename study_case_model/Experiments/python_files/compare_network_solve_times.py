@@ -1,15 +1,23 @@
-import os, sys
+import os
+import sys
 import time
+import csv
+import argparse
+import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 
-# Add parent directory to Python path
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+# Add parent directory
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT))
 
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scsp
 
+
 # -----------------------------
-# Settings
+# Default settings
 # -----------------------------
 NETWORKS = {
     "smaller_network": "data/data_analysis_results/Geojson_pipelines/smaller_network.geojson",
@@ -18,74 +26,194 @@ NETWORKS = {
 }
 
 DATA_FOLDERS = {
-    "bigger_network": "study_case_model/compare_models/bigger_network/scenario_variables/",
-    "smaller_network": "study_case_model/compare_models/smaller_network/scenario_variables/",
-    "study_case_network": "study_case_model/compare_models/study_case_network/scenario_variables/",
+    "bigger_network": "study_case_model/scenario_variables/compare_models/bigger_network/",
+    "smaller_network": "study_case_model/scenario_variables/compare_models/smaller_network/",
+    "study_case_network": "study_case_model/scenario_variables/compare_models/study_case_network/",
 }
 
-NUMBER_OF_STAGES = 3
-# We'll vary stage 2 and stage 3 branching
-STAGE_2_OPTIONS = [3, 5, 7]
-STAGE_3_OPTIONS = [1, 2, 4]
+FIGURES_FOLDERS = {
+    "bigger_network": "study_case_model/figures/compare_models/bigger_network/",
+    "smaller_network": "study_case_model/figures/compare_models/smaller_network/",
+    "study_case_network": "study_case_model/figures/compare_models/study_case_network/",
+}
 
 
 # -----------------------------
-# Helper function
+# CSV logging
 # -----------------------------
-def run_model(geojson_file, data_folder, branches_per_stage):
-    # Build graph
+def init_csv(csv_path):
+    """Create CSV with header if it doesn't exist."""
+    if not os.path.exists(csv_path):
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+
+        with open(csv_path, mode="w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "network",
+                "stage2",
+                "stage3",
+                "run",
+                "seed",
+                "solve_time"
+            ])
+
+
+def log_run(csv_path, row):
+    """Append a single run to CSV immediately."""
+    with open(csv_path, mode="a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(row)
+
+
+# -----------------------------
+# Model runner
+# -----------------------------
+def run_model(geojson_file, data_folder, figure_folder, branches_per_stage, seed, n_stages):
     G = scsp.build_base_graph(geojson_file)
-    # Create scenarios
-    scenarios = scsp.create_scenarios(NUMBER_OF_STAGES, branches_per_stage, G, data_folder)
-    # Build model
+
+    scenarios = scsp.create_scenarios(
+        n_stages,
+        branches_per_stage,
+        G,
+        seed=seed,
+        folder=data_folder
+    )
+
     model = scsm.create_model(G, scenarios)
-    
-    # Solve and time
+
     start_time = time.time()
-    results = scsm.solve_model(model)
+    results = scsm.solve_model(model, verbose=False, precision=0.001, threads =32)
     solve_time = time.time() - start_time
-    
+
+    scsm.save_model_values(model, figure_folder + f"model_run{seed}.pkl")
+
     return solve_time, results
 
-# -----------------------------
-# Run experiments
-# -----------------------------
-results_summary = []
-
-for net_name, geojson_file in NETWORKS.items():
-    data_folder = DATA_FOLDERS[net_name]
-    
-    print(f"\n=== Network: {net_name} ===")
-    
-    for stage2 in STAGE_2_OPTIONS:
-        for stage3 in STAGE_3_OPTIONS:
-            branches_per_stage = {1: 1, 2: stage2, 3: stage3}
-            
-            print(f"Running with stage2={stage2}, stage3={stage3}...")
-            solve_time, results = run_model(geojson_file, data_folder, branches_per_stage)
-            
-            results_summary.append({
-                "network": net_name,
-                "stage2": stage2,
-                "stage3": stage3,
-                "solve_time": solve_time,
-                "results": results
-            })
-            print(f" --> Solve time: {solve_time:.2f}s")
 
 # -----------------------------
-# Plot solve times
+# Main experiment logic
 # -----------------------------
-plt.figure(figsize=(10, 6))
-for net_name in NETWORKS.keys():
-    times = [r["solve_time"] for r in results_summary if r["network"] == net_name]
-    labels = [f"{r['stage2']}-{r['stage3']}" for r in results_summary if r["network"] == net_name]
-    plt.plot(labels, times, marker='o', label=net_name)
+def run_experiment(args):
+    init_csv(args.csv)
 
-plt.xlabel("Stage2-Stage3 branching")
-plt.ylabel("Solve Time (s)")
-plt.title("Comparison of Solve Time for Different Networks and Scenario Branching")
-plt.legend()
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
+    results_summary = []
+
+    for net_name in args.networks:
+        geojson_file = NETWORKS[net_name]
+        data_folder = DATA_FOLDERS[net_name]
+        figure_folder = FIGURES_FOLDERS[net_name]
+
+        print(f"\n=== Network: {net_name} ===")
+
+        for stage2 in args.stage2:
+            for stage3 in args.stage3:
+                branches_per_stage = {1: 1, 2: stage2, 3: stage3}
+
+                print(f"\nConfig: stage2={stage2}, stage3={stage3}")
+
+                run_times = []
+
+                for run in range(args.runs):
+                    seed = args.base_seed + run
+
+                    print(f"  Run {run+1}/{args.runs} (seed={seed})...")
+
+                    solve_time, _ = run_model(
+                        geojson_file,
+                        data_folder,
+                        figure_folder,
+                        branches_per_stage,
+                        seed,
+                        args.stages
+                    )
+
+                    run_times.append(solve_time)
+
+                    # 🔥 LOG IMMEDIATELY
+                    log_run(args.csv, [
+                        net_name,
+                        stage2,
+                        stage3,
+                        run,
+                        seed,
+                        solve_time
+                    ])
+
+                    print(f"    -> {solve_time:.2f}s")
+
+                mean_time = np.mean(run_times)
+                std_time = np.std(run_times)
+
+                results_summary.append({
+                    "network": net_name,
+                    "stage2": stage2,
+                    "stage3": stage3,
+                    "mean": mean_time,
+                    "std": std_time
+                })
+
+                print(f"  ✅ Mean: {mean_time:.2f}s | Std: {std_time:.2f}s")
+
+    return results_summary
+
+
+# -----------------------------
+# Plotting
+# -----------------------------
+def plot_results(results_summary, file_name):
+    plt.figure(figsize=(10, 6))
+
+    networks = sorted(set(r["network"] for r in results_summary))
+
+    for net_name in networks:
+        filtered = [r for r in results_summary if r["network"] == net_name]
+
+        labels = [f"{r['stage2']}-{r['stage3']}" for r in filtered]
+        means = [r["mean"] for r in filtered]
+        stds = [r["std"] for r in filtered]
+
+        plt.errorbar(labels, means, yerr=stds, marker='o', capsize=5, label=net_name)
+
+    plt.xlabel("Stage2-Stage3 branching")
+    plt.ylabel("Solve Time (s)")
+    plt.title("Solve Time Comparison (Mean ± Std)")
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(file_name)
+    plt.show()
+
+
+# -----------------------------
+# Argument parser
+# -----------------------------
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run stochastic model experiments")
+
+    parser.add_argument("--runs", type=int, default=2, help="Number of repetitions per config")
+    parser.add_argument("--stages", type=int, default=3, help="Number of stages")
+    parser.add_argument("--stage2", nargs="+", type=int, default=[4], help="Stage 2 branching options")
+    parser.add_argument("--stage3", nargs="+", type=int, default=[4], help="Stage 3 branching options")
+    parser.add_argument("--networks", nargs="+", default=list(NETWORKS.keys()), help="Networks to test")
+    parser.add_argument("--csv", type=str, default=FIGURES_FOLDERS["study_case_network"] +"experiment_results.csv", help="CSV log file")
+    parser.add_argument("--base-seed", type=int, default=42, help="Base random seed")
+
+    return parser.parse_args()
+
+
+# -----------------------------
+# Entry point
+# -----------------------------
+def main():
+    args = parse_args()
+
+    results_summary = run_experiment(args)
+
+    # Optional plotting
+    if len(results_summary) > 0:
+        plot_results(results_summary, file_name=FIGURES_FOLDERS["study_case_network"]+ "solve_times.png")
+
+
+if __name__ == "__main__":
+    main()

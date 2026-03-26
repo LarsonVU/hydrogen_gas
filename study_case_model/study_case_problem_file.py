@@ -376,10 +376,14 @@ def add_scenario_attributes(scenarios, branches_per_stage = BRANCHES_PER_STAGE, 
     add_generation_costs(scenarios, branches_per_stage=branches_per_stage)
     add_booking_costs(scenarios, branches_per_stage=branches_per_stage)
 
-def create_scenarios(n_stages, b_stages, G, folder = "study_case_model/scenario_variables/other_experiment_data/"):
+def create_scenarios(n_stages, b_stages, G, seed = None, folder = "study_case_model/scenario_variables/other_experiment_data/"):
     # Ensure the folder exists
     os.makedirs(folder, exist_ok=True)
-    
+    if seed is None:
+        np.random.seed(42)
+    else:
+        np.random.seed(seed)
+
     scenarios = {k: [] for k in range(1, n_stages + 1)}
 
     stage_probs = prob_per_stage(n_stages, b_stages)
@@ -417,7 +421,7 @@ def print_nodes_network_scenario(scenario):
 if __name__ == "__main__":
     G = build_base_graph()
     print(G)
-    scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, folder="study_case_model/scenario_variables/")
+    scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, seed=1, folder="study_case_model/scenario_variables/")
     cutting_plane = generate_cutting_plane_pairs(method= "skewed")
     plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/cut_plane_skewed")
 
@@ -425,5 +429,5 @@ if __name__ == "__main__":
     # plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/cut_plane_max")
 
     #Print a specific scenario for verification
-    #print_nodes_network_scenario(scenarios[3][4])
+    print_nodes_network_scenario(scenarios[3][4])
     #print_edges_network_scenario(scenarios[3][4])
