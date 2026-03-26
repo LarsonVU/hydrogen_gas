@@ -191,7 +191,7 @@ def plot_results(results_summary, file_name):
 def parse_args():
     parser = argparse.ArgumentParser(description="Run stochastic model experiments")
 
-    parser.add_argument("--runs", type=int, default=2, help="Number of repetitions per config")
+    parser.add_argument("--runs", type=int, default=10, help="Number of repetitions per config")
     parser.add_argument("--stages", type=int, default=3, help="Number of stages")
     parser.add_argument("--stage2", nargs="+", type=int, default=[4], help="Stage 2 branching options")
     parser.add_argument("--stage3", nargs="+", type=int, default=[4], help="Stage 3 branching options")
