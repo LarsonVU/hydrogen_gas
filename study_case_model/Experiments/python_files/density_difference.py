@@ -44,7 +44,7 @@ BRANCHES_PER_STAGE = {1: 1, 2: args.branches_stage2, 3: args.branches_stage3}
 PRECISION = args.precision
 RUNS = args.runs
 
-DENSITIES = [1, 5, 10]
+DENSITIES = [1, 2, 4, 8]
 SUBSIDIES = [0, 35, 40, 80]
 
 # =========================
