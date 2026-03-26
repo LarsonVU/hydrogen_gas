@@ -94,9 +94,9 @@ def plot_results(csv_path, folder="figures/"):
         capsize=3
     )
 
-    plt.xlabel("Index")
+    plt.xlabel("Amount of homogeneous splits")
     plt.ylabel("Solve Time (seconds)")
-    plt.title("Solve Time per Index (Combined Homogeneous Splits)")
+    plt.title("Solve Time for different amount of homogeneous splits")
     plt.grid(True)
     plt.tight_layout()
 
@@ -122,9 +122,9 @@ def plot_results(csv_path, folder="figures/"):
         capsize=3
     )
 
-    plt.xlabel("Index")
+    plt.xlabel("Amount of homogeneous splits")
     plt.ylabel("Objective Value")
-    plt.title("Objective per Index (Combined Homogeneous Splits)")
+    plt.title("Objective for different amount of homogeneous splits")
     plt.grid(True)
     plt.tight_layout()
 

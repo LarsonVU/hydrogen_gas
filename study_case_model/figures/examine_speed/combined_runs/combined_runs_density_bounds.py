@@ -79,9 +79,9 @@ def load_and_plot_series(csv_path, folder="figures/"):
     # optionally, add error bars as thin black lines (like little caps)
     plt.errorbar(x, means, yerr=stderrs, fmt='none', ecolor="#FF8692", capsize=3)
 
-    plt.xlabel("Index")
+    plt.xlabel("Amount of upperbounds")
     plt.ylabel("Mean Solve Time (seconds)")
-    plt.title("Solve Time per Index")
+    plt.title("Solve Time for different amount of upperbounds")
     plt.grid(True)
     plt.tight_layout()
 
