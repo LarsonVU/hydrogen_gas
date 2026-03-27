@@ -1,6 +1,6 @@
 #!/bin/bash
 # Set Job Requirements
-#SBATCH -t 10:00:00
+#SBATCH -t 48:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
