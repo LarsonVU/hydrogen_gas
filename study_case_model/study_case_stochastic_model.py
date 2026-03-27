@@ -766,6 +766,7 @@ def solve_model(
 
     # --- Gurobi memory management ---
     solver.options['NodefileStart'] = nodefile_start
+    solver.options['NodefileDir'] = node_file_folder
 
     # Optional: safer memory cap (in GB)
     solver.options['MemLimit'] = 60  # slightly below your 64GB total

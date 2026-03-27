@@ -121,7 +121,8 @@ if __name__ == "__main__":
     )
 
     # Solve with Gurobi (multithreaded)
-    results = scsm.solve_model(model, threads= THREADS, verbose= True, precision=0.001)
+    node_file_folder = f"node_files/dev{DEVIATION}_sub{SUBSIDY}_run{RUN}"
+    results = scsm.solve_model(model, threads= THREADS, verbose= True, precision=0.001, node_file_folder=node_file_folder)
 
     # Save results
     scsm.save_model_values(model, os.path.join(pickle_folder, "model_snapshot.pkl"))

@@ -379,9 +379,7 @@ def add_scenario_attributes(scenarios, branches_per_stage = BRANCHES_PER_STAGE, 
 def create_scenarios(n_stages, b_stages, G, seed = None, folder = "study_case_model/scenario_variables/other_experiment_data/"):
     # Ensure the folder exists
     os.makedirs(folder, exist_ok=True)
-    if seed is None:
-        np.random.seed(42)
-    else:
+    if seed is not None:
         np.random.seed(seed)
 
     scenarios = {k: [] for k in range(1, n_stages + 1)}
