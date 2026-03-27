@@ -194,6 +194,9 @@ def plot_objective_values(objective_dict, folder):
 
         subs, means, ses = zip(*sorted_data)
 
+        ses  = [s**2 + ses[0]**2 for s in ses]
+        means = means - means[0]
+
         plt.errorbar(
             subs,
             means,
@@ -212,6 +215,172 @@ def plot_objective_values(objective_dict, folder):
     plt.savefig(os.path.join(folder, "objective_vs_subsidy.png"))
     plt.close()
 
+def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
+    os.makedirs(folder, exist_ok=True)
+
+    plt.figure(figsize=(10, 5))
+
+    for label in sorted(objective_dict.keys()):
+        obj_stats = objective_dict[label]
+        h2_stats = h2_dict[label]
+
+        # sort both consistently
+        sorted_data = sorted(
+            zip(obj_stats["subsidy"], obj_stats["mean"], obj_stats["se"],
+                h2_stats["mean"], h2_stats["se"]),
+            key=lambda x: x[0]
+        )
+
+        subs, obj_means, obj_ses, h2_means, h2_ses = zip(*sorted_data)
+        base_obj = obj_means[0]
+
+        net_means = []
+        net_ses = []
+
+        if co2_method == "zero":
+            # No social cost on co2
+            co2_savings_unit = 0
+        elif co2_method == "energy":
+            # Social cost savings per displaced mwh (transformed to mscm)
+            # Sources:
+            # Costs per kwh :   https://co2emissiefactoren.nl/ 
+            # Conversion rates : https://www.engineeringtoolbox.com/fuels-higher-calorific-values-d_169.html
+            # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2
+
+            co2_cost_ng = 2.134 * 1000 # in tonne (metric ton) CO2e per Mscm 
+            co2_cost_green_h2 = 1.080 /11.94 *1000 # in tonne (metric ton) CO2e per Mscm 
+            
+            conversion_ng = 39.8 /3.6 *1000 # mwh to Mscm
+            conversion_h2 = 12.7 /3.6 *1000 #  mwh to Mscm
+
+            co2_savings_unit = 185 * (co2_cost_ng-co2_cost_green_h2) * (conversion_h2/ conversion_ng) # Euro per Mscm
+        elif co2_method == "volume":
+            # Social cost savings per mscm
+            # Sources:
+            # https://h2tools.org/hyarc/calculator-tools/hydrogen-conversions-calculator # KG to scm transformation h2
+            # https://co2emissiefactoren.nl/  Emissionfactors
+            # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2 
+            co2_cost_ng = 2.134 * 1000 # in tonne (metric ton) CO2e per Mscm 
+            co2_cost_green_h2 = 1.080 /11.94 *1000 # in tonne (metric ton) CO2e per Mscm 
+            co2_savings_unit = 185 * (co2_cost_ng -co2_cost_green_h2) # in euro per Mscm
+        else:
+            Exception("No accepted co2 saving method")
+        print("CO2 cost per Mcsm:", co2_savings_unit)
+
+
+        for s, m_obj, se_obj, m_h2, se_h2 in zip(subs, obj_means, obj_ses, h2_means, h2_ses):
+            delta_obj =  m_obj - base_obj
+
+            # correct net effect
+            net = delta_obj - s *2.78 * 1000 * m_h2 + m_h2 *co2_savings_unit
+            net_means.append(net)
+
+            # error propagation (approx)
+            var = se_obj**2 + obj_ses[0]**2 + (s**2) * (se_h2**2)
+            net_ses.append(np.sqrt(var))
+
+        plt.errorbar(
+            subs,
+            net_means,
+            yerr=net_ses,
+            fmt='o-',
+            capsize=5,
+            label=f"Deviation {label}"
+        )
+
+    plt.xlabel('Subsidy (Euro/MWh)')
+    plt.ylabel('Net Effect (Euro)')
+    plt.title('Net Welfare Effect of Subsidy')
+    plt.grid(True)
+    plt.legend()
+
+    plt.savefig(os.path.join(folder, f"net_effect_vs_subsidy_{co2_method}.png"))
+    plt.close()
+
+def get_average_network_flows_per_component():
+    average_flows = 0
+    return None
+
+def analyze_network_flows(subsidy, deviation, base_folder):
+    """
+    Extract all flow variables for a given (subsidy, deviation) setting.
+
+    Returns:
+        dict with:
+            - "flows": list of flow dictionaries per run
+            - "mean": aggregated mean flow (per variable)
+            - "se": standard error (per variable)
+    """
+    base = Path(base_folder)
+
+    dev_dir = base / f"dev{deviation}"
+    sub_dir = dev_dir / f"sub{subsidy}"
+
+    flows = []
+
+    for run_dir in sorted(sub_dir.glob("run*/")):
+        files = list(run_dir.glob("*.pkl"))
+        if not files:
+            continue
+
+        with open(files[0], "rb") as f:
+            snapshot = pickle.load(f)
+
+        # ---- Extract flows from snapshot ----
+        # This assumes your snapshot stores flows in model.f as before
+        flow_dict = {}
+
+        for vname, var in snapshot.model.component_map(type(snapshot.model.f)).items():
+            if var.is_indexed():
+                flow_dict[vname] = {
+                    idx: float(var[idx].value)
+                    for idx in var
+                }
+            else:
+                flow_dict[vname] = float(var.value)
+
+        flows.append(flow_dict)
+
+    if len(flows) == 0:
+        return None
+
+    # ---- Aggregate (example: mean & SE per variable/index) ----
+    # Convert to structured numeric arrays
+    aggregated = {}
+
+    # Collect all variable names
+    var_names = flows[0].keys()
+
+    for vname in var_names:
+        # collect all runs for this variable
+        values = []
+
+        for flow in flows:
+            if isinstance(flow[vname], dict):
+                values.append(list(flow[vname].values()))
+            else:
+                values.append([flow[vname]])
+
+        values = np.array(values)
+
+        mean = np.mean(values, axis=0)
+        se = np.std(values, axis=0, ddof=1) / np.sqrt(values.shape[0])
+
+        aggregated[vname] = {
+            "mean": mean,
+            "se": se
+        }
+
+    return {
+        "flows": flows,
+        "aggregated": aggregated
+    }
+
+
+def network_plot_hydrogen_production(subsidy, deviation, folder):
+    return None
+
+
 # ---------------------------
 # RUN
 # ---------------------------
@@ -225,3 +394,6 @@ if __name__ == "__main__":
     objective_dict = analyze_objectives("study_case_model/figures/subsidy_experiment/run_24326")
 
     plot_objective_values(objective_dict, folder="study_case_model/figures/subsidy_experiment/combined_results")
+    plot_net_effect(objective_dict, results, folder ="study_case_model/figures/subsidy_experiment/combined_results")
+    plot_net_effect(objective_dict, results, folder ="study_case_model/figures/subsidy_experiment/combined_results", co2_method="energy")
+    plot_net_effect(objective_dict, results, folder ="study_case_model/figures/subsidy_experiment/combined_results", co2_method="volume")
