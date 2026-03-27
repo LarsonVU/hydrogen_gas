@@ -736,6 +736,7 @@ def solve_model(
     threads=8,
     precision=0.0001,
     nodefile_start=1,   # GB before spilling to disk
+    node_file_folder = None
 ):
     solver = pyo.SolverFactory('gurobi')
 

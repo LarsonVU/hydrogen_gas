@@ -193,8 +193,8 @@ def parse_args():
 
     parser.add_argument("--runs", type=int, default=10, help="Number of repetitions per config")
     parser.add_argument("--stages", type=int, default=3, help="Number of stages")
-    parser.add_argument("--stage2", nargs="+", type=int, default=[4], help="Stage 2 branching options")
-    parser.add_argument("--stage3", nargs="+", type=int, default=[4], help="Stage 3 branching options")
+    parser.add_argument("--stage2", nargs="+", type=int, default=[1], help="Stage 2 branching options")
+    parser.add_argument("--stage3", nargs="+", type=int, default=[1], help="Stage 3 branching options")
     parser.add_argument("--networks", nargs="+", default=list(NETWORKS.keys()), help="Networks to test")
     parser.add_argument("--csv", type=str, default=FIGURES_FOLDERS["study_case_network"] +"experiment_results.csv", help="CSV log file")
     parser.add_argument("--base-seed", type=int, default=42, help="Base random seed")
