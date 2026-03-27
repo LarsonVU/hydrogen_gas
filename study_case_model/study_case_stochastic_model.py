@@ -740,6 +740,20 @@ def solve_model(
 ):
     solver = pyo.SolverFactory('gurobi')
 
+
+    # -----------------------------
+    # Create timestamped folder
+    # -----------------------------
+    created_temp_dir = False
+
+    if node_file_folder is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        node_file_folder = os.path.join("nodefiles", f"run_{timestamp}")
+
+    if not os.path.exists(node_file_folder):
+        os.makedirs(node_file_folder, exist_ok=True)
+        created_temp_dir = True
+
     # --- Basic solver settings ---
     solver.options['OutputFlag'] = 1
     solver.options['MIPGap'] = precision
@@ -758,6 +772,17 @@ def solve_model(
 
     # --- Solve ---
     results = solver.solve(model, tee=verbose)
+
+    # -----------------------------
+    # Cleanup node files
+    # -----------------------------
+    if created_temp_dir and os.path.exists(node_file_folder):
+        try:
+            shutil.rmtree(node_file_folder)
+            if verbose:
+                print(f"Deleted nodefile directory: {node_file_folder}")
+        except Exception as e:
+            print(f"Warning: could not delete nodefile folder: {e}")
 
     return results
 
