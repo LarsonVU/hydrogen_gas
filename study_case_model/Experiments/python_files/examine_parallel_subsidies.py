@@ -121,7 +121,8 @@ if __name__ == "__main__":
     )
 
     # Solve with Gurobi (multithreaded)
-    node_file_folder = f"node_files/dev{DEVIATION}_sub{SUBSIDY}_run{RUN}"
+    node_file_folder = os.environ.get("TMPDIR", "/tmp")
+    node_file_folder = os.path.join(node_file_folder, f"gurobi_dev{DEVIATION}_sub{SUBSIDY}_run{RUN}")
     results = scsm.solve_model(model, threads= THREADS, verbose= True, precision=0.001, node_file_folder=node_file_folder)
 
     # Save results
