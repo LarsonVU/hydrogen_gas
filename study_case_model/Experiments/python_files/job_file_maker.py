@@ -3,14 +3,15 @@ import os
 # =========================
 # Parameters (same as your script)
 # =========================
-subsidies = [0] + [30 + i * 2 for i in range(6)] + [45 + 5* i for i in range(4)] + [70]  # 0,5,...,80
+subsidies = [0,25] + [30 + i * 2 for i in range(6)] + [45 + 5* i for i in range(5)] + [70]  # 0,5,...,80
 deviations = [0, 0.05, 0.1, 0.2 ,1]
-runs = 2
+runs = 4
 
-data_folder = "study_case_model/scenario_variables/subsidy_experiment/run_29326/"
-pickle_folder = "study_case_model/figures/subsidy_experiment/run_29326/"
+data_folder = "study_case_model/scenario_variables/subsidy_experiment/run_30326/"
+pickle_folder = "study_case_model/figures/subsidy_experiment/run_30326/"
 threads = 32
-output_file = "study_case_model/Experiments/slurm_files/jobs.txt"
+output_file = "study_case_model/Experiments/slurm_files/jobs_30326.txt"
+precision = 0.002
 
 # =========================
 # Generate jobs
@@ -27,6 +28,7 @@ for run_idx in range(3,runs +3):
                 f"--subsidy {sub} "
                 f"--deviation {dev} "
                 f"--upper_bounds 1 "
+                f"--precision {precision}"
                 f"--data_folder {data_folder} "
                 f"--pickle_folder {pickle_folder} "
                 f"--threads {threads}"

@@ -28,6 +28,7 @@ parser.add_argument("--deviation", type=float, default=0)
 parser.add_argument("--upper_bounds", type=int, default=1)
 parser.add_argument("--time_limit", type=float, default=None)
 parser.add_argument("--threads", type= int, default= 8)
+parser.add_argument("--precision", type=float, default=0.001)
 
 parser.add_argument("--data_folder", type=str, default="scenario_variables/other_experiment_data/")
 parser.add_argument("--pickle_folder", type= str, default= "study_case_model/figures/other_experiments")
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     # Solve with Gurobi (multithreaded)
     node_file_folder = os.environ.get("TMPDIR", "/tmp")
     node_file_folder = os.path.join(node_file_folder, f"gurobi_dev{DEVIATION}_sub{SUBSIDY}_run{RUN}")
-    results = scsm.solve_model(model, threads= THREADS, verbose= True, precision=0.001, node_file_folder=node_file_folder)
+    results = scsm.solve_model(model, threads= THREADS, verbose= True, precision=args.precision, node_file_folder=node_file_folder)
 
     # Save results
     scsm.save_model_values(model, os.path.join(pickle_folder, "model_snapshot.pkl"))

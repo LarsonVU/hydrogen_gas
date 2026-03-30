@@ -10,7 +10,8 @@ import numbers
 import pandas as pd
 import ast
 
-LOAD_ONE_RUN = None #"run0"
+LOAD_ONE_RUN = None #"run4"
+MINIMUM_RUNS = 2
 
 # ---------------------------
 # LOAD SNAPSHOT
@@ -96,8 +97,7 @@ def analyze_experiment(base_folder):
             sub_value = float(sub_dir.name.replace("sub", ""))
             
             mean, stderr, n, results = process_dev_sub(sub_dir)
-
-            if n > 0:
+            if n > MINIMUM_RUNS-1:
                 summary.setdefault(dev_value, {
                                     "subsidy": [],
                                     "mean": [],
@@ -171,7 +171,7 @@ def analyze_objectives(base_folder):
                 if val is not None:
                     results.append(val)
 
-            if len(results) == 0:
+            if len(results) <= MINIMUM_RUNS-1:
                 continue
 
             results = np.array(results)
@@ -286,7 +286,9 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
             delta_obj =  m_obj - base_obj
 
             # correct net effect
-            net = delta_obj - s *2.78 * 1000 * m_h2 + m_h2 *co2_savings_unit
+            sub_cost = s *2.78 * 1000 * m_h2
+            co_2_savings = m_h2 * co2_savings_unit
+            net = delta_obj - sub_cost + co_2_savings
             net_means.append(net)
 
             # error propagation (approx)
@@ -428,6 +430,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
     # -------------------------------
     FOLDER = "data/data_analysis_results/Geojson_pipelines/"
     input_path = FOLDER + "study_case_network.geojson"
+    os.makedirs(output_folder, exist_ok=True)
     output_html = os.path.join(output_folder, f"network_h2_sub{subsidy}_dev{deviation}.html")
 
     gdf = gpd.read_file(input_path)
@@ -582,9 +585,9 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
 # RUN
 # ---------------------------
 if __name__ == "__main__":
-    base_folder = "study_case_model/figures/subsidy_experiment/run_27326/"
+    base_folder = "study_case_model/figures/subsidy_experiment/run_29326/"
     
-    network_plot_hydrogen_production(70.0, 1.0, base_folder,f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/")
+    network_plot_hydrogen_production(70.0, 1.0, base_folder,f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/combined_runs/")
     
     results = analyze_experiment(base_folder)
 
