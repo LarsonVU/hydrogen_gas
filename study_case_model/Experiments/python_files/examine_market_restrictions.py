@@ -23,11 +23,13 @@ parser.add_argument("--run", type=int, default= 0 )
 parser.add_argument("--branches_stage2", type=int, default=8)
 parser.add_argument("--branches_stage3", type=int, default=8)
 parser.add_argument("--subsidy", type=float, default=0)
-parser.add_argument("--deviation", type=float, default=0)
+parser.add_argument("--market", type =str, default="DORNUM") #required = True)
+parser.add_argument("--allowed_hydrogen", type=float, default=0)
 
 parser.add_argument("--upper_bounds", type=int, default=1)
 parser.add_argument("--time_limit", type=float, default=None)
 parser.add_argument("--threads", type= int, default= 8)
+parser.add_argument("--precision", type=float, default=0.001)
 
 parser.add_argument("--data_folder", type=str, default="scenario_variables/other_experiment_data/")
 parser.add_argument("--pickle_folder", type= str, default= "study_case_model/figures/other_experiments")
@@ -47,7 +49,8 @@ BRANCHES_PER_STAGE = {
 UPPER_BOUNDS = args.upper_bounds
 THREADS = args.threads
 SUBSIDY = args.subsidy
-DEVIATION = args.deviation
+MARKET = args.market
+ALLOWED_HYDROGEN = args.allowed_hydrogen
 RUN = args.run
 
 # =========================
@@ -69,6 +72,12 @@ def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
     return G_changed
 
 
+def apply_market_restriction(G, market, allowed_hydrogen):
+    G_changed = G.copy()
+    G_changed.nodes[market]["max_fractions"]["H2"] = allowed_hydrogen
+
+    return G_changed
+
 # =========================
 # Main execution
 # =========================
@@ -82,11 +91,14 @@ if __name__ == "__main__":
 
     # Apply subsidy
     G_changed = apply_subsidy(G, subsidy_mscm)
+    # Apply market restriction
+    G_changed = apply_market_restriction(G_changed, MARKET, ALLOWED_HYDROGEN)
 
     # Create scenario folder
     data_folder = os.path.join(
         args.data_folder,
-        f"dev{DEVIATION}",
+        f"market{MARKET}",
+        f"maxh2_{ALLOWED_HYDROGEN}",
         f"sub{SUBSIDY}",
         f"run{RUN}"
     )
@@ -94,7 +106,8 @@ if __name__ == "__main__":
     # Create pickle folder
     pickle_folder = os.path.join(
         args.pickle_folder,
-        f"dev{DEVIATION}",
+        f"market{MARKET}",
+        f"maxh2_{ALLOWED_HYDROGEN}",
         f"sub{SUBSIDY}",
         f"run{RUN}"
     )
@@ -110,20 +123,19 @@ if __name__ == "__main__":
         folder=data_folder
     )
 
-    print("Solving model:" + f" dev{DEVIATION}, sub{SUBSIDY}, run{RUN}", flush=True)
+    print("Solving model:" + f" market{MARKET}, maxh2_{ALLOWED_HYDROGEN}, sub{SUBSIDY}, run{RUN}", flush=True)
 
     # Build model
     model = scsm.create_model(
         G_changed,
         scenarios,
-        allowed_deviation=DEVIATION,
         number_of_density_bounds=UPPER_BOUNDS
     )
 
     # Solve with Gurobi (multithreaded)
     node_file_folder = os.environ.get("TMPDIR", "/tmp")
-    node_file_folder = os.path.join(node_file_folder, f"gurobi_dev{DEVIATION}_sub{SUBSIDY}_run{RUN}")
-    results = scsm.solve_model(model, threads= THREADS, verbose= True, precision=0.001, node_file_folder=node_file_folder)
+    node_file_folder = os.path.join(node_file_folder, f"gurobi_market{MARKET}_maxh2_{ALLOWED_HYDROGEN}_sub{SUBSIDY}_run{RUN}")
+    results = scsm.solve_model(model, threads= THREADS, verbose= True, precision=args.precision, node_file_folder=node_file_folder)
 
     # Save results
     scsm.save_model_values(model, os.path.join(pickle_folder, "model_snapshot.pkl"))
