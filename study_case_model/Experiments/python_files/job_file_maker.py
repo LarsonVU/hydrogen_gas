@@ -28,7 +28,7 @@ for run_idx in range(3,runs +3):
                 f"--subsidy {sub} "
                 f"--deviation {dev} "
                 f"--upper_bounds 1 "
-                f"--precision {precision}"
+                f"--precision {precision} "
                 f"--data_folder {data_folder} "
                 f"--pickle_folder {pickle_folder} "
                 f"--threads {threads}"
