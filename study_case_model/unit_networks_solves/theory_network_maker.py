@@ -18,7 +18,7 @@ from study_case_problem_file import build_base_graph
 # -----------------------------
 # CONFIG
 # -----------------------------
-FOLDER_PICKLE = "unit_networks_solves/unit_gen2_networks/"
+FOLDER_PICKLE = "study_case_model/unit_networks_solves/unit_gen2_networks/"
 FOLDER_HTML = "data/data_analysis_results/unit_gen2_maps/"
 
 np.random.seed(123)
@@ -93,7 +93,7 @@ def extract_distributions(G):
 # -----------------------------
 # SAMPLING
 # -----------------------------
-def sample_node_attributes(node_type, node_attrs_by_type):
+def sample_node_attributes(node_type, node_attrs_by_type, layer=None, n_layers=None):
     base = node_attrs_by_type[node_type][
         np.random.randint(len(node_attrs_by_type[node_type]))
     ]
@@ -107,13 +107,27 @@ def sample_node_attributes(node_type, node_attrs_by_type):
 
     new_data["node_type"] = node_type
 
-    # Add random geometry (Europe-ish bounding box)
+    # -----------------------------
+    # USE LAYER FOR GEOMETRY
+    # -----------------------------
+    if layer is not None and n_layers is not None:
+        lat_min, lat_max = 50, 65
+        band_height = (lat_max - lat_min) / n_layers
+
+        # center of the layer band + small noise
+        lat_center = lat_min + (layer + 0.5) * band_height
+        lat = lat_center 
+    else:
+        print("Warning: No layering info, assigning random latitude")
+        # fallback (no layering info)
+        lat = np.random.uniform(50, 65)
+
     lon = np.random.uniform(-5, 15)
-    lat = np.random.uniform(50, 65)
+
     new_data["geometry"] = Point(lon, lat)
+    new_data["layer"] = layer  # store it here as well (optional redundancy)
 
     return new_data
-
 
 def sample_edge_attributes(edge_attrs, u_geom, v_geom):
     base = edge_attrs[np.random.randint(len(edge_attrs))]
@@ -135,46 +149,88 @@ def sample_edge_attributes(edge_attrs, u_geom, v_geom):
 # STRUCTURE GENERATION
 # -----------------------------
 def generate_structure(num_nodes, node_types):
+    """
+    Layered graph:
+    Generation → Intermediate → Market
+    """
+
     G = nx.DiGraph()
 
+    # -------------------------
+    # Assign nodes
+    # -------------------------
     for i in range(num_nodes):
         G.add_node(i, node_type=node_types[i])
 
-    nodes = list(G.nodes)
+    # -------------------------
+    # Build layers
+    # -------------------------
+    gen_layer = [i for i, t in enumerate(node_types) if t == "Generation"]
+    market_layer = [i for i, t in enumerate(node_types) if t == "Market"]
+    inter_nodes = [i for i, t in enumerate(node_types)
+                   if t not in ["Generation", "Market"]]
 
-    for i in nodes:
-        ti = node_types[i]
+    # Split intermediate nodes into 2–3 layers
+    n_inter_layers = max(1, min(3, len(inter_nodes)))
+    split = np.array_split(np.random.permutation(inter_nodes), n_inter_layers)
 
-        # Market nodes should not have outgoing edges
-        if ti == "Market":
+    layers = [gen_layer] + [list(s) for s in split] + [market_layer]
+
+    # -------------------------
+    # Connect layers forward
+    # -------------------------
+    for l in range(len(layers) - 1):
+        current_layer = layers[l]
+        next_layer = layers[l + 1]
+
+        if not current_layer or not next_layer:
             continue
 
-        # Possible targets (respecting rules)
-        possible_targets = [
-            j for j in nodes
-            if j != i and node_types[j] != "Generation"
-        ]
+        for u in current_layer:
+            k = np.random.randint(1, min(4, len(next_layer)) + 1)
+            targets = np.random.choice(next_layer, size=k, replace=False)
 
-        if not possible_targets:
-            continue
+            for v in targets:
+                G.add_edge(u, v)
 
-        # Sample number of connections (1 to 5, but not exceeding available nodes)
-        k = np.random.randint(1, min(5, len(possible_targets)) + 1)
+    # -------------------------
+    # Optional: skip-layer edges (adds realism)
+    # -------------------------
+    for l in range(len(layers) - 2):
+        if np.random.rand() < 0.3:
+            for u in layers[l]:
+                v = np.random.choice(layers[l + 2])
+                G.add_edge(u, v)
 
-        targets = np.random.choice(possible_targets, size=k, replace=False)
-
-        for j in targets:
-            G.add_edge(i, j)
-            
+    # -------------------------
     # Ensure no isolated nodes
-    for n in nodes:
-        if G.degree(n) == 0:
-            target = np.random.choice(nodes)
-            if n != target:
-                G.add_edge(n, target)
+    # -------------------------
+    for i, layer in enumerate(layers):
+        for n in layer:
+            G.nodes[n]["layer"] = i
+
+    for n in G.nodes:
+        if G.in_degree(n) == 0 and G.nodes[n]["node_type"] != "Generation":
+            # connect from previous layer
+            for layer in layers:
+                if n in layer:
+                    idx = layers.index(layer)
+                    if idx > 0 and layers[idx - 1]:
+                        u = np.random.choice(layers[idx - 1])
+                        G.add_edge(u, n)
+                    break
+
+        if G.out_degree(n) == 0 and G.nodes[n]["node_type"] != "Market":
+            # connect to next layer
+            for layer in layers:
+                if n in layer:
+                    idx = layers.index(layer)
+                    if idx < len(layers) - 1 and layers[idx + 1]:
+                        v = np.random.choice(layers[idx + 1])
+                        G.add_edge(n, v)
+                    break
 
     return G
-
 
 # -----------------------------
 # SYNTHETIC NETWORK
@@ -182,21 +238,39 @@ def generate_structure(num_nodes, node_types):
 def generate_synthetic_network(G_base, num_nodes):
     node_type_probs, node_attrs_by_type, edge_attrs = extract_distributions(G_base)
 
-    node_types = np.random.choice(
-        list(node_type_probs.keys()),
-        size=num_nodes,
-        p=list(node_type_probs.values())
+    # -------------------------
+    # Structured node type assignment
+    # -------------------------
+    n_gen = max(1, int(0.2 * num_nodes))
+    n_market = max(1, int(0.2 * num_nodes))
+    n_inter = num_nodes - n_gen - n_market
+
+    inter_types = ["Compression", "Junction", "Processing"]
+
+    node_types = (
+        ["Generation"] * n_gen +
+        list(np.random.choice(inter_types, size=n_inter)) +
+        ["Market"] * n_market
     )
 
-    G_new = generate_structure(num_nodes, node_types)
+    # Shuffle to avoid ordering bias in IDs
+    node_types = list(np.random.permutation(node_types))
 
+    # -------------------------
+    # Generate structured graph
+    # -------------------------
+    G_new = generate_structure(num_nodes, node_types)
+    # -------------------------
     # Assign node attributes
+    # -------------------------
     for n in G_new.nodes:
         t = node_types[n]
-        attrs = sample_node_attributes(t, node_attrs_by_type)
+        attrs = sample_node_attributes(t, node_attrs_by_type, layer = G_new.nodes[n]['layer'], n_layers = max(G_new.nodes[n]['layer'] for n in G_new.nodes))
         G_new.nodes[n].update(attrs)
 
-    # Assign edges
+    # -------------------------
+    # Assign edge attributes
+    # -------------------------
     for u, v in G_new.edges:
         u_geom = G_new.nodes[u].get("geometry")
         v_geom = G_new.nodes[v].get("geometry")
