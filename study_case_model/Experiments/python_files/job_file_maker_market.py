@@ -3,7 +3,7 @@ import numpy as np
 # =========================
 # Parameters (same as your script)
 # =========================
-subsidies = [0, 40, 70] 
+subsidies = [40, 70] 
 markets =  ["DUNKERQUE", "EASINGTON", "EMDEN", "DORNUM", "ST.FERGUS", "ZEEBRUGGE"]
 allowed_hydrogen = np.linspace(0, 0.2, 11) 
 runs = 2
