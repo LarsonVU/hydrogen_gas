@@ -1,3 +1,4 @@
+import math
 import os
 import pickle
 import numpy as np
@@ -267,6 +268,50 @@ def generate_synthetic_network(G_base, num_nodes):
         t = node_types[n]
         attrs = sample_node_attributes(t, node_attrs_by_type, layer = G_new.nodes[n]['layer'], n_layers = max(G_new.nodes[n]['layer'] for n in G_new.nodes))
         G_new.nodes[n].update(attrs)
+
+    # -----------------------------
+    # HARD CAP DEMAND
+    # -----------------------------
+
+    # Conversion factor: Mscm → GWh
+    MSCm_to_GWh = 10.8
+
+    # Total supply (convert to GWh)
+    total_supply_mscm = sum(
+    float(v)
+    for n in G_new.nodes
+    if (v := G_new.nodes[n].get("supply_capacity")) is not None
+    and isinstance(v, (int, float))
+    and not math.isnan(v)
+    )
+
+    total_supply_gwh = total_supply_mscm * MSCm_to_GWh
+
+    # Maximum allowed demand
+    max_total_demand = total_supply_gwh / 4
+
+    # Collect demand nodes
+    demand_nodes = [
+        n for n in G_new.nodes
+        if "average_demand_mwh_x1000" in G_new.nodes[n]
+    ]
+
+    total_demand = sum(
+        float(v)
+        for n in demand_nodes
+        if (v := G_new.nodes[n].get("average_demand_mwh_x1000")) is not None
+        and isinstance(v, (int, float))
+        and not math.isnan(v)
+    )
+
+    # Apply hard cap (proportional scaling)
+    if total_demand > max_total_demand and total_demand > 0:
+        print(f"Scaling down demand from {total_demand:.2f} MWh to {max_total_demand:.2f} MWh")
+        scale_factor = max_total_demand / total_demand
+
+        for n in demand_nodes:
+            G_new.nodes[n]["average_demand_mwh_x1000"] *= scale_factor
+
 
     # -------------------------
     # Assign edge attributes

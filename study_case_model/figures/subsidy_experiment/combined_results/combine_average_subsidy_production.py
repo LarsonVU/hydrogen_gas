@@ -10,6 +10,7 @@ import numbers
 import pandas as pd
 import ast
 
+EXPERIMENT = "run_29326"
 LOAD_ONE_RUN = None #"run4"
 MINIMUM_RUNS = 2
 
@@ -472,7 +473,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
         h2_values.append(avg_flow[arc]["mean"][2])
         tot_flow_values.append(sum(avg_flow[arc]["mean"]))
 
-    max_flow = max(h2_values) if h2_values else 1.0
+    max_flow = 4.75 #max(h2_values) if h2_values else 1.0
     max_tot_flow = max(tot_flow_values) if tot_flow_values else 1.0
 
 
@@ -585,9 +586,9 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
 # RUN
 # ---------------------------
 if __name__ == "__main__":
-    base_folder = "study_case_model/figures/subsidy_experiment/run_29326/"
+    base_folder = f"study_case_model/figures/subsidy_experiment/{EXPERIMENT}/"
     
-    network_plot_hydrogen_production(45.0, 1.0, base_folder,f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/combined_runs/")
+    network_plot_hydrogen_production(70.0, 1.0, base_folder,f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/{EXPERIMENT}/")
     
     results = analyze_experiment(base_folder)
 
