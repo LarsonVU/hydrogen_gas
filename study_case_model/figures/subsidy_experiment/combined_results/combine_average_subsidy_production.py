@@ -587,7 +587,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
 if __name__ == "__main__":
     base_folder = "study_case_model/figures/subsidy_experiment/run_29326/"
     
-    network_plot_hydrogen_production(70.0, 1.0, base_folder,f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/combined_runs/")
+    network_plot_hydrogen_production(45.0, 1.0, base_folder,f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/combined_runs/")
     
     results = analyze_experiment(base_folder)
 
