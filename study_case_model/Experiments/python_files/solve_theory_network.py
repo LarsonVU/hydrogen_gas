@@ -10,7 +10,7 @@ import study_case_problem_file as scsp
 
 DATA_FOLDER = "study_case_model/unit_networks/scenario_variables/"
 FOLDER = "study_case_model/figures/unit_networks/"
-PICKLE_FOLDER = "study_case_model/figures/unit_networks/"
+PICKLE_FOLDER = "study_case_model/figures/unit_network_pickles/"
 NETWORK_FOLDER = "study_case_model/unit_networks_solves/unit_gen2_networks/"
 
 NUMBER_OF_STAGES = 3
