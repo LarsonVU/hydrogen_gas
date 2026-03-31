@@ -1,38 +1,43 @@
 import os
-
+import numpy as np
 # =========================
 # Parameters (same as your script)
 # =========================
-subsidies = [0,25] + [30 + i * 2 for i in range(6)] + [45 + 5* i for i in range(5)] + [70]  # 0,5,...,80
-deviations = [0, 0.05, 0.1, 0.2 ,1]
+subsidies = [0, 40, 70] 
+markets =  ["DUNKERQUE", "EASINGTON", "EMDEN", "DORNUM", "ST.FERGUS", "ZEEBRUGGE"]
+allowed_hydrogen = np.linspace(0, 0.2, 11) 
 runs = 2
 
 data_folder = "study_case_model/scenario_variables/market_experiment/run_30326/"
 pickle_folder = "study_case_model/figures/market_experiment/run_30326/"
 threads = 32
 output_file = "study_case_model/Experiments/slurm_files/market_jobs.txt"
+precision = 0.002
 
 # =========================
 # Generate jobs
 # =========================
 lines = []
-for run_idx in range(5,runs +5):
-    for dev_idx, dev in enumerate(deviations):
+for run_idx in range(runs):
+    for market_idx, market in enumerate(markets):
         for sub_idx, sub in enumerate(subsidies):
-            cmd = (
-                "python study_case_model/Experiments/python_files/examine_market_restrictions.py "
-                f"--run {run_idx} "
-                f"--branches_stage2 8 "
-                f"--branches_stage3 8 "
-                f"--subsidy {sub} "
-                f"--deviation {dev} "
-                f"--upper_bounds 1 "
-                f"--data_folder {data_folder} "
-                f"--pickle_folder {pickle_folder} "
-                f"--threads {threads}"
-            )
+            for al_h2 in allowed_hydrogen:
+                cmd = (
+                    "python study_case_model/Experiments/python_files/examine_market_restrictions.py "
+                    f"--run {run_idx} "
+                    f"--branches_stage2 8 "
+                    f"--branches_stage3 8 "
+                    f"--subsidy {sub} "
+                    f"--market {market} "
+                    f"--allowed_hydrogen {al_h2} "
+                    f"--upper_bounds 1 "
+                    f"--precision {precision} "
+                    f"--data_folder {data_folder} "
+                    f"--pickle_folder {pickle_folder} "
+                    f"--threads {threads}"
+                )
 
-            lines.append(cmd)
+                lines.append(cmd)
 
 # =========================
 # Write file
