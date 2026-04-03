@@ -20,7 +20,7 @@ def safe_filename(s):
 FOLDER = "study_case_model/figures/main_run/"
 
 NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1: 1, 2: 2, 3: 2}
+BRANCHES_PER_STAGE = {1: 1, 2: 8, 3: 8}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
 NUMBER_OF_DENSITY_BOUNDS = 1

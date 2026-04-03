@@ -12,7 +12,7 @@ import ast
 
 EXPERIMENT = "run_29326"
 LOAD_ONE_RUN = None #"run0"
-MINIMUM_RUNS = 1
+MINIMUM_RUNS = 2
 HYDROGEN_MSCM_MWH = 2.78 * 1000 
 # ---------------------------
 # LOAD SNAPSHOT
@@ -102,12 +102,14 @@ def analyze_experiment(base_folder):
                 summary.setdefault(dev_value, {
                                     "subsidy": [],
                                     "mean": [],
-                                    "se": []
+                                    "se": [],
+                                    "runs": []
                                 })
 
                 summary[dev_value]["subsidy"].append(sub_value)
                 summary[dev_value]["mean"].append(mean)
                 summary[dev_value]["se"].append(stderr)
+                summary[dev_value]["runs"].append(results)
 
                 print(f"dev={dev_value}, sub={sub_value} | mean={mean:.4f}, stderr={stderr:.4f}, n={n}")
     return summary
@@ -131,7 +133,7 @@ def plot_hydrogen_production_by_subsidy(h2_dict, folder):
 
         # Step 3: collect values across deviations
         for deviation, stats in sorted(h2_dict.items()):
-            for s, m, se in zip(stats["subsidy"], stats["mean"], stats["se"]):
+            for s, m, se, runs in zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]):
                 if s == sub:
                     deviations.append(deviation)
                     means.append(m)
@@ -159,36 +161,24 @@ def plot_hydrogen_production_by_subsidy(h2_dict, folder):
     plt.savefig(os.path.join(folder, "hydrogen_production_vs_deviation.png"))
     plt.close()
 
-def plot_hydrogen_production(h2_dict, folder):
+def plot_hydrogen_production(h2_dict, folder): 
     os.makedirs(folder, exist_ok=True)
-
+    
     plt.figure(figsize=(10, 5))
-
-    for label, stats in sorted(h2_dict.items()):
-        # sort by subsidy to ensure clean lines
-        sorted_data = sorted(
-            zip(stats["subsidy"], stats["mean"], stats["se"]),
-            key=lambda x: x[0]
-        )
-
-        subs, means, ses = zip(*sorted_data)
-
-        plt.errorbar(
-            subs,
-            means,
-            yerr=ses,
-            fmt='o-',
-            capsize=5,
-            label=f"Deviation {label}"
-        )
-
-    plt.xlabel('Subsidy (Euro/MWh)')
+    
+    for label, stats in sorted(h2_dict.items()): 
+        # sort by subsidy to ensure clean lines 
+        sorted_data = sorted( zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]), 
+                             key=lambda x: x[0] )
+        subs, means, ses, runs = zip(*sorted_data)
+        
+        plt.errorbar( subs, means, yerr=ses, fmt='o-', capsize=5, label=f"Deviation {label}" )
+    plt.xlabel('Subsidy (Euro/MWh)') 
     plt.ylabel('Hydrogen Production')
     plt.title('Hydrogen Production vs Subsidy')
-    plt.grid(True)
-    plt.legend()
-
-    plt.savefig(os.path.join(folder, "hydrogen_production_vs_subsidy.png"))
+    plt.grid(True) 
+    plt.legend() 
+    plt.savefig(os.path.join(folder, "hydrogen_production_vs_subsidy.png")) 
     plt.close()
 
 def plot_subsidy_cost(h2_dict, folder):
@@ -264,12 +254,14 @@ def analyze_objectives(base_folder):
             summary.setdefault(dev_value, {
                 "subsidy": [],
                 "mean": [],
-                "se": []
+                "se": [],
+                "runs": []
             })
 
             summary[dev_value]["subsidy"].append(sub_value)
             summary[dev_value]["mean"].append(mean)
             summary[dev_value]["se"].append(se)
+            summary[dev_value]["runs"].append(results)
             print(f"dev={dev_value}, sub={sub_value} | mean={mean:.4f}, stderr={se:.4f}, n={len(results)}")
     return summary
 
@@ -281,19 +273,36 @@ def plot_objective_values(objective_dict, folder):
     for label, stats in sorted(objective_dict.items()):
         # ensure correct ordering by subsidy
         sorted_data = sorted(
-            zip(stats["subsidy"], stats["mean"], stats["se"]),
+            zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]),
             key=lambda x: x[0]
         )
 
-        subs, means, ses = zip(*sorted_data)
+        subs, means, ses, runs = zip(*sorted_data)
 
-        ses  = [np.sqrt(s**2 + ses[0]**2) for s in ses]
-        means = means - means[0]
+        diffs = []
+        base = runs[0]
+
+        for r in runs:
+            min_len = min(len(r), len(base))
+            diffs.append([r[i] - base[i] for i in range(min_len)])
+
+        diff_means = []
+        diff_ses = []
+
+        for d in diffs:
+            d = np.array(d)
+            n = len(d)
+
+            mean = np.mean(d)
+            se = np.std(d, ddof=1) / np.sqrt(n)
+
+            diff_means.append(mean)
+            diff_ses.append(se)
 
         plt.errorbar(
             subs,
-            means,
-            yerr=ses,
+            diff_means,
+            yerr=diff_ses,
             fmt='o-',
             capsize=5,
             label=f"Deviation {label}"
@@ -343,43 +352,66 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
         Exception("No accepted co2 saving method")
     print("CO2 cost per Mcsm:", co2_savings_unit)
 
-
     for label in sorted(objective_dict.keys()):
         obj_stats = objective_dict[label]
         h2_stats = h2_dict[label]
 
-        # sort both consistently
+        # ✅ sort consistently INCLUDING runs
         sorted_data = sorted(
-            zip(obj_stats["subsidy"], obj_stats["mean"], obj_stats["se"],
-                h2_stats["mean"], h2_stats["se"]),
+            zip(obj_stats["subsidy"], obj_stats["runs"], h2_stats["runs"]),
             key=lambda x: x[0]
         )
 
-        subs, obj_means, obj_ses, h2_means, h2_ses = zip(*sorted_data)
-        base_obj = obj_means[0]
+        subs, obj_runs, h2_runs = zip(*sorted_data)
 
-        net_means = []
-        net_ses = []
+        # --------------------------------------------------
+        # STEP 1: compute net effect per run
+        # --------------------------------------------------
+        net_runs = []
 
+        base_obj_runs = obj_runs[0]
 
+        for s, r_obj, r_h2 in zip(subs, obj_runs, h2_runs):
+            min_len = min(len(base_obj_runs), len(r_obj), len(r_h2))
 
-        for s, m_obj, se_obj, m_h2, se_h2 in zip(subs, obj_means, obj_ses, h2_means, h2_ses):
-            delta_obj =  m_obj - base_obj
+            net_r = []
+            for i in range(min_len):
+                delta_obj = r_obj[i] - base_obj_runs[i]
+                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i]
+                co2_savings = r_h2[i] * co2_savings_unit
 
-            # correct net effect
-            sub_cost = s *HYDROGEN_MSCM_MWH* m_h2
-            co_2_savings = m_h2 * co2_savings_unit
-            net = delta_obj - sub_cost + co_2_savings
-            net_means.append(net)
+                net = delta_obj - sub_cost + co2_savings
+                net_r.append(net)
 
-            # error propagation (approx)
-            var = se_obj**2 + obj_ses[0]**2 + (s**2) * (se_h2**2)
-            net_ses.append(np.sqrt(var))
+            net_runs.append(net_r)
+
+        # --------------------------------------------------
+        # STEP 2: apply YOUR CRN block
+        # --------------------------------------------------
+        diffs = []
+        base = net_runs[0]
+
+        for r in net_runs:
+            min_len = min(len(r), len(base))
+            diffs.append([r[i] - base[i] for i in range(min_len)])
+
+        diff_means = []
+        diff_ses = []
+
+        for d in diffs:
+            d = np.array(d)
+            n = len(d)
+
+            mean = np.mean(d)
+            se = np.std(d, ddof=1) / np.sqrt(n)
+
+            diff_means.append(mean)
+            diff_ses.append(se)
 
         plt.errorbar(
             subs,
-            net_means,
-            yerr=net_ses,
+            diff_means,
+            yerr=diff_ses,
             fmt='o-',
             capsize=5,
             label=f"Deviation {label}"
@@ -435,38 +467,66 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
         obj_stats = objective_dict[label]
         h2_stats = h2_dict[label]
 
-        # sort both consistently
+        # sort consistently INCLUDING runs
         sorted_data = sorted(
-            zip(obj_stats["subsidy"], obj_stats["mean"], obj_stats["se"],
-                h2_stats["mean"], h2_stats["se"]),
+            zip(
+                obj_stats["subsidy"],
+                obj_stats["runs"],
+                h2_stats["runs"]
+            ),
             key=lambda x: x[0]
         )
 
-        subs, obj_means, obj_ses, h2_means, h2_ses = zip(*sorted_data)
-        base_obj = obj_means[0]
+        subs, obj_runs, h2_runs = zip(*sorted_data)
+
+        # --------------------------------------------------
+        # STEP 1: compute ROI per run (CRN style)
+        # --------------------------------------------------
+        roi_runs = []
+
+        base_obj_runs = obj_runs[0]
+
+        for s, r_obj, r_h2 in zip(subs, obj_runs, h2_runs):
+            min_len = min(len(base_obj_runs), len(r_obj), len(r_h2))
+
+            roi_r = []
+            for i in range(min_len):
+                delta_obj = r_obj[i] - base_obj_runs[i]
+
+                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i]
+                co2_savings = r_h2[i] * co2_savings_unit
+
+                if sub_cost > 0:
+                    roi = (delta_obj - sub_cost + co2_savings) / sub_cost
+                else:
+                    roi = 0
+
+                roi_r.append(roi)
+
+            roi_runs.append(roi_r)
+
+        # --------------------------------------------------
+        # STEP 2: apply CRN differences vs baseline ROI runs
+        # --------------------------------------------------
+        diffs = []
+        base = roi_runs[0]
+
+        for r in roi_runs:
+            min_len = min(len(r), len(base))
+            diffs.append([r[i] - base[i] for i in range(min_len)])
 
         roi_means = []
         roi_ses = []
 
-        for s, m_obj, se_obj, m_h2, se_h2 in zip(subs, obj_means, obj_ses, h2_means, h2_ses):
-            delta_obj =  m_obj - base_obj
+        for d in diffs:
+            d = np.array(d)
+            n = len(d)
 
-            # correct net effect
-            sub_cost = s *HYDROGEN_MSCM_MWH* m_h2
-            co_2_savings = m_h2 * co2_savings_unit
-            if sub_cost > 0:
-                roi = (delta_obj - sub_cost + co_2_savings) /sub_cost
-                roi_means.append(roi)
+            mean = np.mean(d)
+            se = np.std(d, ddof=1) / np.sqrt(n) if n > 1 else 0
 
-                # error propagation (approx)
-                var = (se_obj**2 + obj_ses[0]**2 + (s**2) * (se_h2**2)) / sub_cost**2
-                roi_ses.append(np.sqrt(var))
-            else: 
-                roi = 0
-                roi_means.append(roi)
-
-                var = 0
-                roi_ses.append(np.sqrt(var))
+            roi_means.append(mean)
+            roi_ses.append(se)
 
 
 
