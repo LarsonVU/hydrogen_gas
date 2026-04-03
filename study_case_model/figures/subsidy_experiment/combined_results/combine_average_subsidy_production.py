@@ -11,9 +11,9 @@ import pandas as pd
 import ast
 
 EXPERIMENT = "run_29326"
-LOAD_ONE_RUN = None #"run4"
-MINIMUM_RUNS = 2
-
+LOAD_ONE_RUN = None #"run0"
+MINIMUM_RUNS = 1
+HYDROGEN_MSCM_MWH = 2.78 * 1000 
 # ---------------------------
 # LOAD SNAPSHOT
 # ---------------------------
@@ -113,6 +113,52 @@ def analyze_experiment(base_folder):
     return summary
 
 
+def plot_hydrogen_production_by_subsidy(h2_dict, folder):
+    os.makedirs(folder, exist_ok=True)
+
+    plt.figure(figsize=(10, 5))
+
+    # Step 1: collect all unique subsidies
+    all_subsidies = set()
+    for stats in h2_dict.values():
+        all_subsidies.update(stats["subsidy"])
+
+    # Step 2: loop over each subsidy (these become the lines)
+    for sub in sorted(all_subsidies):
+        deviations = []
+        means = []
+        ses = []
+
+        # Step 3: collect values across deviations
+        for deviation, stats in sorted(h2_dict.items()):
+            for s, m, se in zip(stats["subsidy"], stats["mean"], stats["se"]):
+                if s == sub:
+                    deviations.append(deviation)
+                    means.append(m)
+                    ses.append(se)
+
+        # sort by deviation for clean lines
+        sorted_data = sorted(zip(deviations, means, ses), key=lambda x: x[0])
+        devs, means, ses = zip(*sorted_data)
+
+        plt.errorbar(
+            devs,
+            means,
+            yerr=ses,
+            fmt='o-',
+            capsize=5,
+            label=f"Subsidy {sub}"
+        )
+
+    plt.xlabel('Deviation')
+    plt.ylabel('Hydrogen Production')
+    plt.title('Hydrogen Production vs Deviation (by Subsidy)')
+    plt.grid(True)
+    plt.legend(loc = "upper left")
+
+    plt.savefig(os.path.join(folder, "hydrogen_production_vs_deviation.png"))
+    plt.close()
+
 def plot_hydrogen_production(h2_dict, folder):
     os.makedirs(folder, exist_ok=True)
 
@@ -143,6 +189,40 @@ def plot_hydrogen_production(h2_dict, folder):
     plt.legend()
 
     plt.savefig(os.path.join(folder, "hydrogen_production_vs_subsidy.png"))
+    plt.close()
+
+def plot_subsidy_cost(h2_dict, folder):
+    os.makedirs(folder, exist_ok=True)
+
+    plt.figure(figsize=(10, 5))
+
+    for label, stats in sorted(h2_dict.items()):
+        # sort by subsidy to ensure clean lines
+        sorted_data = sorted(
+            zip(stats["subsidy"], stats["mean"], stats["se"]),
+            key=lambda x: x[0]
+        )
+
+        subs, means, ses = zip(*sorted_data)
+
+        costs = [mean * subs[i] *HYDROGEN_MSCM_MWH for i, mean in enumerate(means)] 
+        cost_ses = [se *subs[i] * HYDROGEN_MSCM_MWH for i, se in enumerate(ses)]
+        plt.errorbar(
+            subs,
+            costs,
+            yerr=cost_ses,
+            fmt='o-',
+            capsize=5,
+            label=f"Deviation {label}"
+        )
+
+    plt.xlabel('Subsidy (Euro/MWh)')
+    plt.ylabel('Total Subsidy cost')
+    plt.title('Total Subsidy cost vs Subsidy')
+    plt.grid(True)
+    plt.legend()
+
+    plt.savefig(os.path.join(folder, "hydrogen_production_vs_cost.png"))
     plt.close()
 
 def analyze_objectives(base_folder):
@@ -287,7 +367,7 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
             delta_obj =  m_obj - base_obj
 
             # correct net effect
-            sub_cost = s *2.78 * 1000 * m_h2
+            sub_cost = s *HYDROGEN_MSCM_MWH* m_h2
             co_2_savings = m_h2 * co2_savings_unit
             net = delta_obj - sub_cost + co_2_savings
             net_means.append(net)
@@ -313,6 +393,101 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
 
     plt.savefig(os.path.join(folder, f"net_effect_vs_subsidy_{co2_method}.png"))
     plt.close()
+
+
+def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
+    os.makedirs(folder, exist_ok=True)
+
+    plt.figure(figsize=(10, 5))
+
+    if co2_method == "zero":
+        # No social cost on co2
+        co2_savings_unit = 0
+    elif co2_method == "energy":
+        # Social cost savings per displaced mwh (transformed to mscm)
+        # Sources:
+        # Costs per kwh :   https://co2emissiefactoren.nl/ 
+        # Conversion rates : https://www.engineeringtoolbox.com/fuels-higher-calorific-values-d_169.html
+        # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2
+
+        co2_cost_ng = 2.134 * 1000 # in tonne (metric ton) CO2e per Mscm 
+        co2_cost_green_h2 = 1.080 /11.94 *1000 # in tonne (metric ton) CO2e per Mscm 
+        
+        conversion_ng = 39.8 /3.6 *1000 # mwh to Mscm
+        conversion_h2 = 12.7 /3.6 *1000 #  mwh to Mscm
+
+        co2_savings_unit = 185 * (co2_cost_ng-co2_cost_green_h2) * (conversion_h2/ conversion_ng) # Euro per Mscm
+    elif co2_method == "volume":
+        # Social cost savings per mscm
+        # Sources:
+        # https://h2tools.org/hyarc/calculator-tools/hydrogen-conversions-calculator # KG to scm transformation h2
+        # https://co2emissiefactoren.nl/  Emissionfactors
+        # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2 
+        co2_cost_ng = 2.134 * 1000 # in tonne (metric ton) CO2e per Mscm 
+        co2_cost_green_h2 = 1.080 /11.94 *1000 # in tonne (metric ton) CO2e per Mscm 
+        co2_savings_unit = 185 * (co2_cost_ng -co2_cost_green_h2) # in euro per Mscm
+    else:
+        Exception("No accepted co2 saving method")
+    print("CO2 cost per Mcsm:", co2_savings_unit)
+
+
+    for label in sorted(objective_dict.keys()):
+        obj_stats = objective_dict[label]
+        h2_stats = h2_dict[label]
+
+        # sort both consistently
+        sorted_data = sorted(
+            zip(obj_stats["subsidy"], obj_stats["mean"], obj_stats["se"],
+                h2_stats["mean"], h2_stats["se"]),
+            key=lambda x: x[0]
+        )
+
+        subs, obj_means, obj_ses, h2_means, h2_ses = zip(*sorted_data)
+        base_obj = obj_means[0]
+
+        roi_means = []
+        roi_ses = []
+
+        for s, m_obj, se_obj, m_h2, se_h2 in zip(subs, obj_means, obj_ses, h2_means, h2_ses):
+            delta_obj =  m_obj - base_obj
+
+            # correct net effect
+            sub_cost = s *HYDROGEN_MSCM_MWH* m_h2
+            co_2_savings = m_h2 * co2_savings_unit
+            if sub_cost > 0:
+                roi = (delta_obj - sub_cost + co_2_savings) /sub_cost
+                roi_means.append(roi)
+
+                # error propagation (approx)
+                var = (se_obj**2 + obj_ses[0]**2 + (s**2) * (se_h2**2)) / sub_cost**2
+                roi_ses.append(np.sqrt(var))
+            else: 
+                roi = 0
+                roi_means.append(roi)
+
+                var = 0
+                roi_ses.append(np.sqrt(var))
+
+
+
+        plt.errorbar(
+            subs,
+            roi_means,
+            yerr=roi_ses,
+            fmt='o-',
+            capsize=5,
+            label=f"Deviation {label}"
+        )
+
+    plt.xlabel('Subsidy (Euro/MWh)')
+    plt.ylabel('Return on investment')
+    plt.title('Return on investment of Subsidy')
+    plt.grid(True)
+    plt.legend()
+
+    plt.savefig(os.path.join(folder, f"roi_vs_subsidy_{co2_method}.png"))
+    plt.close()
+
 
 def analyze_network_flows(subsidy, deviation, base_folder):
     """
@@ -473,7 +648,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
         h2_values.append(avg_flow[arc]["mean"][2])
         tot_flow_values.append(sum(avg_flow[arc]["mean"]))
 
-    max_flow = 4.75 #max(h2_values) if h2_values else 1.0
+    #max_flow = 5 #max(h2_values) if h2_values else 1.0
     max_tot_flow = max(tot_flow_values) if tot_flow_values else 1.0
 
 
@@ -493,16 +668,20 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
         total_flow = sum(avg_flow[a_in, a_out]["mean"])
 
         # Normalize
-        intensity = h2_flow / max_flow if max_flow > 0 else 0
+        intensity = h2_flow / total_flow if total_flow > 0 else 0 # max_flow
 
         # Blue gradient (light → strong blue)
         def interpolate_color(intensity, start=(60, 60, 60), end=(0, 201, 255)):
+            intensity = intensity * 5 # Max 20% accross pipelines
             r = int(start[0] + (end[0] - start[0]) * intensity)
             g = int(start[1] + (end[1] - start[1]) * intensity)
             b = int(start[2] + (end[2] - start[2]) * intensity)
             return f"rgb({r}, {g}, {b})"
 
-        color_intensity = np.power(intensity, 0.2) 
+        def adjust_intensity(intensity):
+            return np.power(intensity, 0.8)  # Adjust exponent for better contrast
+
+        color_intensity = adjust_intensity(intensity)
         color = interpolate_color(color_intensity)
 
         # Thickness scaling
@@ -554,23 +733,71 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
     # -------------------------------
     # Add legend (with hydrogen)
     # -------------------------------
-    legend_html = f'''
-    <div style="position: fixed; 
-         bottom: 50px; right: 50px; width: 220px; height: 300px; 
-         background-color: white; border:2px solid grey; z-index:9999; 
-         font-size:14px; padding: 10px">
-         <p style="margin: 0 0 10px 0; font-weight: bold;">Legend</p>
+    # Precompute example values
+    flow_ticks = [0, 0.25, 0.5, 0.75, 1.0]
+    flow_values = [f"{t * max_tot_flow:.1f}" for t in flow_ticks]
 
-         <p><b>Node Types</b></p>
-         <p><span style="background-color: #FFB3BA; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Generation</p>
-         <p><span style="background-color: #BAFFC9; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Processing</p>
-         <p><span style="background-color: #BAE1FF; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Market</p>
-         <p><span style="background-color: #FFFFBA; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Compression</p>
-         <p><span style="background-color: #E0BBE4; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Junction</p>
-         <p><b>Hydrogen Flow</b></p>
-         <p><span style="background-color: {interpolate_color(1)}; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Flow magnitude</p>
-    </div>
-    '''
+    legend_html = f'''
+        <div style="position: fixed; 
+            bottom: 50px; right: 50px; width: 260px; height: auto; 
+            background-color: white; border:2px solid grey; z-index:9999; 
+            font-size:14px; padding: 12px; overflow-y: auto;">
+
+        <p style="margin: 0 0 10px 0; font-weight: bold;">Legend</p>
+
+        <p><b>Node Types</b></p>
+        <p><span style="background-color: #FFB3BA; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Generation</p>
+        <p><span style="background-color: #BAFFC9; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Processing</p>
+        <p><span style="background-color: #BAE1FF; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Market</p>
+        <p><span style="background-color: #FFFFBA; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Compression</p>
+        <p><span style="background-color: #E0BBE4; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Junction</p>
+
+        <p><b>Hydrogen Fraction</b></p>
+        <div style="width: 100%; height: 15px; 
+            background: linear-gradient(to right, 
+            {interpolate_color(adjust_intensity(0))}, 
+            {interpolate_color(adjust_intensity(0.05))}, 
+            {interpolate_color(adjust_intensity(0.1))}, 
+            {interpolate_color(adjust_intensity(0.15))}, 
+            {interpolate_color(adjust_intensity(0.2))}); 
+            border: 1px solid black;">
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span>0</span>
+            <span>0.1</span>
+            <span>0.2</span>
+        </div>
+
+        <p><b>Flow (Line Thickness)</b></p>
+
+        <div style="width: 100%; height: 20px; position: relative;">
+
+            <!-- Tapered thickness bar -->
+            <div style="
+                width: 100%; 
+                height: 100%;
+                background: linear-gradient(to right,
+                    rgba(0,0,0,0.2) 0%,
+                    rgba(0,0,0,0.4) 25%,
+                    rgba(0,0,0,0.6) 50%,
+                    rgba(0,0,0,0.8) 75%,
+                    rgba(0,0,0,1.0) 100%);
+                clip-path: polygon(
+                    0% 50%, 
+                    100% 0%, 
+                    100% 100%
+                );
+            "></div>
+
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span>{flow_values[0]}</span>
+            <span>{flow_values[2]}</span>
+            <span>{flow_values[4]}</span>
+        </div>
+        </div>
+        '''
     m.get_root().html.add_child(folium.Element(legend_html))
 
     # -------------------------------
@@ -587,15 +814,23 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
 # ---------------------------
 if __name__ == "__main__":
     base_folder = f"study_case_model/figures/subsidy_experiment/{EXPERIMENT}/"
-    
-    network_plot_hydrogen_production(70.0, 1.0, base_folder,f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/{EXPERIMENT}/")
-    
+    sub_values = [40.0, 70.0]
+    dev_values = [0.0, 0.1, 1.0]
+
+    for sub_value in sub_values:
+        for dev_value in dev_values:
+            network_plot_hydrogen_production(sub_value, dev_value, base_folder, f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/{EXPERIMENT}/")
+
     results = analyze_experiment(base_folder)
 
     if LOAD_ONE_RUN:
         plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
     else:
         plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/")
 
     objective_dict = analyze_objectives(base_folder)
 
@@ -604,8 +839,14 @@ if __name__ == "__main__":
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
     else:
         plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
