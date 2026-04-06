@@ -3,9 +3,9 @@
 #SBATCH -t 48:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=48
 #SBATCH --partition=genoa
-#SBATCH --array=1-280%9
+#SBATCH --array=1-320%9
 #SBATCH --output=logs/%A_%a.out
 #SBATCH --mail-type=BEGIN,FAIL,END
 #SBATCH --mail-user=l.m.j.beemster@student.vu.nl
@@ -26,4 +26,4 @@ source activate hydrogen_venv
 cd $HOME/projects/hydrogen_gas
 
 i=${SLURM_ARRAY_TASK_ID}
-$(head -$i study_case_model/Experiments/slurm_files/jobs_31326.txt | tail -1)
+$(head -$i study_case_model/Experiments/slurm_files/jobs_06426.txt | tail -1)
