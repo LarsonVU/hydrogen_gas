@@ -30,6 +30,14 @@ RHO_HIGH = 0.70
 NUMBER_OF_HOMOGENEOUS_SPLITS =11
 splits_per_arc = np.linspace(0, 1, NUMBER_OF_HOMOGENEOUS_SPLITS)
 
+# Soft pastel palette
+PASTEL_COLORS = [
+    "#82C9FF",  # pastel blue
+    "#FF8692",  # pastel red
+    "#4BDA6A",  # pastel green
+    "#DB97E3",  # pastel purple
+    "#FFFF82",  # pastel yellow
+]
 
 
 
@@ -825,6 +833,7 @@ def plot_average_flows(model, folder="figures/", show=False):
             capsize=5,
             alpha=0.7,
             label=c,
+            color=PASTEL_COLORS[i % len(PASTEL_COLORS)],
             width=bar_width,
             error_kw={"elinewidth": 2},
         )
@@ -874,7 +883,7 @@ def plot_component_flows_stacked(model, folder="figures/",  show = False):
     bottom = np.zeros(n_scenarios)
 
     for i, c in enumerate(components):
-        ax.bar(range(n_scenarios), flow_matrix[i], bottom=bottom, label=c)
+        ax.bar(range(n_scenarios), flow_matrix[i], bottom=bottom, label=c, color=PASTEL_COLORS[i % len(PASTEL_COLORS)])
         bottom += flow_matrix[i]
 
     ax.set_xlabel('Scenario Index', fontsize=12)
@@ -923,14 +932,16 @@ def plot_inlet_outlet_pressures(model, folder, show = False):
     fig, ax = plt.subplots(figsize=(12, 6))
 
     ax.bar([x - width/2 for x in x_pos], avg_p_in, width, 
-           yerr=yerr_in, capsize=5, label='Inlet Pressure', color='skyblue', alpha=0.7)
+           yerr=yerr_in, capsize=5, label='Inlet Pressure', color=PASTEL_COLORS[0], alpha=0.7)
     ax.bar([x + width/2 for x in x_pos], avg_p_out, width, 
-           yerr=yerr_out, capsize=5, label='Outlet Pressure', color='orange', alpha=0.7)
+           yerr=yerr_out, capsize=5, label='Outlet Pressure', color=PASTEL_COLORS[1], alpha=0.7)
 
     ax.set_xticks(x_pos)
     ax.set_xticklabels(arc_labels, rotation=45, ha='right')
-    ax.set_xlabel("Arc")
-    ax.set_ylabel("Pressure")
+    ax.set_xlabel("Pipeline")
+    ax.set_yticks(np.arange(0, 151, 30))
+    ax.set_ylim(0, 150)
+    ax.set_ylabel("Pressure (bar)")
     ax.set_title("Average Inlet and Outlet Pressure per Arc (with min/max error bars)")
     ax.legend()
     plt.tight_layout()
@@ -955,7 +966,7 @@ def plot_total_vs_weymouth_histogram(model, folder="figures/", show = False):
                 deviation = ((total - weymouth) / total)
             else:
                 deviation = 0
-            deviations.append(deviation)
+            deviations.append(deviation *100) #(convert to percentage)
 
     deviations = np.array(deviations)
 
@@ -968,7 +979,7 @@ def plot_total_vs_weymouth_histogram(model, folder="figures/", show = False):
 
     # Plot histogram
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.hist(deviations, bins=30, color='skyblue', edgecolor='black', alpha=0.7)
+    ax.hist(deviations, bins=30, color=PASTEL_COLORS[2], edgecolor='black', alpha=0.7)
 
     ax.set_xlabel("Deviation (%)", fontsize=12)
     ax.set_ylabel("Frequency", fontsize=12)
@@ -1028,7 +1039,8 @@ def plot_market_node_component_flow_with_std(model, folder="figures/", show = Fa
             width,
             yerr=stds[:, j],
             capsize=4,
-            label=c
+            label=c,
+            color=PASTEL_COLORS[i % len(PASTEL_COLORS)]
         )
 
     ax.set_xticks(x)
@@ -1091,8 +1103,8 @@ def plot_supplier_limit_vs_produced(model, folder="figures/", show = False):
 
         fig, ax = plt.subplots(figsize=(14, 6))
 
-        ax.bar(x + width/2, produced, width, label="Produced")
-        ax.bar(x - width/2, required, width, label="Limit")
+        ax.bar(x + width/2, produced, width, label="Produced", color = PASTEL_COLORS[0])
+        ax.bar(x - width/2, required, width, label="Limit", color = PASTEL_COLORS[1])
 
         ax.set_xticks(x)
         ax.set_xticklabels([str(s) for s in scenarios], rotation=45)
@@ -1175,8 +1187,8 @@ def plot_supplier_total_prod_vs_total_demand(model, folder="figures/", show = Fa
 
         fig, ax = plt.subplots(figsize=(14, 6))
 
-        ax.plot(x, prod_per_scenario, marker="o", label=f"Production ({h})")
-        ax.plot(x, demand_per_scenario, linestyle="--", label="Total Demand")
+        ax.plot(x, prod_per_scenario, marker="o", label=f"Production ({h})", color=PASTEL_COLORS[0])
+        ax.plot(x, demand_per_scenario, linestyle="--", label="Total Demand", color=PASTEL_COLORS[1])
 
         ax.set_xticks(x)
         ax.set_xticklabels([str(sc) for sc in scenarios], rotation=45)
@@ -1209,7 +1221,7 @@ def plot_scenario_objectives(model, folder="figures/", show = False):
 
     # Plot bar chart
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(range(n_scenarios), obj_values)
+    ax.bar(range(n_scenarios), obj_values, color = PASTEL_COLORS[0])
 
     ax.set_xlabel('Scenario Index', fontsize=12)
     ax.set_ylabel('Objective Value', fontsize=12)
@@ -1253,23 +1265,25 @@ def plot_scenario_revenue_costs(model, folder="figures/", show=False):
     fig, ax = plt.subplots(figsize=(12, 6))
 
     # Revenue bars (left side of group)
-    ax.bar(x - width/2, revenue, width, label="Revenue")
+    ax.bar(x - width/2, revenue, width, label="Revenue", color=PASTEL_COLORS[0])
 
     # Cost bars (right side of group, stacked)
-    ax.bar(x + width/2, generation_cost, width, label="Generation Cost")
+    ax.bar(x + width/2, generation_cost, width, label="Generation Cost", color=PASTEL_COLORS[1])
     ax.bar(
         x + width/2,
         pressure_cost,
         width,
         bottom=generation_cost,
-        label="Pressure Cost"
+        label="Pressure Cost",
+        color=PASTEL_COLORS[2]
     )
     ax.bar(
         x + width/2,
         booking_cost,
         width,
         bottom=generation_cost + pressure_cost,
-        label="Booking Cost"
+        label="Booking Cost",
+        color=PASTEL_COLORS[3]
     )
 
     ax.set_xlabel("Scenario Index", fontsize=12)
@@ -1350,17 +1364,7 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
         fig, ax = plt.subplots(figsize=(12, 6))
 
         # Stacked bars (capacity)
-        entry_pivot.plot(kind="bar", stacked=True, ax=ax)
-
-        # Flow line
-        flow_values = [flow_dif[n] for n in entry_nodes]
-        ax.plot(
-            range(len(entry_nodes)),
-            flow_values,
-            marker="o",
-            linestyle="None",
-            label="Actual Entry Flow"
-        )
+        entry_pivot.plot(kind="bar", stacked=True, ax=ax, color=PASTEL_COLORS[:len(entry_pivot.columns)])
 
         ax.set_title("Entry Capacity vs Actual Flow per Node")
         ax.set_xlabel("Node")
@@ -1394,17 +1398,7 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
         fig, ax = plt.subplots(figsize=(12, 6))
 
         # Stacked bars (capacity)
-        exit_pivot.plot(kind="bar", stacked=True, ax=ax)
-
-        # Flow line
-        flow_values = [-flow_dif[n] for n in exit_nodes]
-        ax.plot(
-            range(len(exit_nodes)),
-            flow_values,
-            marker="o",
-            linestyle="None",
-            label="Actual Exit Flow"
-        )
+        exit_pivot.plot(kind="bar", stacked=True, ax=ax, color=PASTEL_COLORS[:len(exit_pivot.columns)])
 
         ax.set_title("Exit Capacity vs Actual Flow per Node")
         ax.set_xlabel("Node")
@@ -1423,12 +1417,139 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
     else:
         print("No exit capacity bought at any node.")
 
+def plot_flow_violins(model, folder="figures/", show=False, tol = 0.01):
+    """
+    Violin plots of NET flow per node.
+
+    - Inflow plot: only nodes where inflow > outflow (net inflow)
+      -> plots (inflow - outflow)
+    - Outflow plot: only nodes where outflow > inflow (net outflow)
+      -> plots (outflow - inflow)
+    - Uses scenario-level values (no averaging)
+    """
+
+    import os
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    os.makedirs(folder, exist_ok=True)
+
+    net_data = []
+
+    # =========================
+    # Collect NET FLOW per scenario
+    # =========================
+    for n in model.N:
+        for m_3 in model.M[3]:
+
+            inflow = sum(
+                pyo.value(model.f[a, c, m_3])
+                for a in model.A_n_minus[n]
+                for c in model.C
+            )
+
+            outflow = sum(
+                pyo.value(model.f[a, c, m_3])
+                for a in model.A_n_plus[n]
+                for c in model.C
+            )
+
+            net = inflow - outflow
+
+            net_data.append({
+                "node": n,
+                "net": net
+            })
+
+    df = pd.DataFrame(net_data)
+
+    # =========================
+    # Classify nodes
+    # =========================
+    mean_net = df.groupby("node")["net"].mean()
+
+    inflow_nodes = mean_net[mean_net > tol].sort_values(ascending=False).index
+    outflow_nodes = mean_net[mean_net < -tol].sort_values().index  # most negative first
+
+    # =========================
+    # INFLOW DOMINATED (net > 0)
+    # =========================
+    if len(inflow_nodes) > 0:
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        data = [
+            df[df["node"] == n]["net"].values
+            for n in inflow_nodes
+        ]
+
+        violin_parts = ax.violinplot(data, showmeans=True, showextrema=True,)
+
+        for pc in violin_parts['bodies']:
+            pc.set_facecolor(PASTEL_COLORS[0])
+            pc.set_edgecolor('black')
+
+        ax.set_xticks(range(1, len(inflow_nodes) + 1))
+        ax.set_xticklabels(inflow_nodes, rotation=45, ha='right')
+
+        ax.set_title("Net Inflow per Node (Inflow > Outflow)")
+        ax.set_xlabel("Node")
+        ax.set_ylim(0)
+        ax.set_ylabel("Net Inflow (Inflow - Outflow)")
+        ax.grid(alpha=0.3, axis="y")
+
+        plt.tight_layout()
+        plt.savefig(folder + "net_inflow_violin.png")
+
+        if show:
+            plt.show()
+
+        plt.close(fig)
+
+    else:
+        print("No net inflow nodes.")
+
+    # =========================
+    # OUTFLOW DOMINATED (net < 0)
+    # =========================
+    if len(outflow_nodes) > 0:
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        data = [
+            -df[df["node"] == n]["net"].values  # flip sign → positive magnitude
+            for n in outflow_nodes
+        ]
+
+        ax.violinplot(data, showmeans=True, showextrema=True)
+
+        ax.set_xticks(range(1, len(outflow_nodes) + 1))
+        ax.set_xticklabels(outflow_nodes, rotation=45, ha='right')
+
+        ax.set_title("Net Outflow per Node (Outflow > Inflow)")
+        ax.set_xlabel("Node")
+        ax.set_ylim(0)
+        ax.set_ylabel("Net Outflow (Outflow - Inflow)")
+        ax.grid(alpha=0.3, axis="y")
+
+        plt.tight_layout()
+        plt.savefig(folder + "net_outflow_violin.png")
+
+        if show:
+            plt.show()
+
+        plt.close(fig)
+
+    else:
+        print("No net outflow nodes.")
+
+
 def plot_results(model, folder = "figures/"):
     if len(model.N) == 0:
         print("Warning: No plots were made as there are no nodes in the model")
         return None
     os.makedirs(folder, exist_ok=True)
     plot_average_flows(model, folder)
+    plot_flow_violins(model, folder)
     plot_component_flows_stacked(model, folder)
     plot_inlet_outlet_pressures(model, folder)
     plot_total_vs_weymouth_histogram(model, folder)
@@ -1517,7 +1638,7 @@ if __name__ == "__main__":
 
     model = create_model(G, scenarios, cutting_plane_pairs=generate_cutting_plane_pairs(method = "skewed"))
 
-    results = solve_model(model, time_limit= None)
+    results = solve_model(model, time_limit= None, precision= 0.002)
     print(results)
     plot_results(model, folder = FOLDER)
     save_model_values(model, "study_case_model/scenario_variables/main_model.pkl")
