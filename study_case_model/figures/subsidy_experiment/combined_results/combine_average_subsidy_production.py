@@ -10,10 +10,25 @@ import numbers
 import pandas as pd
 import ast
 
-EXPERIMENT = "run_29326"
+EXPERIMENT = "combined_runs_new"
 LOAD_ONE_RUN = None #"run0"
 MINIMUM_RUNS = 2
 HYDROGEN_MSCM_MWH = 2.78 * 1000 
+
+# =========================
+# COLOR PALETTE
+# =========================
+PASTEL_COLORS = [
+    "#82C9FF",  # blue
+    "#FF8692",  # red
+    "#4BDA6A",  # green
+    "#DB97E3",  # purple
+    "#FFFF82",  # yellow
+    "#FFC085",
+    "#7EDCD5"
+]
+
+
 # ---------------------------
 # LOAD SNAPSHOT
 # ---------------------------
@@ -126,7 +141,7 @@ def plot_hydrogen_production_by_subsidy(h2_dict, folder):
         all_subsidies.update(stats["subsidy"])
 
     # Step 2: loop over each subsidy (these become the lines)
-    for sub in sorted(all_subsidies):
+    for j, sub in enumerate(sorted(all_subsidies)):
         deviations = []
         means = []
         ses = []
@@ -149,7 +164,8 @@ def plot_hydrogen_production_by_subsidy(h2_dict, folder):
             yerr=ses,
             fmt='o-',
             capsize=5,
-            label=f"Subsidy {sub}"
+            label=f"Subsidy {sub}",
+            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
         )
 
     plt.xlabel('Deviation')
@@ -166,13 +182,13 @@ def plot_hydrogen_production(h2_dict, folder):
     
     plt.figure(figsize=(10, 5))
     
-    for label, stats in sorted(h2_dict.items()): 
+    for j, (label, stats) in enumerate(sorted(h2_dict.items())): 
         # sort by subsidy to ensure clean lines 
         sorted_data = sorted( zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]), 
                              key=lambda x: x[0] )
         subs, means, ses, runs = zip(*sorted_data)
         
-        plt.errorbar( subs, means, yerr=ses, fmt='o-', capsize=5, label=f"Deviation {label}" )
+        plt.errorbar( subs, means, yerr=ses, fmt='o-', capsize=5, label=f"Deviation {label}", color = PASTEL_COLORS[j % len(PASTEL_COLORS)] )
     plt.xlabel('Subsidy (Euro/MWh)') 
     plt.ylabel('Hydrogen Production')
     plt.title('Hydrogen Production vs Subsidy')
@@ -186,7 +202,7 @@ def plot_subsidy_cost(h2_dict, folder):
 
     plt.figure(figsize=(10, 5))
 
-    for label, stats in sorted(h2_dict.items()):
+    for j, (label, stats) in enumerate(sorted(h2_dict.items())):
         # sort by subsidy to ensure clean lines
         sorted_data = sorted(
             zip(stats["subsidy"], stats["mean"], stats["se"]),
@@ -203,7 +219,8 @@ def plot_subsidy_cost(h2_dict, folder):
             yerr=cost_ses,
             fmt='o-',
             capsize=5,
-            label=f"Deviation {label}"
+            label=f"Deviation {label}",
+            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
         )
 
     plt.xlabel('Subsidy (Euro/MWh)')
@@ -270,7 +287,7 @@ def plot_objective_values(objective_dict, folder):
 
     plt.figure(figsize=(10, 5))
 
-    for label, stats in sorted(objective_dict.items()):
+    for j, (label, stats) in enumerate(sorted(objective_dict.items())):
         # ensure correct ordering by subsidy
         sorted_data = sorted(
             zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]),
@@ -305,7 +322,8 @@ def plot_objective_values(objective_dict, folder):
             yerr=diff_ses,
             fmt='o-',
             capsize=5,
-            label=f"Deviation {label}"
+            label=f"Deviation {label}",
+            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
         )
 
     plt.xlabel('Subsidy (Euro/MWh)')
@@ -352,7 +370,7 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
         Exception("No accepted co2 saving method")
     print("CO2 cost per Mcsm:", co2_savings_unit)
 
-    for label in sorted(objective_dict.keys()):
+    for j, label in enumerate(sorted(objective_dict.keys())):
         obj_stats = objective_dict[label]
         h2_stats = h2_dict[label]
 
@@ -414,7 +432,8 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
             yerr=diff_ses,
             fmt='o-',
             capsize=5,
-            label=f"Deviation {label}"
+            label=f"Deviation {label}",
+            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
         )
 
     plt.xlabel('Subsidy (Euro/MWh)')
@@ -463,7 +482,7 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
     print("CO2 cost per Mcsm:", co2_savings_unit)
 
 
-    for label in sorted(objective_dict.keys()):
+    for j,label in enumerate(sorted(objective_dict.keys())):
         obj_stats = objective_dict[label]
         h2_stats = h2_dict[label]
 
@@ -492,15 +511,14 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
             roi_r = []
             for i in range(min_len):
                 delta_obj = r_obj[i] - base_obj_runs[i]
-
-                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i]
+                scaling_factor = 0# 0.1 * s * HYDROGEN_MSCM_MWH *np.mean(r_h2) # scale subsidy cost by average production to avoid outliers dominating ROI
+                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i] 
                 co2_savings = r_h2[i] * co2_savings_unit
 
-                if sub_cost > 0:
-                    roi = (delta_obj - sub_cost + co2_savings) / sub_cost
+                if sub_cost > 0 and s >= 30:
+                    roi = (delta_obj - sub_cost + co2_savings) / (sub_cost + scaling_factor)
                 else:
                     roi = 0
-
                 roi_r.append(roi)
 
             roi_runs.append(roi_r)
@@ -518,7 +536,10 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
         roi_means = []
         roi_ses = []
 
-        for d in diffs:
+        for i, d in enumerate(diffs):
+            if i < len(subs) and subs[i] < 30:
+                continue
+            
             d = np.array(d)
             n = len(d)
 
@@ -528,15 +549,17 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
             roi_means.append(mean)
             roi_ses.append(se)
 
-
+        # Filter subs to match roi_means length
+        filtered_subs = [s for s in subs if s >= 30]
 
         plt.errorbar(
-            subs,
+            filtered_subs,
             roi_means,
             yerr=roi_ses,
             fmt='o-',
             capsize=5,
-            label=f"Deviation {label}"
+            label=f"Deviation {label}",
+            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
         )
 
     plt.xlabel('Subsidy (Euro/MWh)')

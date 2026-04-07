@@ -11,15 +11,15 @@ def get_next_run_index(sub_dst_path):
             existing.append(int(match.group(1)))
     return max(existing) + 1 if existing else 0
 
-def copy_run0_from_src1(src_path, dst_base):
+def copy_run_from_src1(src_path, dst_base, run = "run0"):
     """Copy run0 from src1, replacing existing run0 in destination"""
     for dev_dir in src_path.glob("dev*/"):
         for sub_dir in dev_dir.glob("sub*/"):
-            src_run0 = sub_dir / "run0"
+            src_run0 = sub_dir / run
             if not src_run0.exists():
                 continue
 
-            dst_run0 = dst_base / dev_dir.name / sub_dir.name / "run0"
+            dst_run0 = dst_base / dev_dir.name / sub_dir.name / run
             dst_run0.parent.mkdir(parents=True, exist_ok=True)
 
             if dst_run0.exists():
@@ -53,14 +53,17 @@ def merge_runs(src_paths, dst_base):
 # ---------------------------
 # Paths
 # ---------------------------
-src1 = Path("study_case_model/figures/subsidy_experiment/run_24326")
-src2 = Path("study_case_model/figures/subsidy_experiment/run_27326")
-src3 = Path("study_case_model/figures/subsidy_experiment/run_29326")
-dst_base = Path("study_case_model/figures/subsidy_experiment/combined_runs")
+src1 = Path("study_case_model/figures/subsidy_experiment/run_06426")
+dst_base = Path("study_case_model/figures/subsidy_experiment/combined_runs_new")
 
 # ---------------------------
 # Run merge
 # ---------------------------
-src_run_zero = Path("study_case_model/figures/subsidy_experiment/run_24326_0")
-copy_run0_from_src1(src1, src_run_zero)
-merge_runs([src_run_zero, src2, src3], dst_base)
+src_run_five = Path("study_case_model/figures/subsidy_experiment/run_5")
+src_run_six = Path("study_case_model/figures/subsidy_experiment/run_6")
+src_run_seven = Path("study_case_model/figures/subsidy_experiment/run_7")
+copy_run_from_src1(src1, src_run_five, run="run5")
+copy_run_from_src1(src1, src_run_six, run="run6")
+copy_run_from_src1(src1, src_run_seven, run="run7")
+
+merge_runs([src_run_five, src_run_six, src_run_seven], dst_base)

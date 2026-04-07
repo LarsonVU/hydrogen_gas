@@ -3,7 +3,7 @@ import numpy as np
 # =========================
 # Parameters (same as your script)
 # =========================
-subsidies = [30, 40, 70] 
+subsidies = [30, 45, 70] 
 allowed_hydrogen = np.linspace(0, 0.2, 21) 
 runs = 4
 
