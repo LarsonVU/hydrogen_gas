@@ -3,18 +3,41 @@ import pickle
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
-import os
 import folium
 import geopandas as gpd
 import numbers
 import pandas as pd
 import ast
 
+# =========================
+# SETTINGS
+# =========================
 EXPERIMENT = "run_30326"
-LOAD_ONE_RUN = None #"run4"
+LOAD_ONE_RUN = None
 MINIMUM_RUNS = 1
-SUBSIDY = 40.0
-ERROR_BARS = False
+SUBSIDY = 70.0
+ERROR_BARS = True
+
+# =========================
+# COLOR PALETTE
+# =========================
+PASTEL_COLORS = [
+    "#82C9FF",  # blue
+    "#FF8692",  # red
+    "#4BDA6A",  # green
+    "#DB97E3",  # purple
+    "#FFFF82",  # yellow
+    "#FFC085",
+    "#7EDCD5"
+]
+
+# =========================
+# HELPERS
+# =========================
+def crn_standard_error(values):
+    values = np.array(values)
+    return np.std(values, ddof=1) / np.sqrt(len(values))
+
 
 # ---------------------------
 # LOAD SNAPSHOT
@@ -144,105 +167,180 @@ def analyze_experiment(base_folder, method = 0):
                     summary.setdefault((market_value, allowed_h2), {
                                         "subsidy": [],
                                         "mean": [],
-                                        "se": []
+                                        "se": [],
+                                        "values": []
                                     })
 
                     summary[(market_value, allowed_h2)]["subsidy"].append(sub_value)
                     summary[(market_value, allowed_h2)]["mean"].append(mean)
                     summary[(market_value, allowed_h2)]["se"].append(stderr)
+                    summary[(market_value, allowed_h2)]["values"].append(results)
 
                     print(f"Market={market_value}, Allowed H2={allowed_h2}, sub={sub_value} | mean={mean:.4f}, stderr={stderr:.4f}, n={n}")
     return summary
 
 def plot_h2_vs_allowed_for_subsidy(h2_dict, subsidy_value, folder, tol=1e-6):
-    """
-    For a fixed subsidy:
-    - x-axis: allowed_h2
-    - lines: markets
-    """
-
     os.makedirs(folder, exist_ok=True)
     plt.figure(figsize=(10, 5))
 
-    # reorganize: market -> [(allowed_h2, mean, se)]
     market_data = {}
+    color_map = {}
+    color_idx = 0
+
+    # --- collect data ---
+    for (market, allowed_h2), stats in h2_dict.items():
+        for sub, values in zip(stats["subsidy"], stats["values"]):
+            if abs(sub - subsidy_value) < tol:
+                market_data.setdefault(market, []).append((allowed_h2, values))
+
+    # --- baseline (CRN vector) ---
+    baseline_values = None
 
     for (market, allowed_h2), stats in h2_dict.items():
-        for sub, mean, se in zip(stats["subsidy"], stats["mean"], stats["se"]):
-            if abs(sub - subsidy_value) < tol:
-                market_data.setdefault(market, []).append((allowed_h2, mean, se))
+        if market == "ZEEBRUGGE" and abs(allowed_h2) < tol:
+            for sub, values in zip(stats["subsidy"], stats["values"]):
+                if abs(sub - subsidy_value) < tol:
+                    baseline_values = np.array(values)
+                    break
 
-    # plot each market
+    if baseline_values is None:
+        raise ValueError("Baseline not found")
+
+    # --- plot per market ---
     for market, values in sorted(market_data.items()):
         values_sorted = sorted(values, key=lambda x: x[0])
-        allowed, means, ses = zip(*values_sorted)
+
+        allowed_list = []
+        means = []
+        ses = []
+
+        for allowed_h2, scenario_vals in values_sorted:
+            scenario_vals = np.array(scenario_vals)
+
+            diff = scenario_vals - baseline_values
+
+            allowed_list.append(allowed_h2)
+            means.append(np.mean(diff))
+
+            # CRN variance
+            var = np.var(diff, ddof=1)
+            ses.append(np.sqrt(var / len(diff)))
+
+        means = np.array(means)
+        ses = np.array(ses)
+
+        if market not in color_map:
+            color_map[market] = PASTEL_COLORS[color_idx % len(PASTEL_COLORS)]
+            color_idx += 1
+
+        color = color_map[market]
+
         if ERROR_BARS:
-            plt.errorbar(
-                allowed,
-                means,
-                yerr=ses,
-                fmt='o-',
-                capsize=5,
-                label=f"Market {market}"
-            )
+            plt.errorbar(allowed_list, means, yerr=ses, fmt='o-', capsize=4, color=color, label=f"Market {market}")
         else:
-            plt.plot(allowed, means, 'o-', label=f"Market {market}")
+            plt.plot(allowed_list, means, 'o-', color=color, label=f"Market {market}")
 
     plt.xlabel('Allowed Hydrogen Share')
-    plt.ylabel('Hydrogen Production')
+    plt.ylabel('Hydrogen Production (CRN Δ vs Zeebrugge)')
     plt.title(f'Hydrogen Production vs Allowed H2 (Subsidy = {subsidy_value})')
     plt.grid(True)
     plt.legend()
 
-    filename = f"h2_prod_vs_allowed_sub_{subsidy_value}.png"
-    plt.savefig(os.path.join(folder, filename))
+    plt.savefig(os.path.join(folder, f"h2_prod_vs_allowed_sub_{subsidy_value}.png"))
     plt.close()
 
-
 def plot_h2_per_market_subsidy(h2_dict, subsidy_value, folder, tol=1e-6):
-    """
-    For a fixed subsidy:
-    - x-axis: allowed_h2
-    - lines: markets
-    """
-
     os.makedirs(folder, exist_ok=True)
     plt.figure(figsize=(10, 5))
 
-    # reorganize: market -> [(allowed_h2, mean, se)]
     market_data = {}
+    color_map = {}
+    color_idx = 0
+
+    # -------------------------
+    # Collect scenario-level data
+    # -------------------------
+    for (market, allowed_h2), stats in h2_dict.items():
+        for sub, values in zip(stats["subsidy"], stats["values"]):
+            if abs(sub - subsidy_value) < tol:
+                market_data.setdefault(market, []).append((allowed_h2, np.array(values)))
+
+    # -------------------------
+    # Baseline (CRN vector)
+    # -------------------------
+    baseline_values = None
 
     for (market, allowed_h2), stats in h2_dict.items():
-        for sub, mean, se in zip(stats["subsidy"], stats["mean"], stats["se"]):
-            if abs(sub - subsidy_value) < tol:
-                market_data.setdefault(market, []).append((allowed_h2, mean, se))
+        if market == "ZEEBRUGGE" and abs(allowed_h2) < tol:
+            for sub, values in zip(stats["subsidy"], stats["values"]):
+                if abs(sub - subsidy_value) < tol:
+                    baseline_values = np.array(values)
+                    break
 
-    # plot each market
+    if baseline_values is None:
+        raise ValueError("Zeebrugge baseline not found")
+
+    # -------------------------
+    # Plot per market
+    # -------------------------
     for market, values in sorted(market_data.items()):
         values_sorted = sorted(values, key=lambda x: x[0])
-        allowed, means, ses = zip(*values_sorted)
+
+        allowed_list = []
+        means = []
+        ses = []
+
+        for allowed_h2, scenario_vals in values_sorted:
+            scenario_vals = np.array(scenario_vals)
+
+            # CRN difference
+            diff = scenario_vals - baseline_values
+
+            allowed_list.append(allowed_h2)
+            means.append(np.mean(diff))
+
+            # CRN variance
+            var = np.var(diff, ddof=1)
+            se = np.sqrt(var / len(diff))
+            ses.append(se)
+
+        means = np.array(means)
+        ses = np.array(ses)
+
+        # -------------------------
+        # Color assignment
+        # -------------------------
+        if market not in color_map:
+            color_map[market] = PASTEL_COLORS[color_idx % len(PASTEL_COLORS)]
+            color_idx += 1
+
+        color = color_map[market]
+
+        # -------------------------
+        # Plot
+        # -------------------------
         if ERROR_BARS:
             plt.errorbar(
-                allowed,
+                allowed_list,
                 means,
                 yerr=ses,
                 fmt='o-',
-                capsize=5,
+                capsize=4,
+                color=color,
                 label=f"Market {market}"
             )
         else:
-            plt.plot(allowed, means, 'o-', label=f"Market {market}")
+            plt.plot(allowed_list, means, 'o-', color=color, label=f"Market {market}")
 
     plt.xlabel('Allowed Hydrogen Share')
-    plt.ylabel(f'Hydrogen Consumption at respective market')
+    plt.ylabel('Hydrogen Consumption (CRN Δ vs Zeebrugge)')
     plt.title(f'Hydrogen Consumption vs Allowed H2 (Subsidy = {subsidy_value})')
     plt.grid(True)
     plt.legend()
 
-    filename = f"h2_cons_vs_allowed_sub_{subsidy_value}.png"
-    plt.savefig(os.path.join(folder, filename))
+    plt.savefig(os.path.join(folder, f"h2_cons_vs_allowed_sub_{subsidy_value}.png"))
     plt.close()
-
+    
 def analyze_objectives(base_folder):
     summary = {}
 
@@ -283,12 +381,15 @@ def analyze_objectives(base_folder):
                 summary.setdefault((market_value, allowed_h2), {
                     "subsidy": [],
                     "mean": [],
-                    "se": []
+                    "se": [],
+                    "values": []
                 })
 
                 summary[(market_value, allowed_h2)]["subsidy"].append(sub_value)
                 summary[(market_value, allowed_h2)]["mean"].append(mean)
                 summary[(market_value, allowed_h2)]["se"].append(se)
+                summary[(market_value, allowed_h2)]["values"].append(results)
+
                 print(f"Market={market_value}, Allowed H2={allowed_h2}, sub={sub_value} | mean={mean:.4f}, stderr={se:.4f}, n={len(results)}")
     return summary
 
@@ -297,39 +398,93 @@ def plot_objective_vs_allowed_for_subsidy(objective_dict, subsidy_value, folder,
     For a fixed subsidy:
     - x-axis: allowed_h2
     - lines: markets
+    - CRN applied using scenario-level values
     """
 
     os.makedirs(folder, exist_ok=True)
     plt.figure(figsize=(10, 5))
 
     market_data = {}
+    color_map = {}
+    color_idx = 0
+
+    # -------------------------
+    # Collect scenario-level data
+    # -------------------------
+    for (market, allowed_h2), stats in objective_dict.items():
+        for sub, values in zip(stats["subsidy"], stats["values"]):
+            if abs(sub - subsidy_value) < tol:
+                market_data.setdefault(market, []).append((allowed_h2, np.array(values)))
+
+    # -------------------------
+    # Baseline (CRN vector)
+    # -------------------------
+    baseline_values = None
 
     for (market, allowed_h2), stats in objective_dict.items():
-        for sub, mean, se in zip(stats["subsidy"], stats["mean"], stats["se"]):
-            if abs(sub - subsidy_value) < tol:
-                market_data.setdefault(market, []).append((allowed_h2, mean, se))
+        if str(market).lower() == "zeebrugge" and abs(allowed_h2) < tol:
+            for sub, values in zip(stats["subsidy"], stats["values"]):
+                if abs(sub - subsidy_value) < tol:
+                    baseline_values = np.array(values)
+                    break
 
+    if baseline_values is None:
+        raise ValueError("Zeebrugge baseline not found")
+
+    # -------------------------
+    # Plot per market
+    # -------------------------
     for market, values in sorted(market_data.items()):
         values_sorted = sorted(values, key=lambda x: x[0])
-        allowed, means, ses = zip(*values_sorted)
 
-        means = np.array(means) - means[0]
-        ses = np.array([np.sqrt(s**2 + ses[0]**2) for s in ses])
+        allowed_list = []
+        means = []
+        ses = []
 
+        for allowed_h2, scenario_vals in values_sorted:
+            scenario_vals = np.array(scenario_vals)
+
+            # CRN difference
+            diff = scenario_vals - baseline_values
+
+            allowed_list.append(allowed_h2)
+            means.append(np.mean(diff))
+
+            # CRN variance
+            var = np.var(diff, ddof=1)
+            se = np.sqrt(var / len(diff))
+            ses.append(se)
+
+        means = np.array(means)
+        ses = np.array(ses)
+
+        # -------------------------
+        # Colors
+        # -------------------------
+        if market not in color_map:
+            color_map[market] = PASTEL_COLORS[color_idx % len(PASTEL_COLORS)]
+            color_idx += 1
+
+        color = color_map[market]
+
+        # -------------------------
+        # Plot
+        # -------------------------
         if ERROR_BARS:
             plt.errorbar(
-                allowed,
+                allowed_list,
                 means,
                 yerr=ses,
                 fmt='o-',
                 capsize=5,
+                color=color,
                 label=f"Market {market}"
             )
         else:
-            plt.plot(allowed, means, 'o-', label=f"Market {market}")
+            plt.plot(allowed_list, means, 'o-', color=color, label=f"Market {market}")
 
     plt.xlabel('Allowed Hydrogen Share')
-    plt.ylabel('Objective Value (Δ from baseline)')
+    plt.ylabel('Objective Value (CRN Δ vs Zeebrugge)')
     plt.title(f'Objective vs Allowed H2 (Subsidy = {subsidy_value})')
     plt.grid(True)
     plt.legend()
@@ -338,14 +493,14 @@ def plot_objective_vs_allowed_for_subsidy(objective_dict, subsidy_value, folder,
     plt.savefig(os.path.join(folder, filename))
     plt.close()
 
-
-def plot_net_effect_for_subsidy(objective_dict, h2_dict, subsidy_value, folder, co2_method="zero", tol=1e-6):
-    """
-    For a fixed subsidy:
-    - x-axis: allowed_h2
-    - lines: markets
-    """
-
+def plot_net_effect_for_subsidy(
+    objective_dict,
+    h2_dict,
+    subsidy_value,
+    folder,
+    co2_method="zero",
+    tol=1e-6
+):
     os.makedirs(folder, exist_ok=True)
     plt.figure(figsize=(10, 5))
 
@@ -373,12 +528,12 @@ def plot_net_effect_for_subsidy(objective_dict, h2_dict, subsidy_value, folder, 
     else:
         raise ValueError("No accepted co2 saving method")
 
-    print("CO2 cost per Mcsm:", co2_savings_unit)
-
     # ---------------------------
-    # reorganize: market -> [(allowed_h2, net_mean, net_se)]
+    # Collect CRN scenario data
     # ---------------------------
     market_data = {}
+    color_map = {}
+    color_idx = 0
 
     for (market, allowed_h2), obj_stats in objective_dict.items():
         h2_stats = h2_dict[(market, allowed_h2)]
@@ -386,49 +541,102 @@ def plot_net_effect_for_subsidy(objective_dict, h2_dict, subsidy_value, folder, 
         for i, sub in enumerate(obj_stats["subsidy"]):
             if abs(sub - subsidy_value) < tol:
 
-                base_obj = obj_stats["mean"][0]
-
-                m_obj = obj_stats["mean"][i]
-                se_obj = obj_stats["se"][i]
-
-                m_h2 = h2_stats["mean"][i]
-                se_h2 = h2_stats["se"][i]
-
-                delta_obj = m_obj - base_obj
-
-                sub_cost = sub * 2.78 * 1000 * m_h2
-                co2_savings = m_h2 * co2_savings_unit
-
-                net = delta_obj - sub_cost + co2_savings
-
-                # error propagation
-                var = se_obj**2 + obj_stats["se"][0]**2 + (sub**2) * (se_h2**2)
-                net_se = np.sqrt(var)
-
                 market_data.setdefault(market, []).append(
-                    (allowed_h2, net, net_se)
+                    (
+                        allowed_h2,
+                        np.array(obj_stats["values"][i]),   # scenario-level objective
+                        np.array(h2_stats["values"][i])     # scenario-level H2
+                    )
                 )
 
     # ---------------------------
-    # plotting
+    # Baseline (CRN vector)
+    # ---------------------------
+    baseline_obj = None
+    baseline_h2 = None
+
+    for (market, allowed_h2), obj_stats in objective_dict.items():
+        if str(market).lower() == "zeebrugge" and abs(allowed_h2) < tol:
+
+            h2_stats = h2_dict[(market, allowed_h2)]
+
+            for i, sub in enumerate(obj_stats["subsidy"]):
+                if abs(sub - subsidy_value) < tol:
+                    baseline_obj = np.array(obj_stats["values"][i])
+                    baseline_h2 = np.array(h2_stats["values"][i])
+                    break
+
+    if baseline_obj is None or baseline_h2 is None:
+        raise ValueError("Baseline not found")
+
+    # ---------------------------
+    # Plot per market
     # ---------------------------
     for market, values in sorted(market_data.items()):
         values_sorted = sorted(values, key=lambda x: x[0])
-        allowed, net_means, net_ses = zip(*values_sorted)
+
+        allowed_list = []
+        net_means = []
+        net_ses = []
+
+        for allowed_h2, obj_vals, h2_vals in values_sorted:
+
+            # ---------------------------
+            # CRN differences
+            # ---------------------------
+            d_obj = obj_vals - baseline_obj
+            d_h2 = h2_vals - baseline_h2
+
+            # ---------------------------
+            # Net at scenario level
+            # ---------------------------
+            sub_cost = subsidy_value * 2.78 * 1000 * d_h2
+            co2_savings = d_h2 * co2_savings_unit
+
+            net_vals = d_obj - sub_cost + co2_savings
+
+            # ---------------------------
+            # Aggregation
+            # ---------------------------
+            allowed_list.append(allowed_h2)
+            net_means.append(np.mean(net_vals))
+
+            var = np.var(net_vals, ddof=1)
+            net_ses.append(np.sqrt(var / len(net_vals)))
+
+        net_means = np.array(net_means)
+        net_ses = np.array(net_ses)
+
+        # ---------------------------
+        # Color assignment
+        # ---------------------------
+        if market not in color_map:
+            color_map[market] = PASTEL_COLORS[color_idx % len(PASTEL_COLORS)]
+            color_idx += 1
+
+        color = color_map[market]
+
+        # ---------------------------
+        # Plot
+        # ---------------------------
         if ERROR_BARS:
             plt.errorbar(
-                allowed,
+                allowed_list,
                 net_means,
                 yerr=net_ses,
                 fmt='o-',
                 capsize=5,
+                color=color,
                 label=f"Market {market}"
             )
-        else:            
-            plt.plot(allowed, net_means, 'o-', label=f"Market {market}")
+        else:
+            plt.plot(allowed_list, net_means, 'o-', color=color, label=f"Market {market}")
 
+    # ---------------------------
+    # Labels
+    # ---------------------------
     plt.xlabel('Allowed Hydrogen Share')
-    plt.ylabel('Net Effect (Euro)')
+    plt.ylabel('Net Effect (CRN, €)')
     plt.title(f'Net Welfare Effect (Subsidy = {subsidy_value}, CO2 = {co2_method})')
     plt.grid(True)
     plt.legend()
@@ -436,6 +644,7 @@ def plot_net_effect_for_subsidy(objective_dict, h2_dict, subsidy_value, folder, 
     filename = f"net_effect_vs_allowed_sub_{subsidy_value}_{co2_method}.png"
     plt.savefig(os.path.join(folder, filename))
     plt.close()
+
 
 def analyze_network_flows(market, subsidy, allowed_h2, base_folder):
     """

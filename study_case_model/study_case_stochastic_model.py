@@ -13,6 +13,8 @@ import pickle
 from datetime import datetime
 from pathlib import Path
 import shutil
+import matplotlib.colors as mcolors
+
 
 def safe_filename(s):
     return re.sub(r'[\\/*?:"<>|]', "_", str(s))
@@ -37,8 +39,19 @@ PASTEL_COLORS = [
     "#4BDA6A",  # pastel green
     "#DB97E3",  # pastel purple
     "#FFFF82",  # pastel yellow
+    "#FFC085",
+    "#7EDCD5"
 ]
 
+def adjust_color(color, factor=0.7):
+    """
+    Darken (<1) or lighten (>1) a color.
+    """
+    rgb = np.array(mcolors.to_rgb(color))
+    if factor < 1:
+        return tuple(rgb * factor)  # darken
+    else:
+        return tuple(1 - (1 - rgb) / factor)  # lighten
 
 
 def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc, number_of_density_bounds):
@@ -950,6 +963,156 @@ def plot_inlet_outlet_pressures(model, folder, show = False):
         plt.show()
     plt.close(fig)
 
+def plot_inlet_outlet_pressure_violins_example(model, folder, show=False):
+    selected_arcs = [("ZEEPIPE-SCP", "ZEEBRUGGE"), ("B-11", "H-7 BP"), ("VISUND", "VISUND T")]
+    os.makedirs(folder, exist_ok=True)
+
+    arcs = list(model.A)
+
+    # =========================
+    # Collect inlet/outlet + variation
+    # =========================
+    arc_data = []
+
+    for a in arcs:
+        p_in_vals = np.array([pyo.value(model.p_in[a, m_3]) for m_3 in model.M[3]])
+        p_out_vals = np.array([pyo.value(model.p_out[a, m_3]) for m_3 in model.M[3]])
+
+        if len(p_in_vals) == 0:
+            continue
+
+        variation = np.max(p_in_vals) - np.min(p_in_vals)
+
+        arc_data.append({
+            "arc": a,
+            "label": f"{a[0]}-{a[1]}",
+            "p_in": p_in_vals,
+            "p_out": p_out_vals,
+            "variation": variation
+        })
+
+    if len(arc_data) == 0:
+        print("No arc data found.")
+        return
+
+    # =========================
+    # Select arcs
+    # =========================
+    if selected_arcs is not None:
+        # Filter manually selected arcs
+        arc_data_selected = [d for d in arc_data if d["arc"] in selected_arcs]
+
+        if len(arc_data_selected) == 0:
+            raise ValueError("None of the selected arcs were found in model.A")
+
+    else:
+        # Fallback: min / median / max variation
+        if len(arc_data) < 3:
+            print("Not enough arcs to select min/median/max variation.")
+            return
+
+        arc_data_sorted = sorted(arc_data, key=lambda x: x["variation"])
+
+        arc_data_selected = [
+            arc_data_sorted[0],
+            arc_data_sorted[len(arc_data_sorted) // 2],
+            arc_data_sorted[-1]
+        ]
+
+    # =========================
+    # Prepare plotting data
+    # =========================
+    data = []
+    labels = []
+    positions = []
+
+    pos = 1
+    spacing = 1.5
+
+    for d in arc_data_selected:
+        # outlet
+        data.append(d["p_out"])
+        labels.append(f"{d['label']} (out)")
+        positions.append(pos)
+
+        # inlet
+        data.append(d["p_in"])
+        labels.append(f"{d['label']} (in)")
+        positions.append(pos + 0.4)
+
+        pos += spacing
+
+    # =========================
+    # Plot vertical violins (swapped from horizontal)
+    # =========================
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    parts = ax.violinplot(
+        data,
+        positions=positions,
+        vert=True,
+        showmeans=False,
+        showmedians=False,
+        showextrema=False
+    )
+
+    # Styling
+    for i, pc in enumerate(parts['bodies']):
+        color_idx = i % 2
+        pc.set_facecolor(PASTEL_COLORS[color_idx % len(PASTEL_COLORS)])
+        pc.set_edgecolor(PASTEL_COLORS[color_idx % len(PASTEL_COLORS)])
+        pc.set_alpha(0.7)
+
+    # =========================
+    # Overlay TRUE data points (color-matched)
+    # =========================
+    for i, vals in enumerate(data):
+        vals = np.array(vals)
+
+        sorted_vals = np.sort(vals)
+        unique_vals, counts = np.unique(sorted_vals, return_counts=True)
+
+        x_positions = []
+        y_positions = []
+
+        for val, count in zip(unique_vals, counts):
+            offsets = [0] if count == 1 else np.linspace(-0.08, 0.08, count)
+            for offset in offsets:
+                x_positions.append(positions[i] + offset)
+                y_positions.append(val)
+
+        # Match violin color, but slightly darker for contrast
+        base_color = PASTEL_COLORS[i % 2]
+        point_color = adjust_color(base_color, factor=0.9)
+
+        ax.scatter(
+            x_positions,
+            y_positions,
+            s=14,
+            alpha=1,
+            color=point_color,
+            edgecolors='none'
+        )
+
+    # =========================
+    # Labels
+    # =========================
+    ax.set_xticks(positions)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+
+    ax.set_ylabel("Pressure (bar)")
+    ax.set_title(
+        "Inlet and Outlet Pressure Distributions"
+    )
+
+    plt.tight_layout()
+    plt.savefig(folder + "inlet_outlet_pressure_violin_example.png")
+
+    if show:
+        plt.show()
+
+    plt.close(fig)
+
 def plot_total_vs_weymouth_histogram(model, folder="figures/", show = False):
     """
     Plot a histogram of deviations between total_flow and weymouth_flow
@@ -1236,65 +1399,150 @@ def plot_scenario_objectives(model, folder="figures/", show = False):
 
 def plot_scenario_revenue_costs(model, folder="figures/", show=False):
     """
-    Plot revenue and split costs per scenario.
-    Revenue and total costs are shown next to each other.
-    Costs are stacked per type.
+    Plot revenue (objective) on primary y-axis and costs on secondary y-axis.
+    Revenue gets its own subplot/axis, costs share a secondary axis.
     """
 
     os.makedirs(folder, exist_ok=True)
 
     scenarios = list(model.M[3])
-    n_scenarios = len(scenarios)
 
-    revenue = np.zeros(n_scenarios)
-    generation_cost = np.zeros(n_scenarios)
-    pressure_cost = np.zeros(n_scenarios)
-    booking_cost = np.zeros(n_scenarios)
+    revenue = []
+    generation_cost = []
+    pressure_cost = []
+    booking_cost = []
 
     # Collect values per scenario
-    for j, m_3 in enumerate(scenarios):
-        revenue[j] = pyo.value(model.revenue_scenario[m_3])
-        generation_cost[j] = pyo.value(model.generation_scenario[m_3])
-        pressure_cost[j] = pyo.value(model.pressure_scenario[m_3])
-        booking_cost[j] = pyo.value(model.booking_scenario[m_3])
+    for m_3 in scenarios:
+        revenue.append(pyo.value(model.revenue_scenario[m_3]))
+        generation_cost.append(pyo.value(model.generation_scenario[m_3]))
+        pressure_cost.append(pyo.value(model.pressure_scenario[m_3]))
+        booking_cost.append(pyo.value(model.booking_scenario[m_3]))
 
-    x = np.arange(n_scenarios)
+    fig = plt.figure(figsize=(16, 6))
+    
+    # Revenue subplot: 1/4 of the width
+    ax1 = fig.add_subplot(1, 5, 1)
+    
+    # Costs subplot: 3/4 of the width
+    ax2 = fig.add_subplot(1, 5, (2, 5))
 
-    width = 0.35  # width of bars
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    # Revenue bars (left side of group)
-    ax.bar(x - width/2, revenue, width, label="Revenue", color=PASTEL_COLORS[0])
-
-    # Cost bars (right side of group, stacked)
-    ax.bar(x + width/2, generation_cost, width, label="Generation Cost", color=PASTEL_COLORS[1])
-    ax.bar(
-        x + width/2,
-        pressure_cost,
-        width,
-        bottom=generation_cost,
-        label="Pressure Cost",
-        color=PASTEL_COLORS[2]
-    )
-    ax.bar(
-        x + width/2,
-        booking_cost,
-        width,
-        bottom=generation_cost + pressure_cost,
-        label="Booking Cost",
-        color=PASTEL_COLORS[3]
+    # ============================================
+    # LEFT SUBPLOT: Revenue (Primary)
+    # ============================================
+    positions_revenue = [1]
+    revenue_data = [np.array(revenue) / 1000000]
+    
+    parts1 = ax1.violinplot(
+        revenue_data,
+        positions=positions_revenue,
+        vert=True,
+        showmeans=False,
+        showmedians=False,
+        showextrema=False
     )
 
-    ax.set_xlabel("Scenario Index", fontsize=12)
-    ax.set_ylabel("Value", fontsize=12)
-    ax.set_title("Revenue and Split Costs per Scenario", fontsize=14)
-    ax.set_xticks(x)
-    ax.grid(alpha=0.3, axis="y")
-    ax.legend()
+    # Color revenue violin
+    for pc in parts1['bodies']:
+        pc.set_facecolor(PASTEL_COLORS[0])
+        pc.set_edgecolor(PASTEL_COLORS[0])
+        pc.set_alpha(0.7)
+
+    # Overlay revenue data points
+    revenue_vals = np.array(revenue) / 1000000
+    sorted_vals = np.sort(revenue_vals)
+    unique_vals, counts = np.unique(sorted_vals, return_counts=True)
+
+    x_positions = []
+    y_positions = []
+
+    for val, count in zip(unique_vals, counts):
+        offsets = [0] if count == 1 else np.linspace(-0.08, 0.08, count)
+        for offset in offsets:
+            x_positions.append(positions_revenue[0] + offset)
+            y_positions.append(val)
+
+    point_color = adjust_color(PASTEL_COLORS[0], factor=0.9)
+    ax1.scatter(
+        x_positions,
+        y_positions,
+        s=14,
+        alpha=0.6,
+        color=point_color,
+        edgecolors='none'
+    )
+
+    ax1.set_ylabel("Revenue (Million Euro)", fontsize=12, color='black')
+    ax1.tick_params(axis='y', labelcolor='black')
+    ax1.set_xticks(positions_revenue)
+    ax1.set_xticklabels(["Revenue"], rotation=45, ha='right')
+    ax1.set_title("Revenue Distribution", fontsize=14)
+    ax1.set_ylim(bottom=0)
+    ax1.grid(alpha=0.3, axis="y")
+
+    # ============================================
+    # RIGHT SUBPLOT: Costs
+    # ============================================
+    positions_costs = [1, 2, 3]
+    costs_data = [np.array(generation_cost) / 1000000, np.array(pressure_cost) / 1000000, np.array(booking_cost) / 1000000]
+    cost_labels = ["Generation Cost", "Pressure Cost", "Booking Cost"]
+    cost_colors = PASTEL_COLORS[1:4]
+
+    parts2 = ax2.violinplot(
+        costs_data,
+        positions=positions_costs,
+        vert=True,
+        showmeans=False,
+        showmedians=False,
+        showextrema=False
+    )
+
+    # Color each cost violin
+    for i, pc in enumerate(parts2['bodies']):
+        pc.set_facecolor(cost_colors[i])
+        pc.set_edgecolor(cost_colors[i])
+        pc.set_alpha(0.7)
+
+    # Overlay cost data points
+    for i, vals in enumerate(costs_data):
+        vals = np.array(vals)       
+
+        sorted_vals = np.sort(vals)
+        unique_vals, counts = np.unique(sorted_vals, return_counts=True)
+
+        x_positions = []
+        y_positions = []
+
+        for val, count in zip(unique_vals, counts):
+            offsets = [0] if count == 1 else np.linspace(-0.08, 0.08, count)
+            
+            for offset in offsets:
+                x_positions.append(positions_costs[i] + offset)
+                y_positions.append(val)
+
+            # Match violin color, but slightly darker for contrast
+            base_color = cost_colors[i]
+            point_color = adjust_color(base_color, factor=0.9)
+
+            ax2.scatter(
+            x_positions,
+            y_positions,
+            s=14,
+            alpha=0.6,
+            color=point_color,
+            edgecolors='none'
+            )
+
+    ax2.set_ylabel("Costs (Million Euro)", fontsize=12, color='black')
+    ax2.tick_params(axis='y', labelcolor='black')
+    ax2.set_xticks(positions_costs)
+    ax2.set_xticklabels(cost_labels, rotation=45, ha='right')
+    ax2.set_title("Cost Distribution", fontsize=14)
+    ax2.set_ylim(bottom=0)
+    ax2.grid(alpha=0.3, axis="y")
 
     plt.tight_layout()
-    plt.savefig(folder + "scenario_revenue_costs_grouped.png")
+    plt.savefig(folder + "scenario_revenue_costs_violins.png")
 
     if show:
         plt.show()
@@ -1364,11 +1612,13 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
         fig, ax = plt.subplots(figsize=(12, 6))
 
         # Stacked bars (capacity)
+        entry_pivot.columns = [f"Stage {k}" for k in entry_pivot.columns]
         entry_pivot.plot(kind="bar", stacked=True, ax=ax, color=PASTEL_COLORS[:len(entry_pivot.columns)])
 
-        ax.set_title("Entry Capacity vs Actual Flow per Node")
+        ax.set_title("Entry Capacity Bought per Stage")
         ax.set_xlabel("Node")
-        ax.set_ylabel("Entry Capacity / Flow")
+        ax.set_xticklabels(entry_nodes, rotation=45, ha="right")
+        ax.set_ylabel("Entry Capacity (Mscm)")
         ax.legend()
         ax.grid(alpha=0.3, axis="y")
 
@@ -1398,11 +1648,13 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
         fig, ax = plt.subplots(figsize=(12, 6))
 
         # Stacked bars (capacity)
+        exit_pivot.columns = [f"Stage {k}" for k in exit_pivot.columns]
         exit_pivot.plot(kind="bar", stacked=True, ax=ax, color=PASTEL_COLORS[:len(exit_pivot.columns)])
 
-        ax.set_title("Exit Capacity vs Actual Flow per Node")
+        ax.set_title("Exit Capacity Bought per Stage")
         ax.set_xlabel("Node")
-        ax.set_ylabel("Exit Capacity / Flow")
+        ax.set_xticklabels(exit_nodes, rotation=45, ha="right")
+        ax.set_ylabel("Exit Capacity (Mscm)")
         ax.legend()
         ax.grid(alpha=0.3, axis="y")
 
@@ -1417,21 +1669,125 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
     else:
         print("No exit capacity bought at any node.")
 
+def plot_overdraft_violins(model, folder="figures/", show=False):
+    """
+    Violin plots of overdraft per node.
+
+    - Capacity is summed over ALL stages
+    - Overdraft computed per node per scenario
+    - Distribution across nodes and scenarios
+    """
+
+    os.makedirs(folder, exist_ok=True)
+
+    entry_overdraft = []
+    exit_overdraft = []
+
+    # =========================
+    # Precompute TOTAL capacity per node (sum over stages)
+    # =========================
+    total_entry_cap = {}
+    total_exit_cap = {}
+
+    for n in model.N:
+        entry_sum = 0
+        exit_sum = 0
+
+        for k in model.K:
+            # average over scenarios of that stage
+            entry_vals = [pyo.value(model.x_entry[n, k, m_k]) for m_k in model.M[k]]
+            exit_vals = [pyo.value(model.x_exit[n, k, m_k]) for m_k in model.M[k]]
+
+            entry_sum += np.mean(entry_vals)
+            exit_sum += np.mean(exit_vals)
+
+        total_entry_cap[n] = entry_sum
+        total_exit_cap[n] = exit_sum
+
+    # =========================
+    # Compute overdraft per node per scenario
+    # =========================
+    # Use final stage scenarios (full uncertainty realized)
+    final_stage = max(model.K)
+
+    for n in model.N:
+        for m in model.M[final_stage]:
+
+            inflow = sum(pyo.value(model.f[a, c, m])
+                         for a in model.A_n_minus[n] for c in model.C)
+            outflow = sum(pyo.value(model.f[a, c, m])
+                          for a in model.A_n_plus[n] for c in model.C)
+
+            net_flow = inflow - outflow
+
+            entry_od = max(0, net_flow - total_entry_cap[n])
+            exit_od = max(0, -net_flow - total_exit_cap[n])
+
+            entry_overdraft.append(entry_od)
+            exit_overdraft.append(exit_od)
+
+    # =========================
+    # ENTRY OVERDRAFT PLOT
+    # =========================
+    if len(entry_overdraft) > 0:
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        ax.violinplot([entry_overdraft], showmeans=True, showextrema=True)
+
+        ax.set_xticks([1])
+        ax.set_xticklabels(["Entry"])
+
+        ax.set_title("Distribution of Entry Overdraft (Total Capacity)")
+        ax.set_ylabel("Overdraft Amount")
+
+        ax.grid(alpha=0.3, axis="y")
+
+        plt.tight_layout()
+        plt.savefig(folder + "entry_overdraft_violin.png")
+
+        if show:
+            plt.show()
+
+        plt.close(fig)
+    else:
+        print("No entry overdraft data available.")
+
+    # =========================
+    # EXIT OVERDRAFT PLOT
+    # =========================
+    if len(exit_overdraft) > 0:
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        ax.violinplot([exit_overdraft], showmeans=True, showextrema=True)
+
+        ax.set_xticks([1])
+        ax.set_xticklabels(["Exit"])
+
+        ax.set_title("Distribution of Exit Overdraft (Total Capacity)")
+        ax.set_ylabel("Overdraft Amount")
+
+        ax.grid(alpha=0.3, axis="y")
+
+        plt.tight_layout()
+        plt.savefig(folder + "exit_overdraft_violin.png")
+
+        if show:
+            plt.show()
+
+        plt.close(fig)
+    else:
+        print("No exit overdraft data available.")
+
 def plot_flow_violins(model, folder="figures/", show=False, tol = 0.01):
     """
     Violin plots of NET flow per node.
 
     - Inflow plot: only nodes where inflow > outflow (net inflow)
-      -> plots (inflow - outflow)
+        -> plots (inflow - outflow)
     - Outflow plot: only nodes where outflow > inflow (net outflow)
-      -> plots (outflow - inflow)
+        -> plots (outflow - inflow)
     - Uses scenario-level values (no averaging)
     """
-
-    import os
-    import numpy as np
-    import pandas as pd
-    import matplotlib.pyplot as plt
 
     os.makedirs(folder, exist_ok=True)
 
@@ -1483,19 +1839,62 @@ def plot_flow_violins(model, folder="figures/", show=False, tol = 0.01):
             for n in inflow_nodes
         ]
 
-        violin_parts = ax.violinplot(data, showmeans=True, showextrema=True,)
+        positions = range(1, len(inflow_nodes) + 1)
+        
+        parts = ax.violinplot(
+            data,
+            positions=positions,
+            vert=True,
+            showmeans=False,
+            showmedians=False,
+            showextrema=False
+        )
 
-        for pc in violin_parts['bodies']:
-            pc.set_facecolor(PASTEL_COLORS[0])
-            pc.set_edgecolor('black')
+        # Styling
+        for i, pc in enumerate(parts['bodies']):
+            pc.set_facecolor(PASTEL_COLORS[i % len(PASTEL_COLORS)])
+            pc.set_edgecolor(PASTEL_COLORS[i % len(PASTEL_COLORS)])
+            pc.set_alpha(0.7)
+
+        # =========================
+        # Overlay TRUE data points (color-matched)
+        # =========================
+        for i, vals in enumerate(data):
+            vals = np.array(vals)
+
+            sorted_vals = np.sort(vals)
+            unique_vals, counts = np.unique(sorted_vals, return_counts=True)
+
+            x_positions = []
+            y_positions = []
+
+            for val, count in zip(unique_vals, counts):
+                offsets = [0] if count == 1 else np.linspace(-0.08, 0.08, count)
+                
+                for offset in offsets:
+                    x_positions.append(positions[i] + offset)
+                    y_positions.append(val)
+
+            # Match violin color, but slightly darker for contrast
+            base_color = PASTEL_COLORS[i % len(PASTEL_COLORS)]
+            point_color = adjust_color(base_color, factor=0.9)
+
+            ax.scatter(
+            x_positions,
+            y_positions,
+            s=14,
+            alpha=1,
+            color=point_color,
+            edgecolors='none'
+            )
 
         ax.set_xticks(range(1, len(inflow_nodes) + 1))
         ax.set_xticklabels(inflow_nodes, rotation=45, ha='right')
 
-        ax.set_title("Net Inflow per Node (Inflow > Outflow)")
+        ax.set_title("Network Inflow per Node")
         ax.set_xlabel("Node")
         ax.set_ylim(0)
-        ax.set_ylabel("Net Inflow (Inflow - Outflow)")
+        ax.set_ylabel("Inflow (Mscm)")
         ax.grid(alpha=0.3, axis="y")
 
         plt.tight_layout()
@@ -1520,16 +1919,63 @@ def plot_flow_violins(model, folder="figures/", show=False, tol = 0.01):
             for n in outflow_nodes
         ]
 
-        ax.violinplot(data, showmeans=True, showextrema=True)
+        positions = range(1, len(outflow_nodes) + 1)
+        
+        parts = ax.violinplot(
+            data,
+            positions=positions,
+            vert=True,
+            showmeans=False,
+            showmedians=False,
+            showextrema=False
+        )
+
+        # Styling
+        for i, pc in enumerate(parts['bodies']):
+            pc.set_facecolor(PASTEL_COLORS[i % len(PASTEL_COLORS)])
+            pc.set_edgecolor(PASTEL_COLORS[i % len(PASTEL_COLORS)])
+            pc.set_alpha(0.7)
+
+        # =========================
+        # Overlay TRUE data points (color-matched)
+        # =========================
+        for i, vals in enumerate(data):
+            vals = np.array(vals)
+
+            sorted_vals = np.sort(vals)
+            unique_vals, counts = np.unique(sorted_vals, return_counts=True)
+
+            x_positions = []
+            y_positions = []
+
+            for val, count in zip(unique_vals, counts):
+                offsets = [0] if count == 1 else np.linspace(-0.08, 0.08, count)
+                for offset in offsets:
+                    x_positions.append(positions[i] + offset)
+                    y_positions.append(val)
+
+            # Match violin color, but slightly darker for contrast
+            base_color = PASTEL_COLORS[i % len(PASTEL_COLORS)]
+            point_color = adjust_color(base_color, factor=0.9)
+
+            ax.scatter(
+            x_positions,
+            y_positions,
+            s=14,
+            alpha=1,
+            color=point_color,
+            edgecolors='none'
+            )
 
         ax.set_xticks(range(1, len(outflow_nodes) + 1))
         ax.set_xticklabels(outflow_nodes, rotation=45, ha='right')
 
-        ax.set_title("Net Outflow per Node (Outflow > Inflow)")
+        ax.set_title("Network Outflow per Node")
         ax.set_xlabel("Node")
         ax.set_ylim(0)
-        ax.set_ylabel("Net Outflow (Outflow - Inflow)")
+        ax.set_ylabel("Outflow (Mscm)")
         ax.grid(alpha=0.3, axis="y")
+
 
         plt.tight_layout()
         plt.savefig(folder + "net_outflow_violin.png")
@@ -1559,6 +2005,8 @@ def plot_results(model, folder = "figures/"):
     plot_scenario_revenue_costs(model, folder)
     plot_scenario_objectives(model, folder)
     plot_entry_exit_capacity(model, folder)
+    plot_overdraft_violins(model, folder)
+    plot_inlet_outlet_pressure_violins_example(model, folder)
 
 def save_model_values(model, filename):
     """
