@@ -3,7 +3,7 @@
 #SBATCH -t 48:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=48
+#SBATCH --cpus-per-task=32
 #SBATCH --partition=genoa
 #SBATCH --array=1-252%9
 #SBATCH --output=logs/%A_%a.out
