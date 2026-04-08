@@ -26,8 +26,8 @@ PASTEL_COLORS = [
     "#FF8692",  # red
     "#4BDA6A",  # green
     "#DB97E3",  # purple
-    "#FFFF82",  # yellow
     "#FFC085",
+    "#FFFF82",  # yellow
     "#7EDCD5"
 ]
 
@@ -243,7 +243,7 @@ def plot_h2_vs_allowed_for_subsidy(h2_dict, subsidy_value, folder, tol=1e-6):
     plt.xlabel('Allowed Hydrogen Share')
     plt.ylabel('Hydrogen Production (CRN Δ vs Zeebrugge)')
     plt.title(f'Hydrogen Production vs Allowed H2 (Subsidy = {subsidy_value})')
-    plt.grid(True)
+    plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
     plt.savefig(os.path.join(folder, f"h2_prod_vs_allowed_sub_{subsidy_value}.png"))
@@ -335,7 +335,7 @@ def plot_h2_per_market_subsidy(h2_dict, subsidy_value, folder, tol=1e-6):
     plt.xlabel('Allowed Hydrogen Share')
     plt.ylabel('Hydrogen Consumption (CRN Δ vs Zeebrugge)')
     plt.title(f'Hydrogen Consumption vs Allowed H2 (Subsidy = {subsidy_value})')
-    plt.grid(True)
+    plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
     plt.savefig(os.path.join(folder, f"h2_cons_vs_allowed_sub_{subsidy_value}.png"))
@@ -486,7 +486,7 @@ def plot_objective_vs_allowed_for_subsidy(objective_dict, subsidy_value, folder,
     plt.xlabel('Allowed Hydrogen Share')
     plt.ylabel('Objective Value (CRN Δ vs Zeebrugge)')
     plt.title(f'Objective vs Allowed H2 (Subsidy = {subsidy_value})')
-    plt.grid(True)
+    plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
     filename = f"objective_vs_allowed_sub_{subsidy_value}.png"
@@ -638,7 +638,7 @@ def plot_net_effect_for_subsidy(
     plt.xlabel('Allowed Hydrogen Share')
     plt.ylabel('Net Effect (CRN, €)')
     plt.title(f'Net Welfare Effect (Subsidy = {subsidy_value}, CO2 = {co2_method})')
-    plt.grid(True)
+    plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
     filename = f"net_effect_vs_allowed_sub_{subsidy_value}_{co2_method}.png"

@@ -985,7 +985,7 @@ def plot_inlet_outlet_pressure_violins_example(model, folder, show=False):
 
         arc_data.append({
             "arc": a,
-            "label": f"{a[0]}-{a[1]}",
+            "label": f"{a[0]}- \n {a[1]}",
             "p_in": p_in_vals,
             "p_out": p_out_vals,
             "variation": variation
@@ -1030,15 +1030,15 @@ def plot_inlet_outlet_pressure_violins_example(model, folder, show=False):
     spacing = 1.5
 
     for d in arc_data_selected:
-        # outlet
-        data.append(d["p_out"])
-        labels.append(f"{d['label']} (out)")
-        positions.append(pos)
-
         # inlet
         data.append(d["p_in"])
-        labels.append(f"{d['label']} (in)")
-        positions.append(pos + 0.4)
+        labels.append(f"{d['label']} \n (Inlet)")
+        positions.append(pos)
+
+        # outlet
+        data.append(d["p_out"])
+        labels.append(f"{d['label']} \n (Outlet)")
+        positions.append(pos+ 0.6)
 
         pos += spacing
 
@@ -1098,12 +1098,15 @@ def plot_inlet_outlet_pressure_violins_example(model, folder, show=False):
     # Labels
     # =========================
     ax.set_xticks(positions)
-    ax.set_xticklabels(labels, rotation=45, ha='right')
+    ax.set_xticklabels(labels)
+    ax.grid(alpha=0.3, axis="y")
 
     ax.set_ylabel("Pressure (bar)")
     ax.set_title(
         "Inlet and Outlet Pressure Distributions"
     )
+    ax.set_ylim(bottom=40, top=150)
+    ax.set_yticks(np.append(np.arange(40, 151, 20), 150))
 
     plt.tight_layout()
     plt.savefig(folder + "inlet_outlet_pressure_violin_example.png")
@@ -1475,9 +1478,9 @@ def plot_scenario_revenue_costs(model, folder="figures/", show=False):
     ax1.set_ylabel("Revenue (Million Euro)", fontsize=12, color='black')
     ax1.tick_params(axis='y', labelcolor='black')
     ax1.set_xticks(positions_revenue)
-    ax1.set_xticklabels(["Revenue"], rotation=45, ha='right')
+    ax1.set_xticklabels(["Revenue"])
     ax1.set_title("Revenue Distribution", fontsize=14)
-    ax1.set_ylim(bottom=0)
+    ax1.set_ylim(bottom=0, top = 25)
     ax1.grid(alpha=0.3, axis="y")
 
     # ============================================
@@ -1536,9 +1539,9 @@ def plot_scenario_revenue_costs(model, folder="figures/", show=False):
     ax2.set_ylabel("Costs (Million Euro)", fontsize=12, color='black')
     ax2.tick_params(axis='y', labelcolor='black')
     ax2.set_xticks(positions_costs)
-    ax2.set_xticklabels(cost_labels, rotation=45, ha='right')
+    ax2.set_xticklabels(cost_labels)
     ax2.set_title("Cost Distribution", fontsize=14)
-    ax2.set_ylim(bottom=0)
+    ax2.set_ylim(bottom=0, top =2)
     ax2.grid(alpha=0.3, axis="y")
 
     plt.tight_layout()
@@ -1602,6 +1605,7 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
     # =========================
     entry_totals = df.groupby("node")["entry"].sum()
     entry_nodes = entry_totals[entry_totals > 0].sort_values(ascending=False).index
+    entry_nodes = [n for n in entry_nodes if any(flow_dif[n] > 0 for n in [n])]
 
     if len(entry_nodes) > 0:
         entry_df = df[df["node"].isin(entry_nodes)]
@@ -1617,7 +1621,8 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
 
         ax.set_title("Entry Capacity Bought per Stage")
         ax.set_xlabel("Node")
-        ax.set_xticklabels(entry_nodes, rotation=45, ha="right")
+        ax.set_ylim(0, 26)
+        ax.set_xticklabels(entry_nodes, rotation=0, ha="center")
         ax.set_ylabel("Entry Capacity (Mscm)")
         ax.legend()
         ax.grid(alpha=0.3, axis="y")
@@ -1653,7 +1658,8 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
 
         ax.set_title("Exit Capacity Bought per Stage")
         ax.set_xlabel("Node")
-        ax.set_xticklabels(exit_nodes, rotation=45, ha="right")
+        ax.set_xticklabels(exit_nodes, rotation=0, ha="center")
+        ax.set_ylim(0, 21)
         ax.set_ylabel("Exit Capacity (Mscm)")
         ax.legend()
         ax.grid(alpha=0.3, axis="y")
@@ -1889,7 +1895,7 @@ def plot_flow_violins(model, folder="figures/", show=False, tol = 0.01):
             )
 
         ax.set_xticks(range(1, len(inflow_nodes) + 1))
-        ax.set_xticklabels(inflow_nodes, rotation=45, ha='right')
+        ax.set_xticklabels(inflow_nodes, rotation=0, ha='center')
 
         ax.set_title("Network Inflow per Node")
         ax.set_xlabel("Node")
@@ -1968,7 +1974,7 @@ def plot_flow_violins(model, folder="figures/", show=False, tol = 0.01):
             )
 
         ax.set_xticks(range(1, len(outflow_nodes) + 1))
-        ax.set_xticklabels(outflow_nodes, rotation=45, ha='right')
+        ax.set_xticklabels(outflow_nodes, rotation=0, ha='center')
 
         ax.set_title("Network Outflow per Node")
         ax.set_xlabel("Node")

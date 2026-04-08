@@ -23,8 +23,8 @@ PASTEL_COLORS = [
     "#FF8692",  # red
     "#4BDA6A",  # green
     "#DB97E3",  # purple
-    "#FFFF82",  # yellow
     "#FFC085",
+    "#FFFF82",  # yellow
     "#7EDCD5"
 ]
 
@@ -171,7 +171,7 @@ def plot_hydrogen_production_by_subsidy(h2_dict, folder):
     plt.xlabel('Deviation')
     plt.ylabel('Hydrogen Production')
     plt.title('Hydrogen Production vs Deviation (by Subsidy)')
-    plt.grid(True)
+    plt.grid(alpha=0.3, axis="y")
     plt.legend(loc = "upper left")
 
     plt.savefig(os.path.join(folder, "hydrogen_production_vs_deviation.png"))
@@ -184,16 +184,32 @@ def plot_hydrogen_production(h2_dict, folder):
     
     for j, (label, stats) in enumerate(sorted(h2_dict.items())): 
         # sort by subsidy to ensure clean lines 
-        sorted_data = sorted( zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]), 
-                             key=lambda x: x[0] )
+        sorted_data = sorted(
+            zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]), 
+            key=lambda x: x[0]
+        )
         subs, means, ses, runs = zip(*sorted_data)
         
-        plt.errorbar( subs, means, yerr=ses, fmt='o-', capsize=5, label=f"Deviation {label}", color = PASTEL_COLORS[j % len(PASTEL_COLORS)] )
+        means = [m * HYDROGEN_MSCM_MWH for m in means]
+        ses = [se * HYDROGEN_MSCM_MWH for se in ses]
+
+        color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
+        
+        # Line (no dots)
+        plt.plot(subs, means, '-', label=f"Deviation {int(label *100)}%", color=color)
+        
+        # Shaded error band
+        lower = [m - se for m, se in zip(means, ses)]
+        upper = [m + se for m, se in zip(means, ses)]
+        
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
+    
     plt.xlabel('Subsidy (Euro/MWh)') 
-    plt.ylabel('Hydrogen Production')
+    plt.ylabel('Hydrogen Production (Mwh)')
     plt.title('Hydrogen Production vs Subsidy')
-    plt.grid(True) 
+    plt.grid(alpha=0.3, axis="y")
     plt.legend() 
+    
     plt.savefig(os.path.join(folder, "hydrogen_production_vs_subsidy.png")) 
     plt.close()
 
@@ -211,26 +227,29 @@ def plot_subsidy_cost(h2_dict, folder):
 
         subs, means, ses = zip(*sorted_data)
 
-        costs = [mean * subs[i] *HYDROGEN_MSCM_MWH for i, mean in enumerate(means)] 
-        cost_ses = [se *subs[i] * HYDROGEN_MSCM_MWH for i, se in enumerate(ses)]
-        plt.errorbar(
-            subs,
-            costs,
-            yerr=cost_ses,
-            fmt='o-',
-            capsize=5,
-            label=f"Deviation {label}",
-            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
-        )
+        costs = [mean * subs[i] * HYDROGEN_MSCM_MWH for i, mean in enumerate(means)] 
+        cost_ses = [se * subs[i] * HYDROGEN_MSCM_MWH for i, se in enumerate(ses)]
+
+        color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
+
+        # Line (no markers)
+        plt.plot(subs, costs, '-', label=f"Deviation {int(label *100)}%", color=color)
+
+        # Shaded band
+        lower = [c - se for c, se in zip(costs, cost_ses)]
+        upper = [c + se for c, se in zip(costs, cost_ses)]
+
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel('Subsidy (Euro/MWh)')
     plt.ylabel('Total Subsidy cost')
     plt.title('Total Subsidy cost vs Subsidy')
-    plt.grid(True)
+    plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
     plt.savefig(os.path.join(folder, "hydrogen_production_vs_cost.png"))
     plt.close()
+
 
 def analyze_objectives(base_folder):
     summary = {}
@@ -316,24 +335,26 @@ def plot_objective_values(objective_dict, folder):
             diff_means.append(mean)
             diff_ses.append(se)
 
-        plt.errorbar(
-            subs,
-            diff_means,
-            yerr=diff_ses,
-            fmt='o-',
-            capsize=5,
-            label=f"Deviation {label}",
-            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
-        )
+        color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
+
+        # Line (no markers)
+        plt.plot(subs, diff_means, '-', label=f"Deviation {int(label*100)}%", color=color)
+
+        # Shaded uncertainty band
+        lower = [m - se for m, se in zip(diff_means, diff_ses)]
+        upper = [m + se for m, se in zip(diff_means, diff_ses)]
+
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel('Subsidy (Euro/MWh)')
     plt.ylabel('Objective Value')
     plt.title('Objective Value vs Subsidy')
-    plt.grid(True)
+    plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
     plt.savefig(os.path.join(folder, "objective_vs_subsidy.png"))
     plt.close()
+
 
 def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
     os.makedirs(folder, exist_ok=True)
@@ -341,40 +362,28 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
     plt.figure(figsize=(10, 5))
 
     if co2_method == "zero":
-        # No social cost on co2
         co2_savings_unit = 0
     elif co2_method == "energy":
-        # Social cost savings per displaced mwh (transformed to mscm)
-        # Sources:
-        # Costs per kwh :   https://co2emissiefactoren.nl/ 
-        # Conversion rates : https://www.engineeringtoolbox.com/fuels-higher-calorific-values-d_169.html
-        # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2
-
-        co2_cost_ng = 2.134 * 1000 # in tonne (metric ton) CO2e per Mscm 
-        co2_cost_green_h2 = 1.080 /11.94 *1000 # in tonne (metric ton) CO2e per Mscm 
+        co2_cost_ng = 2.134 * 1000
+        co2_cost_green_h2 = 1.080 / 11.94 * 1000
         
-        conversion_ng = 39.8 /3.6 *1000 # mwh to Mscm
-        conversion_h2 = 12.7 /3.6 *1000 #  mwh to Mscm
+        conversion_ng = 39.8 / 3.6 * 1000
+        conversion_h2 = 12.7 / 3.6 * 1000
 
-        co2_savings_unit = 185 * (co2_cost_ng-co2_cost_green_h2) * (conversion_h2/ conversion_ng) # Euro per Mscm
+        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
     elif co2_method == "volume":
-        # Social cost savings per mscm
-        # Sources:
-        # https://h2tools.org/hyarc/calculator-tools/hydrogen-conversions-calculator # KG to scm transformation h2
-        # https://co2emissiefactoren.nl/  Emissionfactors
-        # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2 
-        co2_cost_ng = 2.134 * 1000 # in tonne (metric ton) CO2e per Mscm 
-        co2_cost_green_h2 = 1.080 /11.94 *1000 # in tonne (metric ton) CO2e per Mscm 
-        co2_savings_unit = 185 * (co2_cost_ng -co2_cost_green_h2) # in euro per Mscm
+        co2_cost_ng = 2.134 * 1000
+        co2_cost_green_h2 = 1.080 / 11.94 * 1000
+        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2)
     else:
-        Exception("No accepted co2 saving method")
+        raise Exception("No accepted co2 saving method")
+
     print("CO2 cost per Mcsm:", co2_savings_unit)
 
     for j, label in enumerate(sorted(objective_dict.keys())):
         obj_stats = objective_dict[label]
         h2_stats = h2_dict[label]
 
-        # ✅ sort consistently INCLUDING runs
         sorted_data = sorted(
             zip(obj_stats["subsidy"], obj_stats["runs"], h2_stats["runs"]),
             key=lambda x: x[0]
@@ -382,11 +391,8 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
 
         subs, obj_runs, h2_runs = zip(*sorted_data)
 
-        # --------------------------------------------------
         # STEP 1: compute net effect per run
-        # --------------------------------------------------
         net_runs = []
-
         base_obj_runs = obj_runs[0]
 
         for s, r_obj, r_h2 in zip(subs, obj_runs, h2_runs):
@@ -403,9 +409,7 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
 
             net_runs.append(net_r)
 
-        # --------------------------------------------------
-        # STEP 2: apply YOUR CRN block
-        # --------------------------------------------------
+        # STEP 2: CRN
         diffs = []
         base = net_runs[0]
 
@@ -426,67 +430,66 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
             diff_means.append(mean)
             diff_ses.append(se)
 
-        plt.errorbar(
-            subs,
-            diff_means,
-            yerr=diff_ses,
-            fmt='o-',
-            capsize=5,
-            label=f"Deviation {label}",
-            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
-        )
+        color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
+
+        # Line (no markers)
+        plt.plot(subs, diff_means, '-', label=f"Deviation {label* 100}%", color=color)
+
+        # Shaded band
+        lower = [m - se for m, se in zip(diff_means, diff_ses)]
+        upper = [m + se for m, se in zip(diff_means, diff_ses)]
+
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel('Subsidy (Euro/MWh)')
     plt.ylabel('Net Effect (Euro)')
     plt.title('Net Welfare Effect of Subsidy')
-    plt.grid(True)
+    plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
     plt.savefig(os.path.join(folder, f"net_effect_vs_subsidy_{co2_method}.png"))
     plt.close()
 
-
-def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
-    os.makedirs(folder, exist_ok=True)
-
-    plt.figure(figsize=(10, 5))
-
-    if co2_method == "zero":
-        # No social cost on co2
-        co2_savings_unit = 0
-    elif co2_method == "energy":
         # Social cost savings per displaced mwh (transformed to mscm)
         # Sources:
         # Costs per kwh :   https://co2emissiefactoren.nl/ 
         # Conversion rates : https://www.engineeringtoolbox.com/fuels-higher-calorific-values-d_169.html
         # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2
 
-        co2_cost_ng = 2.134 * 1000 # in tonne (metric ton) CO2e per Mscm 
-        co2_cost_green_h2 = 1.080 /11.94 *1000 # in tonne (metric ton) CO2e per Mscm 
-        
-        conversion_ng = 39.8 /3.6 *1000 # mwh to Mscm
-        conversion_h2 = 12.7 /3.6 *1000 #  mwh to Mscm
-
-        co2_savings_unit = 185 * (co2_cost_ng-co2_cost_green_h2) * (conversion_h2/ conversion_ng) # Euro per Mscm
-    elif co2_method == "volume":
         # Social cost savings per mscm
         # Sources:
         # https://h2tools.org/hyarc/calculator-tools/hydrogen-conversions-calculator # KG to scm transformation h2
         # https://co2emissiefactoren.nl/  Emissionfactors
-        # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2 
-        co2_cost_ng = 2.134 * 1000 # in tonne (metric ton) CO2e per Mscm 
-        co2_cost_green_h2 = 1.080 /11.94 *1000 # in tonne (metric ton) CO2e per Mscm 
-        co2_savings_unit = 185 * (co2_cost_ng -co2_cost_green_h2) # in euro per Mscm
+        # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2
+
+def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
+    os.makedirs(folder, exist_ok=True)
+
+    plt.figure(figsize=(10, 5))
+
+    if co2_method == "zero":
+        co2_savings_unit = 0
+    elif co2_method == "energy":
+        co2_cost_ng = 2.134 * 1000
+        co2_cost_green_h2 = 1.080 / 11.94 * 1000
+        
+        conversion_ng = 39.8 / 3.6 * 1000
+        conversion_h2 = 12.7 / 3.6 * 1000
+
+        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+    elif co2_method == "volume":
+        co2_cost_ng = 2.134 * 1000
+        co2_cost_green_h2 = 1.080 / 11.94 * 1000
+        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2)
     else:
-        Exception("No accepted co2 saving method")
+        raise Exception("No accepted co2 saving method")
+
     print("CO2 cost per Mcsm:", co2_savings_unit)
 
-
-    for j,label in enumerate(sorted(objective_dict.keys())):
+    for j, label in enumerate(sorted(objective_dict.keys())):
         obj_stats = objective_dict[label]
         h2_stats = h2_dict[label]
 
-        # sort consistently INCLUDING runs
         sorted_data = sorted(
             zip(
                 obj_stats["subsidy"],
@@ -498,11 +501,8 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
 
         subs, obj_runs, h2_runs = zip(*sorted_data)
 
-        # --------------------------------------------------
-        # STEP 1: compute ROI per run (CRN style)
-        # --------------------------------------------------
+        # STEP 1: compute ROI per run
         roi_runs = []
-
         base_obj_runs = obj_runs[0]
 
         for s, r_obj, r_h2 in zip(subs, obj_runs, h2_runs):
@@ -511,8 +511,8 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
             roi_r = []
             for i in range(min_len):
                 delta_obj = r_obj[i] - base_obj_runs[i]
-                scaling_factor = 0# 0.1 * s * HYDROGEN_MSCM_MWH *np.mean(r_h2) # scale subsidy cost by average production to avoid outliers dominating ROI
-                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i] 
+                scaling_factor = 0
+                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i]
                 co2_savings = r_h2[i] * co2_savings_unit
 
                 if sub_cost > 0 and s >= 30:
@@ -523,9 +523,7 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
 
             roi_runs.append(roi_r)
 
-        # --------------------------------------------------
-        # STEP 2: apply CRN differences vs baseline ROI runs
-        # --------------------------------------------------
+        # STEP 2: CRN differences
         diffs = []
         base = roi_runs[0]
 
@@ -549,28 +547,28 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method = "zero"):
             roi_means.append(mean)
             roi_ses.append(se)
 
-        # Filter subs to match roi_means length
+        # Match subs
         filtered_subs = [s for s in subs if s >= 30]
 
-        plt.errorbar(
-            filtered_subs,
-            roi_means,
-            yerr=roi_ses,
-            fmt='o-',
-            capsize=5,
-            label=f"Deviation {label}",
-            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
-        )
+        color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
+
+        # Line (no markers)
+        plt.plot(filtered_subs, roi_means, '-', label=f"Deviation {int(label * 100)}%", color=color)
+
+        # Shaded band
+        lower = [m - se for m, se in zip(roi_means, roi_ses)]
+        upper = [m + se for m, se in zip(roi_means, roi_ses)]
+
+        plt.fill_between(filtered_subs, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel('Subsidy (Euro/MWh)')
     plt.ylabel('Return on investment')
     plt.title('Return on investment of Subsidy')
-    plt.grid(True)
+    plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
     plt.savefig(os.path.join(folder, f"roi_vs_subsidy_{co2_method}.png"))
     plt.close()
-
 
 def analyze_network_flows(subsidy, deviation, base_folder):
     """
