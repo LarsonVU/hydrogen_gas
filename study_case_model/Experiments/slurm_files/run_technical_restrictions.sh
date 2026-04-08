@@ -7,7 +7,7 @@
 #SBATCH --partition=genoa
 #SBATCH --array=1-25%9
 #SBATCH --output=logs/%A_%a.out
-#SBATCH --mail-type=BEGIN,FAIL,END
+#SBATCH --mail-type=BEGIN,FAIL,END,ARRAY_TASKS
 #SBATCH --mail-user=l.m.j.beemster@student.vu.nl
 
 # Loading modules
