@@ -151,8 +151,8 @@ def plot_hydrogen_production_by_subsidy(h2_dict, folder):
             for s, m, se, runs in zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]):
                 if s == sub:
                     deviations.append(deviation)
-                    means.append(m)
-                    ses.append(se)
+                    means.append(m * HYDROGEN_MSCM_MWH /1000)
+                    ses.append(se * HYDROGEN_MSCM_MWH /1000)
 
         # sort by deviation for clean lines
         sorted_data = sorted(zip(deviations, means, ses), key=lambda x: x[0])
@@ -169,8 +169,8 @@ def plot_hydrogen_production_by_subsidy(h2_dict, folder):
         )
 
     plt.xlabel('Deviation')
-    plt.ylabel('Hydrogen Production')
-    plt.title('Hydrogen Production vs Deviation (by Subsidy)')
+    plt.ylabel('Average Hydrogen Production (Gwh)')
+    plt.title('Average Hydrogen Production vs Deviation')
     plt.grid(alpha=0.3, axis="y")
     plt.legend(loc = "upper left")
 
@@ -190,8 +190,8 @@ def plot_hydrogen_production(h2_dict, folder):
         )
         subs, means, ses, runs = zip(*sorted_data)
         
-        means = [m * HYDROGEN_MSCM_MWH for m in means]
-        ses = [se * HYDROGEN_MSCM_MWH for se in ses]
+        means = [m * HYDROGEN_MSCM_MWH/ 1000 for m in means]
+        ses = [se * HYDROGEN_MSCM_MWH /1000 for se in ses]
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
         
@@ -205,8 +205,8 @@ def plot_hydrogen_production(h2_dict, folder):
         plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
     
     plt.xlabel('Subsidy (Euro/MWh)') 
-    plt.ylabel('Hydrogen Production (Mwh)')
-    plt.title('Hydrogen Production vs Subsidy')
+    plt.ylabel('Average Hydrogen Production (Gwh)')
+    plt.title('Average Hydrogen Production vs Subsidy')
     plt.grid(alpha=0.3, axis="y")
     plt.legend() 
     
@@ -227,8 +227,8 @@ def plot_subsidy_cost(h2_dict, folder):
 
         subs, means, ses = zip(*sorted_data)
 
-        costs = [mean * subs[i] * HYDROGEN_MSCM_MWH for i, mean in enumerate(means)] 
-        cost_ses = [se * subs[i] * HYDROGEN_MSCM_MWH for i, se in enumerate(ses)]
+        costs = [mean * subs[i] * HYDROGEN_MSCM_MWH / 1000000 for i, mean in enumerate(means)] 
+        cost_ses = [se * subs[i] * HYDROGEN_MSCM_MWH / 1000000 for i, se in enumerate(ses)]
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
 
@@ -242,8 +242,8 @@ def plot_subsidy_cost(h2_dict, folder):
         plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel('Subsidy (Euro/MWh)')
-    plt.ylabel('Total Subsidy cost')
-    plt.title('Total Subsidy cost vs Subsidy')
+    plt.ylabel('Average Subsidy cost (Million Euro)')
+    plt.title('Average Subsidy cost vs Subsidy')
     plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
@@ -332,8 +332,8 @@ def plot_objective_values(objective_dict, folder):
             mean = np.mean(d)
             se = np.std(d, ddof=1) / np.sqrt(n)
 
-            diff_means.append(mean)
-            diff_ses.append(se)
+            diff_means.append(mean/ 1000000)
+            diff_ses.append(se / 1000000)
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
 
@@ -347,8 +347,8 @@ def plot_objective_values(objective_dict, folder):
         plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel('Subsidy (Euro/MWh)')
-    plt.ylabel('Objective Value')
-    plt.title('Objective Value vs Subsidy')
+    plt.ylabel('Objective Value Effect (Million Euro)')
+    plt.title('Objective Value Effect vs Subsidy')
     plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
@@ -544,8 +544,8 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
             mean = np.mean(d)
             se = np.std(d, ddof=1) / np.sqrt(n) if n > 1 else 0
 
-            roi_means.append(mean)
-            roi_ses.append(se)
+            roi_means.append(mean * 100)
+            roi_ses.append(se * 100) # convert to percentage for better readability
 
         # Match subs
         filtered_subs = [s for s in subs if s >= 30]
@@ -562,7 +562,7 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
         plt.fill_between(filtered_subs, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel('Subsidy (Euro/MWh)')
-    plt.ylabel('Return on investment')
+    plt.ylabel('Return on investment (%)')
     plt.title('Return on investment of Subsidy')
     plt.grid(alpha=0.3, axis="y")
     plt.legend()

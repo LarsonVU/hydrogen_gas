@@ -1,13 +1,13 @@
 #!/bin/bash
 # Set Job Requirements
-#SBATCH -t 48:00:00
+#SBATCH -t 5:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=48
-#SBATCH --partition=rome
-#SBATCH --array=1-25%9
+#SBATCH --partition=genoa
+#SBATCH --array=1-252%9
 #SBATCH --output=logs/%A_%a.out
-#SBATCH --mail-type=BEGIN,FAIL,END
+#SBATCH --mail-type=BEGIN,FAIL,END, ARRAY_TASKS
 #SBATCH --mail-user=l.m.j.beemster@student.vu.nl
 
 # Loading modules
