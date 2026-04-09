@@ -5,9 +5,9 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=48
 #SBATCH --partition=genoa
-#SBATCH --array=1-252%9
+#SBATCH --array=1-252%5
 #SBATCH --output=logs/%A_%a.out
-#SBATCH --mail-type=BEGIN,FAIL,END,ARRAY_TASKS
+#SBATCH --mail-type=BEGIN,FAIL,END
 #SBATCH --mail-user=l.m.j.beemster@student.vu.nl
 
 # Loading modules
