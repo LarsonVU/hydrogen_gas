@@ -1,0 +1,28 @@
+Gurobi shell based on Python 3.13.1 can be launched with command `gurobi.sh`
+Gurobi Python Interface can be loaded in Python 3.13.1 with 'import gurobipy'
+/var/spool/slurm/slurmd/job21700623/slurm_script: line 24: activate: No such file or directory
+Solving model: marketDORNUM, maxh2_0.17, sub70.0, run1
+Set parameter WLSAccessID
+Set parameter WLSSecret
+Set parameter LicenseID to value 2514514
+Traceback (most recent call last):
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/Experiments/python_files/examine_market_restrictions.py", line 138, in <module>
+    results = scsm.solve_model(model, threads= THREADS, verbose= True, precision=args.precision, node_file_folder=node_file_folder)
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/study_case_stochastic_model.py", line 796, in solve_model
+    results = solver.solve(model, tee=verbose)
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/opt/base/solvers.py", line 639, in solve
+    _status = self._apply_solver()
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/solvers/plugins/solvers/GUROBI.py", line 707, in _apply_solver
+    self._soln = GUROBI_RUN.gurobi_run(
+                 ~~~~~~~~~~~~~~~~~~~~~^
+        problem_filename, warmstart_filename, None, options_dict, self._suffixes
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/solvers/plugins/solvers/GUROBI_RUN.py", line 63, in gurobi_run
+    model = read(model_file)
+  File "src/gurobipy/gurobi.pxi", line 336, in gurobipy._core.read
+  File "src/gurobipy/gurobi.pxi", line 116, in gurobipy._core.gurobi.read
+  File "src/gurobipy/gurobi.pxi", line 60, in gurobipy._core.gurobi._getdefaultenv
+  File "src/gurobipy/env.pxi", line 108, in gurobipy._core.Env.__init__
+gurobipy._exception.GurobiError: Overage for too long, 11 active sessions and over the baseline for 35 minutes
