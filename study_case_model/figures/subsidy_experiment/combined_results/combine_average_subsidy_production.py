@@ -570,6 +570,118 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
     plt.savefig(os.path.join(folder, f"roi_vs_subsidy_{co2_method}.png"))
     plt.close()
 
+def plot_roi_cost(objective_dict, h2_dict, folder, co2_method="zero"):
+    os.makedirs(folder, exist_ok=True)
+
+    plt.figure(figsize=(10, 5))
+
+    if co2_method == "zero":
+        co2_savings_unit = 0
+    elif co2_method == "energy":
+        co2_cost_ng = 2.134 * 1000
+        co2_cost_green_h2 = 1.080 / 11.94 * 1000
+        
+        conversion_ng = 39.8 / 3.6 * 1000
+        conversion_h2 = 12.7 / 3.6 * 1000
+
+        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+    elif co2_method == "volume":
+        co2_cost_ng = 2.134 * 1000
+        co2_cost_green_h2 = 1.080 / 11.94 * 1000
+        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2)
+    else:
+        raise Exception("No accepted co2 saving method")
+
+    print("CO2 cost per Mcsm:", co2_savings_unit)
+
+    for j, label in enumerate(sorted(objective_dict.keys())):
+        obj_stats = objective_dict[label]
+        h2_stats = h2_dict[label]
+
+        sorted_data = sorted(
+            zip(
+                obj_stats["subsidy"],
+                obj_stats["runs"],
+                h2_stats["runs"]
+            ),
+            key=lambda x: x[0]
+        )
+
+        subs, obj_runs, h2_runs = zip(*sorted_data)
+
+        # STEP 1: compute ROI per run
+        roi_runs = []
+        sub_costs = []
+        base_obj_runs = obj_runs[0]
+
+        for s, r_obj, r_h2 in zip(subs, obj_runs, h2_runs):
+            min_len = min(len(base_obj_runs), len(r_obj), len(r_h2))
+
+            roi_r = []
+            sub_cost_list = []
+            for i in range(min_len):
+                delta_obj = r_obj[i] - base_obj_runs[i]
+                scaling_factor = 0
+                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i]
+                co2_savings = r_h2[i] * co2_savings_unit
+
+                if sub_cost > 0 and s >= 30:
+                    roi = (delta_obj - sub_cost + co2_savings) / (sub_cost + scaling_factor)
+                else:
+                    roi = 0
+                roi_r.append(roi)
+                sub_cost_list.append(sub_cost)
+
+            roi_runs.append(roi_r)
+            sub_costs.append(np.mean(sub_cost_list) / 1_000_000)  # Convert to Million Euro
+
+        # STEP 2: CRN differences
+        diffs = []
+        base = roi_runs[0]
+
+        for r in roi_runs:
+            min_len = min(len(r), len(base))
+            diffs.append([r[i] - base[i] for i in range(min_len)])
+
+        roi_means = []
+        roi_ses = []
+        filtered_sub_costs = []
+
+        for i, d in enumerate(diffs):
+            if i < len(subs) and subs[i] < 30:
+                continue
+            
+            d = np.array(d)
+            n = len(d)
+
+            mean = np.mean(d)
+            se = np.std(d, ddof=1) / np.sqrt(n) if n > 1 else 0
+
+            roi_means.append(mean * 100)
+            roi_ses.append(se * 100)  # convert to percentage for better readability
+            filtered_sub_costs.append(sub_costs[i])
+
+        color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
+
+        # Line (no markers)
+        plt.plot(filtered_sub_costs, roi_means, '-', label=f"Deviation {int(label * 100)}%", color=color)
+
+        # Shaded band
+        lower = [m - se for m, se in zip(roi_means, roi_ses)]
+        upper = [m + se for m, se in zip(roi_means, roi_ses)]
+
+        plt.fill_between(filtered_sub_costs, lower, upper, color=color, alpha=0.2)
+
+    plt.xlabel('Subsidy Cost (Million Euro)')
+    plt.ylabel('Return on investment (%)')
+    plt.title('Return on investment of Subsidy')
+    plt.grid(alpha=0.3, axis="y")
+    plt.legend()
+
+    plt.savefig(os.path.join(folder, f"roi_vs_cost_{co2_method}.png"))
+    plt.close()
+
+
 def analyze_network_flows(subsidy, deviation, base_folder):
     """
     Extract all flow variables for a given (subsidy, deviation) setting.
@@ -730,7 +842,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
         tot_flow_values.append(sum(avg_flow[arc]["mean"]))
 
     #max_flow = 5 #max(h2_values) if h2_values else 1.0
-    max_tot_flow = max(tot_flow_values) if tot_flow_values else 1.0
+    max_tot_flow = 30 #max(tot_flow_values) if tot_flow_values else 1.0
 
 
 
@@ -767,7 +879,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
 
         # Thickness scaling
         weight_intensity = total_flow / max_tot_flow if max_tot_flow > 0 else 0
-        weight = 2 + 6 * np.power(weight_intensity, 0.5)
+        weight = 2 + 6 * np.power(weight_intensity, 0.3)
         
 
         for line in lines:
@@ -833,7 +945,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
         <p><span style="background-color: #FFFFBA; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Compression</p>
         <p><span style="background-color: #E0BBE4; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Junction</p>
 
-        <p><b>Hydrogen Fraction</b></p>
+        <p><b>Hydrogen (%)</b></p>
         <div style="width: 100%; height: 15px; 
             background: linear-gradient(to right, 
             {interpolate_color(adjust_intensity(0))}, 
@@ -845,11 +957,11 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
         </div>
         <div style="display: flex; justify-content: space-between;">
             <span>0</span>
-            <span>0.1</span>
-            <span>0.2</span>
+            <span>10</span>
+            <span>20</span>
         </div>
 
-        <p><b>Flow (Line Thickness)</b></p>
+        <p><b>Flow (Mscm)</b></p>
 
         <div style="width: 100%; height: 20px; position: relative;">
 
@@ -895,7 +1007,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
 # ---------------------------
 if __name__ == "__main__":
     base_folder = f"study_case_model/figures/subsidy_experiment/{EXPERIMENT}/"
-    sub_values = [40.0, 70.0]
+    sub_values = [30.0, 45.0, 70.0]
     dev_values = [0.0, 0.1, 1.0]
 
     for sub_value in sub_values:
