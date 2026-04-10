@@ -118,12 +118,17 @@ def load_and_plot(csv_path, folder="figures/", runs=None):
     # ---- H2 ----
     plt.figure(figsize=(10, 6))
 
-    for i,s in enumerate(subsidies):
-        means = [results[s][d]["h2_mean"] *MSCM_to_GWH for d in densities]
-        errs = [get_err(results[s][d]["h2_std"]) *MSCM_to_GWH for d in densities]
+    for i, s in enumerate(subsidies):
+        means = np.array([results[s][d]["h2_mean"] * MSCM_to_GWH for d in densities])
+        ses   = np.array([get_err(results[s][d]["h2_std"]) * MSCM_to_GWH for d in densities])
 
-        plt.errorbar(densities, means, yerr=errs, marker="o", capsize=5, label=f"Subsidy {s}",
-        color=pastel_colors[i % len(pastel_colors)])
+        color = pastel_colors[i % len(pastel_colors)]
+
+        plt.plot(densities, means, marker="o", label=f"Subsidy {s}", color=color)
+
+        lower = means - ses
+        upper = means + ses
+        plt.fill_between(densities, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel("Density Bounds")
     plt.ylabel("Hydrogen Production (Gwh)")
@@ -137,11 +142,17 @@ def load_and_plot(csv_path, folder="figures/", runs=None):
     # ---- Pressure ----
     plt.figure(figsize=(10, 6))
 
-    for i,s in enumerate(subsidies):
-        means = [results[s][d]["pressure_mean"] for d in densities]
-        errs = [get_err(results[s][d]["pressure_std"]) for d in densities]
+    for i, s in enumerate(subsidies):
+        means = np.array([results[s][d]["pressure_mean"] for d in densities])
+        ses   = np.array([get_err(results[s][d]["pressure_std"]) for d in densities])
 
-        plt.errorbar(densities, means, yerr=errs, marker="o", capsize=5, label=f"Subsidy {s}", color=pastel_colors[i % len(pastel_colors)])
+        color = pastel_colors[i % len(pastel_colors)]
+
+        plt.plot(densities, means, marker="o", label=f"Subsidy {s}", color=color)
+
+        lower = means - ses
+        upper = means + ses
+        plt.fill_between(densities, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel("Density Bounds")
     plt.ylabel("Pressure Cost (Euro)")
@@ -150,9 +161,7 @@ def load_and_plot(csv_path, folder="figures/", runs=None):
     plt.legend(loc="lower right")
     plt.tight_layout()
     plt.savefig(folder + "pressure_vs_density.png")
-    plt.show()
-
-    print(f"Plots saved in {folder}")
+    plt.show()  
 
 def main():
     files = [

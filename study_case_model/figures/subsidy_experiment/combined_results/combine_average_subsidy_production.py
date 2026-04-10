@@ -811,7 +811,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
     # Create map
     # -------------------------------
     center = gdf.geometry.union_all().centroid
-    m = folium.Map(location=[center.y, center.x], zoom_start=7, tiles="CartoDB positron")
+    m = folium.Map(location=[center.y +3, center.x+2], zoom_start=4.5, tiles="CartoDB positron")
 
     # -------------------------------
     # Helpers
@@ -879,7 +879,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
 
         # Thickness scaling
         weight_intensity = total_flow / max_tot_flow if max_tot_flow > 0 else 0
-        weight = 2 + 6 * np.power(weight_intensity, 0.3)
+        weight = 2 + 6 * np.power(weight_intensity, 0.7)
         
 
         for line in lines:
