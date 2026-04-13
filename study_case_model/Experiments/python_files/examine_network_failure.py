@@ -74,20 +74,24 @@ def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
 
 def map_name(name):
     mapping = {
-        "GJOA": "GJØA",
+        "GJØA": "GJOA",
         "VISUND": "VISUND",
         "NORNE_ERB": "NORNE ERB",
-        "KARSTO": "KÅRSTØ",
-        "DRAUPNER_S": "DRAUPNER S",
+        "KÅRSTØ": "KARSTO",
+        "DRAUPNER S": "DRAUPNER_S",
         "DORNUM": "DORNUM",
         "DUNKERQUE": "DUNKERQUE",
-        "H-7_BP": "H-7 BP",
+        "H-7 BP": "H-7_BP",
         "EMDEN": "EMDEN"
     }
     return mapping.get(name, name)
 
 def apply_technical_restriction(G):
     G_changed = G.copy()
+
+    # Rename all nodes using the mapping
+    node_mapping = {node: map_name(node) for node in G_changed.nodes()}
+    G_changed = pyo.nx.relabel_nodes(G_changed, node_mapping)
 
     if args.failed_pipe_from is not None and args.failed_pipe_to is not None:
         edge = (map_name(args.failed_pipe_from), map_name(args.failed_pipe_to))
