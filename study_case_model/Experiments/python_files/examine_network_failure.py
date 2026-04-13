@@ -76,11 +76,11 @@ def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
 def apply_technical_restriction(G):
     G_changed = G.copy()
     if args.failed_pipe_from is not None and args.failed_pipe_to is not None:
-        edge = (args.failed_pipe_from, args.failed_pipe_to)
+        edge = (args.failed_pipe_from.replace("_", " "), args.failed_pipe_to.replace("_", " "))
         G_changed.edges[edge]["max_flow"] = 0
         print(G_changed.edges[edge])
     if args.failed_plant is not None:
-        node = args.failed_plant
+        node = args.failed_plant.replace("_", " ")
         G_changed.nodes[node]["supply_capacity"] = 0
     return G_changed
 

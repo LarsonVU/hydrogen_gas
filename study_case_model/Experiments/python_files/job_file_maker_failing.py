@@ -4,8 +4,8 @@ import numpy as np
 # Parameters (same as your script)
 # =========================
 subsidies = [30, 45, 70] 
-generation_plants = ["GJØA", "VISUND", "NORNE ERB"]
-pipelines = [("KÅRSTØ", "DRAUPNER S"), ("KÅRSTØ", "DORNUM"), ("DRAUPNER S", "DUNKERQUE"), ("H-7 BP", "EMDEN")]
+generation_plants = ["GJØA", "VISUND", "NORNE_ERB"]
+pipelines = [("KÅRSTØ", "DRAUPNER_S"), ("KÅRSTØ", "DORNUM"), ("DRAUPNER_S", "DUNKERQUE"), ("H-7_BP", "EMDEN")]
 
 runs = 4
 
@@ -28,8 +28,8 @@ for run_idx in range(runs):
                 f"--branches_stage2 8 "
                 f"--branches_stage3 8 "
                 f"--subsidy {sub} "
-                f"--failed_pipe_from \"{failed_pipe[0]}\"  "
-                f"--failed_pipe_to \"{failed_pipe[1]}\" "
+                f"--failed_pipe_from {failed_pipe[0]}  "
+                f"--failed_pipe_to {failed_pipe[1]} "
                 f"--upper_bounds 1 "
                 f"--precision {precision} "
                 f"--data_folder {data_folder} "
@@ -45,7 +45,7 @@ for run_idx in range(runs):
                 f"--branches_stage2 8 "
                 f"--branches_stage3 8 "
                 f"--subsidy {sub} "
-                f"--failed_plant \"{failed_plant}\" "
+                f"--failed_plant {failed_plant} "
                 f"--upper_bounds 1 "
                 f"--precision {precision} "
                 f"--data_folder {data_folder} "
