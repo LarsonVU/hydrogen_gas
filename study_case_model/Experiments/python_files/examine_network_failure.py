@@ -23,8 +23,9 @@ parser.add_argument("--run", type=int, default= 0 )
 parser.add_argument("--branches_stage2", type=int, default=4)
 parser.add_argument("--branches_stage3", type=int, default=4)
 parser.add_argument("--subsidy", type=float, default=0)
-parser.add_argument("--failed_pipe", type=tuple, default=None)
-parser.add_argument("--failed_plant", type=str, default=None)
+parser.add_argument("--failed_pipe_from", type=str, default=None)
+parser.add_argument("--failed_pipe_to", type=str, default=None)
+parser.add_argument("--failed_plant", type=str, default= None)
 
 parser.add_argument("--upper_bounds", type=int, default=1)
 parser.add_argument("--time_limit", type=float, default=None)
@@ -51,7 +52,7 @@ THREADS = args.threads
 SUBSIDY = args.subsidy
 RUN = args.run
 
-FAILED = args.failed_pipe if args.failed_pipe is not None else args.failed_plant
+FAILED = args.failed_pipe_from + "_to_" + args.failed_pipe_to if args.failed_pipe_from is not None else args.failed_plant
 
 # =========================
 # Helper functions
@@ -74,9 +75,10 @@ def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
 
 def apply_technical_restriction(G):
     G_changed = G.copy()
-    if args.failed_pipe is not None:
-        edge = args.failed_pipe
+    if args.failed_pipe_from is not None and args.failed_pipe_to is not None:
+        edge = (args.failed_pipe_from, args.failed_pipe_to)
         G_changed.edges[edge]["max_flow"] = 0
+        print(G_changed.edges[edge])
     if args.failed_plant is not None:
         node = args.failed_plant
         G_changed.nodes[node]["supply_capacity"] = 0
