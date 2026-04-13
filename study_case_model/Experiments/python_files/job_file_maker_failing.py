@@ -4,8 +4,8 @@ import numpy as np
 # Parameters (same as your script)
 # =========================
 subsidies = [30, 45, 70] 
-generation_plants = ["GJØA", "VISUND", "NORNE_ERB"]
-pipelines = [("KÅRSTØ", "DRAUPNER_S"), ("KÅRSTØ", "DORNUM"), ("DRAUPNER_S", "DUNKERQUE"), ("H-7_BP", "EMDEN")]
+generation_plants = ["GJOA", "VISUND", "NORNE_ERB"]
+pipelines = [("KARSTO", "DRAUPNER_S"), ("KARSTO", "DORNUM"), ("DRAUPNER_S", "DUNKERQUE"), ("H-7_BP", "EMDEN")]
 
 runs = 4
 

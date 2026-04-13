@@ -1,5 +1,6 @@
 import numpy as np
 import pyomo.environ as pyo
+import networkx as nx
 import pandas as pd
 import sys
 import os
@@ -76,7 +77,7 @@ def map_name(name):
     mapping = {
         "GJØA": "GJOA",
         "VISUND": "VISUND",
-        "NORNE_ERB": "NORNE ERB",
+        "NORNE ERB": "NORNE_ERB",
         "KÅRSTØ": "KARSTO",
         "DRAUPNER S": "DRAUPNER_S",
         "DORNUM": "DORNUM",
@@ -91,8 +92,17 @@ def apply_technical_restriction(G):
 
     # Rename all nodes using the mapping
     node_mapping = {node: map_name(node) for node in G_changed.nodes()}
-    G_changed = pyo.nx.relabel_nodes(G_changed, node_mapping)
+    G_changed = nx.relabel_nodes(G_changed, node_mapping)
 
+    # Also update edge metadata that stores original node IDs
+    for u, v, data in G_changed.edges(data=True):
+        for key in ("from_node", "to_node", "from", "to"):
+            if key in data:
+                data[key] = node_mapping.get(data[key], data[key])
+
+    print("Renamed nodes according to mapping.")
+    print("Nodes after renaming:", G_changed.nodes(data=False))
+    print("Edges after renaming:", G_changed.edges(data=False))
     if args.failed_pipe_from is not None and args.failed_pipe_to is not None:
         edge = (map_name(args.failed_pipe_from), map_name(args.failed_pipe_to))
         G_changed.edges[edge]["max_flow"] = 0
