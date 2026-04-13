@@ -9,8 +9,8 @@ pipelines = [("KÅRSTØ", "DRAUPNER S"), ("KÅRSTØ", "DORNUM"), ("DRAUPNER S", 
 
 runs = 4
 
-data_folder = "study_case_model/scenario_variables/failure_experiment/run_13426/"
-pickle_folder = "study_case_model/figures/failure_experiment/run_13426/"
+data_folder = "study_case_model/scenario_variables/failure_experiment/run_13426_2/"
+pickle_folder = "study_case_model/figures/failure_experiment/run_13426_2/"
 threads = 48
 output_file = "study_case_model/Experiments/slurm_files/failure_jobs.txt"
 precision = 0.002
@@ -28,8 +28,8 @@ for run_idx in range(runs):
                 f"--branches_stage2 8 "
                 f"--branches_stage3 8 "
                 f"--subsidy {sub} "
-                f"--failed_pipe_from {failed_pipe[0]} "
-                f"--failed_pipe_to {failed_pipe[1]} "
+                f"--failed_pipe_from \"{failed_pipe[0]}\"  "
+                f"--failed_pipe_to \"{failed_pipe[1]}\" "
                 f"--upper_bounds 1 "
                 f"--precision {precision} "
                 f"--data_folder {data_folder} "
@@ -45,7 +45,7 @@ for run_idx in range(runs):
                 f"--branches_stage2 8 "
                 f"--branches_stage3 8 "
                 f"--subsidy {sub} "
-                f"--failed_plant {failed_plant} "
+                f"--failed_plant \"{failed_plant}\" "
                 f"--upper_bounds 1 "
                 f"--precision {precision} "
                 f"--data_folder {data_folder} "
