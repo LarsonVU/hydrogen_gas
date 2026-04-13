@@ -72,16 +72,32 @@ def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
                 )
     return G_changed
 
+def map_name(name):
+    mapping = {
+        "GJOA": "GJØA",
+        "VISUND": "VISUND",
+        "NORNE_ERB": "NORNE ERB",
+        "KARSTO": "KÅRSTØ",
+        "DRAUPNER_S": "DRAUPNER S",
+        "DORNUM": "DORNUM",
+        "DUNKERQUE": "DUNKERQUE",
+        "H-7_BP": "H-7 BP",
+        "EMDEN": "EMDEN"
+    }
+    return mapping.get(name, name)
 
 def apply_technical_restriction(G):
     G_changed = G.copy()
+
     if args.failed_pipe_from is not None and args.failed_pipe_to is not None:
-        edge = (args.failed_pipe_from.replace("_", " "), args.failed_pipe_to.replace("_", " "))
+        edge = (map_name(args.failed_pipe_from), map_name(args.failed_pipe_to))
         G_changed.edges[edge]["max_flow"] = 0
         print(G_changed.edges[edge])
+
     if args.failed_plant is not None:
-        node = args.failed_plant.replace("_", " ")
+        node = map_name(args.failed_plant)
         G_changed.nodes[node]["supply_capacity"] = 0
+
     return G_changed
 
 # =========================
