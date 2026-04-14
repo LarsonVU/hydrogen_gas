@@ -109,6 +109,9 @@ def apply_technical_restriction(G):
         print(G_changed.edges[edge])
 
     if args.failed_plant is not None:
+        if args.failed_plant == "None":
+            print("No plant failure specified (baseline).")
+            return G_changed
         node = map_name(args.failed_plant)
         G_changed.nodes[node]["supply_capacity"] = 0
 
