@@ -22,7 +22,7 @@ def safe_filename(s):
 FOLDER = "study_case_model/figures/main_run/"
 
 NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1: 1, 2: 2, 3: 2}
+BRANCHES_PER_STAGE = {1: 1, 2: 8, 3: 8}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
 NUMBER_OF_DENSITY_BOUNDS = 1
@@ -2094,8 +2094,8 @@ if __name__ == "__main__":
 
     results = solve_model(model, time_limit= None, precision= 0.002)
     print(results)
-    # plot_results(model, folder = FOLDER)
-    # save_model_values(model, "study_case_model/scenario_variables/main_model.pkl")
+    plot_results(model, folder = FOLDER)
+    save_model_values(model, "study_case_model/scenario_variables/main_model.pkl")
 
-    # model_values = load_param_values("results/basic_model")
-    # print(model_values["variables"]["w"])
+    model_values = load_param_values("results/basic_model")
+    print(model_values["variables"]["w"])

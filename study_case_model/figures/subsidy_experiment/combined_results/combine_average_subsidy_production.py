@@ -10,7 +10,7 @@ import numbers
 import pandas as pd
 import ast
 
-EXPERIMENT = "run_10426"
+EXPERIMENT = "combined_runs_new"
 LOAD_ONE_RUN = None #"run0"
 MINIMUM_RUNS = 2
 HYDROGEN_MSCM_MWH = 2.78 * 1000 
@@ -106,111 +106,315 @@ def analyze_experiment(base_folder):
 
     base = Path(base_folder)
     print("H2 Production:")
-    for max_h2_dir in sorted(base.glob("maxh2_*/")):
-        max_h2_value = float(max_h2_dir.name.replace("maxh2_", ""))
+    for dev_dir in sorted(base.glob("dev*/")):
+        dev_value = float(dev_dir.name.replace("dev", ""))
 
-        for sub_dir in sorted(max_h2_dir.glob("sub*/")):
+        for sub_dir in sorted(dev_dir.glob("sub*/")):
             sub_value = float(sub_dir.name.replace("sub", ""))
             
             mean, stderr, n, results = process_dev_sub(sub_dir)
             if n > MINIMUM_RUNS-1:
-                summary.setdefault(sub_value, {
-                                    "max_h2_value": [],
+                summary.setdefault(dev_value, {
+                                    "subsidy": [],
                                     "mean": [],
                                     "se": [],
                                     "runs": []
                                 })
 
-                summary[sub_value]["max_h2_value"].append(max_h2_value)
-                summary[sub_value]["mean"].append(mean)
-                summary[sub_value]["se"].append(stderr)
-                summary[sub_value]["runs"].append(results)
+                summary[dev_value]["subsidy"].append(sub_value)
+                summary[dev_value]["mean"].append(mean)
+                summary[dev_value]["se"].append(stderr)
+                summary[dev_value]["runs"].append(results)
 
-                print(f"max_h2={max_h2_value}, sub={sub_value} | mean={mean:.4f}, stderr={stderr:.4f}, n={n}")
+                print(f"dev={dev_value}, sub={sub_value} | mean={mean:.4f}, stderr={stderr:.4f}, n={n}")
     return summary
 
+def compute_h2_market(snapshot, market, key="H2"):
+    try:
+        f_dict = snapshot["variables"]["f"]
+
+        # Step 1: aggregate per scenario m
+        h2_per_m = {}
+
+        for (i, j, c, m), val in f_dict.items():
+
+            if j == market and c == key:
+                if val is not None and not np.isnan(val):
+                    h2_per_m[m] = h2_per_m.get(m, 0.0) + val
+
+        if not h2_per_m:
+            return None
+
+        values = list(h2_per_m.values())
+
+        return np.mean(values), np.std(values), len(values)
+
+    except KeyError:
+        return None
+
+def plot_hydrogen_consumption_by_market(base_folder, deviation, output_folder):
+    """
+    Plot hydrogen consumption differences per market using CRN.
+    The first subsidy (subs[0]) is used as the base for each run.
+
+    Args:
+        base_folder: Path to the experiment folder
+        deviation: Deviation value to analyze
+        output_folder: Where to save the plot
+    """
+    os.makedirs(output_folder, exist_ok=True)
+
+    base = Path(base_folder)
+    dev_dir = base / f"dev{deviation}"
+
+    # market -> subsidy -> list of run values
+    market_consumption = {}
+
+    subsidy_values = []
+
+    # -------------------------------
+    # Collect data
+    # -------------------------------
+    for sub_dir in sorted(dev_dir.glob("sub*/")):
+        sub_value = float(sub_dir.name.replace("sub", ""))
+        subsidy_values.append(sub_value)
+
+        for run_dir in sorted(sub_dir.glob("run*/")):
+            files = list(run_dir.glob("*.pkl"))
+            if not files:
+                continue
+
+            snapshot = load_snapshot(files[0])
+
+            for market in [ "DUNKERQUE", "ZEEBRUGGE",  "EMDEN", "EASINGTON", "DORNUM", "ST.FERGUS"]:
+                market_consumption.setdefault(market, {}).setdefault(sub_value, [])
+                value, std, n = compute_h2_market(snapshot, market, key = "H2")
+                scaled_value = value * HYDROGEN_MSCM_MWH / 1000
+                market_consumption[market][sub_value].append(scaled_value)
+
+    # -------------------------------
+    # Plot
+    # -------------------------------
+    plt.figure(figsize=(10, 5))
+
+    for j, (market, sub_dict) in enumerate(sorted(market_consumption.items())):
+
+        # Sort subsidies
+        sorted_data = sorted(sub_dict.items())  # [(sub, [runs]), ...]
+
+        subs = [x[0] for x in sorted_data]
+        runs_per_sub = [x[1] for x in sorted_data]
+
+        # Ensure consistent number of runs
+        min_runs = min(len(r) for r in runs_per_sub)
+        runs_per_sub = [r[:min_runs] for r in runs_per_sub]
+
+        # Convert to array: shape (n_subs, n_runs)
+        data = np.array(runs_per_sub)
+
+        # -------------------------------
+        # CRN: subtract base (subs[0]) per run
+        # -------------------------------
+        base = data[0, :]  # shape (n_runs,)
+        diffs = data - base  # broadcasting
+
+        # -------------------------------
+        # Statistics
+        # -------------------------------
+        means = np.mean(diffs, axis=1)
+        ses = np.std(diffs, axis=1, ddof=1) / np.sqrt(diffs.shape[1])
+
+        color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
+
+        # Line
+        plt.plot(subs, means, '-', label=f"Market {market}", color=color)
+
+        # Error band
+        lower = means - ses
+        upper = means + ses
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
+
+    plt.xlabel('Subsidy (Euro/MWh)')
+    plt.ylabel('Hydrogen Consumption (GWh)')
+    plt.title(f'Hydrogen Consumption by Market (Deviation {int(deviation*100)}%)')
+    plt.grid(alpha=0.3, axis="y")
+    plt.legend()
+
+    plt.savefig(os.path.join(output_folder, f"h2_consumption_by_market_dev{deviation}.png"))
+    plt.close()
+
+
+def plot_NG_consumption_by_market(base_folder, deviation, output_folder):
+    """
+    Plot natural gas consumption differences per market using CRN.
+    The first subsidy (subs[0]) is used as the base for each run.
+
+    Args:
+        base_folder: Path to the experiment folder
+        deviation: Deviation value to analyze
+        output_folder: Where to save the plot
+    """
+    os.makedirs(output_folder, exist_ok=True)
+
+    base = Path(base_folder)
+    dev_dir = base / f"dev{deviation}"
+
+    # market -> subsidy -> list of run values
+    market_consumption = {}
+
+    subsidy_values = []
+
+    # -------------------------------
+    # Collect data
+    # -------------------------------
+    for sub_dir in sorted(dev_dir.glob("sub*/")):
+        sub_value = float(sub_dir.name.replace("sub", ""))
+        subsidy_values.append(sub_value)
+
+        for run_dir in sorted(sub_dir.glob("run*/")):
+            files = list(run_dir.glob("*.pkl"))
+            if not files:
+                continue
+
+            snapshot = load_snapshot(files[0])
+
+            for market in ["DORNUM", "EMDEN", "ZEEBRUGGE", "DUNKERQUE", "EASINGTON", "ST.FERGUS"]:
+                market_consumption.setdefault(market, {}).setdefault(sub_value, [])
+                value, std, n = compute_h2_market(snapshot, market, key = "NG")  # Assuming a similar function for natural gas
+                market_consumption[market][sub_value].append(value)
+
+    # -------------------------------
+    # Plot
+    # -------------------------------
+    plt.figure(figsize=(10, 5))
+
+    for j, (market, sub_dict) in enumerate(sorted(market_consumption.items())):
+
+        # Sort subsidies
+        sorted_data = sorted(sub_dict.items())  # [(sub, [runs]), ...]
+
+        subs = [x[0] for x in sorted_data]
+        runs_per_sub = [x[1] for x in sorted_data]
+
+        # Ensure consistent number of runs
+        min_runs = min(len(r) for r in runs_per_sub)
+        runs_per_sub = [r[:min_runs] for r in runs_per_sub]
+
+        # Convert to array: shape (n_subs, n_runs)
+        data = np.array(runs_per_sub)
+
+        # -------------------------------
+        # CRN: subtract base (subs[0]) per run
+        # -------------------------------
+        base = data[0, :]  # shape (n_runs,)
+        diffs = data - base  # broadcasting
+
+        # -------------------------------
+        # Statistics
+        # -------------------------------
+        means = np.mean(diffs, axis=1)
+        ses = np.std(diffs, axis=1, ddof=1) / np.sqrt(diffs.shape[1])
+
+        color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
+
+        # Line
+        plt.plot(subs, means, '-', label=f"Market {market}", color=color)
+
+        # Error band
+        lower = means - ses
+        upper = means + ses
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
+
+    plt.xlabel('Subsidy (Euro/MWh)')
+    plt.ylabel('Change in Natural Gas Consumption (Mscm)')
+    plt.title(f'Natural Gas Consumption by Market (Deviation {int(deviation*100)}%)')
+    plt.grid(alpha=0.3, axis="y")
+    plt.legend()
+
+    plt.savefig(os.path.join(output_folder, f"ng_consumption_by_market_dev{deviation}.png"))
+    plt.close()
 
 def plot_hydrogen_production_by_subsidy(h2_dict, folder):
     os.makedirs(folder, exist_ok=True)
 
     plt.figure(figsize=(10, 5))
 
-    # Step 1: collect all unique deviations
-    all_deviations = set()
+    # Step 1: collect all unique subsidies
+    all_subsidies = set()
     for stats in h2_dict.values():
-        all_deviations.update(stats["max_h2_value"])
+        all_subsidies.update(stats["subsidy"])
 
-    # Step 2: loop over each deviation (these become the lines)
-    for j, dev in enumerate(sorted(all_deviations)):
-        subsidies = []
+    # Step 2: loop over each subsidy (these become the lines)
+    for j, sub in enumerate(sorted(all_subsidies)):
+        deviations = []
         means = []
         ses = []
 
-        # Step 3: collect values across subsidies
-        for subsidy, stats in sorted(h2_dict.items()):
-            for d, m, se, runs in zip(stats["max_h2_value"], stats["mean"], stats["se"], stats["runs"]):
-                if d == dev:
-                    subsidies.append(subsidy)
-                    means.append(m * HYDROGEN_MSCM_MWH / 1000)
-                    ses.append(se * HYDROGEN_MSCM_MWH / 1000)
+        # Step 3: collect values across deviations
+        for deviation, stats in sorted(h2_dict.items()):
+            for s, m, se, runs in zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]):
+                if s == sub:
+                    deviations.append(deviation)
+                    means.append(m * HYDROGEN_MSCM_MWH /1000)
+                    ses.append(se * HYDROGEN_MSCM_MWH /1000)
 
-        # sort by subsidy for clean lines
-        sorted_data = sorted(zip(subsidies, means, ses), key=lambda x: x[0])
-        subs, means, ses = zip(*sorted_data)
+        # sort by deviation for clean lines
+        sorted_data = sorted(zip(deviations, means, ses), key=lambda x: x[0])
+        devs, means, ses = zip(*sorted_data)
 
         plt.errorbar(
-            subs,
+            devs,
             means,
             yerr=ses,
             fmt='o-',
             capsize=5,
-            label=f"Max H2 {dev}",
-            color=PASTEL_COLORS[j % len(PASTEL_COLORS)]
+            label=f"Subsidy {sub}",
+            color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
         )
 
-    plt.xlabel('Subsidy (Euro/MWh)')
-    plt.ylabel('Average Hydrogen Production (GWh)')
-    plt.title('Average Hydrogen Production vs Subsidy')
+    plt.xlabel('Deviation')
+    plt.ylabel('Average Hydrogen Production (Gwh)')
+    plt.title('Average Hydrogen Production vs Deviation')
     plt.grid(alpha=0.3, axis="y")
-    plt.legend(loc="upper left")
+    plt.legend(loc = "upper left")
 
-    plt.savefig(os.path.join(folder, "hydrogen_production_vs_subsidy_by_deviation.png"))
+    plt.savefig(os.path.join(folder, "hydrogen_production_vs_deviation.png"))
     plt.close()
 
-def plot_hydrogen_production(h2_dict, folder):
+def plot_hydrogen_production(h2_dict, folder): 
     os.makedirs(folder, exist_ok=True)
     
     plt.figure(figsize=(10, 5))
     
-    for j, (subsidy, stats) in enumerate(sorted(h2_dict.items())):
-        # sort by max_h2_value to ensure clean lines
+    for j, (label, stats) in enumerate(sorted(h2_dict.items())): 
+        # sort by subsidy to ensure clean lines 
         sorted_data = sorted(
-            zip(stats["max_h2_value"], stats["mean"], stats["se"], stats["runs"]),
+            zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]), 
             key=lambda x: x[0]
         )
-        max_h2_vals, means, ses, runs = zip(*sorted_data)
+        subs, means, ses, runs = zip(*sorted_data)
         
-        means = [m * HYDROGEN_MSCM_MWH / 1000 for m in means]
-        ses = [se * HYDROGEN_MSCM_MWH / 1000 for se in ses]
+        means = [m * HYDROGEN_MSCM_MWH/ 1000 for m in means]
+        ses = [se * HYDROGEN_MSCM_MWH /1000 for se in ses]
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
-        max_h2_vals = [h2 * 100 for h2 in max_h2_vals]  # Convert to percentage
+        
         # Line (no dots)
-        plt.plot(max_h2_vals, means, '-', label=f"Subsidy {int(subsidy)}€/MWh", color=color)
+        plt.plot(subs, means, '-', label=f"Deviation {int(label *100)}%", color=color)
         
         # Shaded error band
         lower = [m - se for m, se in zip(means, ses)]
         upper = [m + se for m, se in zip(means, ses)]
         
-        plt.fill_between(max_h2_vals, lower, upper, color=color, alpha=0.2)
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
     
-    plt.xlabel('Max H2 Throughput (%)')
-    plt.ylabel('Average Hydrogen Production (GWh)')
-    plt.title('Average Hydrogen Production vs Max H2 Throughput')
+    plt.xlabel('Subsidy (Euro/MWh)') 
+    plt.ylabel('Average Hydrogen Production (Gwh)')
+    plt.title('Average Hydrogen Production vs Subsidy')
     plt.grid(alpha=0.3, axis="y")
     plt.legend() 
     
-    plt.savefig(os.path.join(folder, "hydrogen_production_vs_max_h2.png")) 
+    plt.savefig(os.path.join(folder, "hydrogen_production_vs_subsidy.png")) 
     plt.close()
 
 def plot_subsidy_cost(h2_dict, folder):
@@ -218,47 +422,48 @@ def plot_subsidy_cost(h2_dict, folder):
 
     plt.figure(figsize=(10, 5))
 
-    for j, (subsidy, stats) in enumerate(sorted(h2_dict.items())):
-        # sort by max_h2_value to ensure clean lines
+    for j, (label, stats) in enumerate(sorted(h2_dict.items())):
+        # sort by subsidy to ensure clean lines
         sorted_data = sorted(
-            zip(stats["max_h2_value"], stats["mean"], stats["se"]),
+            zip(stats["subsidy"], stats["mean"], stats["se"]),
             key=lambda x: x[0]
         )
 
-        max_h2_vals, means, ses = zip(*sorted_data)
+        subs, means, ses = zip(*sorted_data)
 
-        costs = [mean * subsidy * HYDROGEN_MSCM_MWH / 1000000 for mean in means]
-        cost_ses = [se * subsidy * HYDROGEN_MSCM_MWH / 1000000 for se in ses]
+        costs = [mean * subs[i] * HYDROGEN_MSCM_MWH / 1000000 for i, mean in enumerate(means)] 
+        cost_ses = [se * subs[i] * HYDROGEN_MSCM_MWH / 1000000 for i, se in enumerate(ses)]
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
-        max_h2_vals = [h2 * 100 for h2 in max_h2_vals]  # Convert to percentage
+
         # Line (no markers)
-        plt.plot(max_h2_vals, costs, '-', label=f"Subsidy {int(subsidy)}€/MWh", color=color)
+        plt.plot(subs, costs, '-', label=f"Deviation {int(label *100)}%", color=color)
 
         # Shaded band
         lower = [c - se for c, se in zip(costs, cost_ses)]
         upper = [c + se for c, se in zip(costs, cost_ses)]
 
-        plt.fill_between(max_h2_vals, lower, upper, color=color, alpha=0.2)
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
 
-    plt.xlabel('Max H2 Throughput (%)')
-    plt.ylabel('Average Subsidy Cost (Million Euro)')
-    plt.title('Average Subsidy Cost vs Max H2 Throughput')
+    plt.xlabel('Subsidy (Euro/MWh)')
+    plt.ylabel('Average Subsidy cost (Million Euro)')
+    plt.title('Average Subsidy cost vs Subsidy')
     plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
-    plt.savefig(os.path.join(folder, "subsidy_cost_vs_max_h2.png"))
+    plt.savefig(os.path.join(folder, "hydrogen_production_vs_cost.png"))
     plt.close()
+
 
 def analyze_objectives(base_folder):
     summary = {}
 
     base = Path(base_folder)
     print("Objective value:")
-    for maxh2_dir in sorted(base.glob("maxh2_*/")):
-        maxh2_value = float(maxh2_dir.name.replace("maxh2_", ""))
+    for dev_dir in sorted(base.glob("dev*/")):
+        dev_value = float(dev_dir.name.replace("dev", ""))
 
-        for sub_dir in sorted(maxh2_dir.glob("sub*/")):
+        for sub_dir in sorted(dev_dir.glob("sub*/")):
             sub_value = float(sub_dir.name.replace("sub", ""))
             results = []
 
@@ -286,18 +491,18 @@ def analyze_objectives(base_folder):
             se = np.std(results, ddof=1) / np.sqrt(len(results))
 
             # store in structured format
-            summary.setdefault(sub_value, {
-                "max_h2_value": [],
+            summary.setdefault(dev_value, {
+                "subsidy": [],
                 "mean": [],
                 "se": [],
                 "runs": []
             })
 
-            summary[sub_value]["max_h2_value"].append(maxh2_value)
-            summary[sub_value]["mean"].append(mean)
-            summary[sub_value]["se"].append(se)
-            summary[sub_value]["runs"].append(results)
-            print(f"Max h2 value={maxh2_value}, sub={sub_value} | mean={mean:.4f}, stderr={se:.4f}, n={len(results)}")
+            summary[dev_value]["subsidy"].append(sub_value)
+            summary[dev_value]["mean"].append(mean)
+            summary[dev_value]["se"].append(se)
+            summary[dev_value]["runs"].append(results)
+            print(f"dev={dev_value}, sub={sub_value} | mean={mean:.4f}, stderr={se:.4f}, n={len(results)}")
     return summary
 
 def plot_objective_values(objective_dict, folder):
@@ -305,14 +510,14 @@ def plot_objective_values(objective_dict, folder):
 
     plt.figure(figsize=(10, 5))
 
-    for j, (subsidy, stats) in enumerate(sorted(objective_dict.items())):
-        # sort by max_h2_value to ensure clean lines
+    for j, (label, stats) in enumerate(sorted(objective_dict.items())):
+        # ensure correct ordering by subsidy
         sorted_data = sorted(
-            zip(stats["max_h2_value"], stats["mean"], stats["se"], stats["runs"]),
+            zip(stats["subsidy"], stats["mean"], stats["se"], stats["runs"]),
             key=lambda x: x[0]
         )
 
-        max_h2_vals, means, ses, runs = zip(*sorted_data)
+        subs, means, ses, runs = zip(*sorted_data)
 
         diffs = []
         base = runs[0]
@@ -331,31 +536,31 @@ def plot_objective_values(objective_dict, folder):
             mean = np.mean(d)
             se = np.std(d, ddof=1) / np.sqrt(n)
 
-            diff_means.append(mean / 1000000)
+            diff_means.append(mean/ 1000000)
             diff_ses.append(se / 1000000)
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
-        max_h2_vals = [h2 *100 for h2 in max_h2_vals]  # Convert to percentage
+
         # Line (no markers)
-        plt.plot(max_h2_vals, diff_means, '-', label=f"Subsidy {int(subsidy)}€/MWh", color=color)
+        plt.plot(subs, diff_means, '-', label=f"Deviation {int(label*100)}%", color=color)
 
         # Shaded uncertainty band
         lower = [m - se for m, se in zip(diff_means, diff_ses)]
         upper = [m + se for m, se in zip(diff_means, diff_ses)]
 
-        plt.fill_between(max_h2_vals, lower, upper, color=color, alpha=0.2)
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
 
-    plt.xlabel('Max H2 Throughput (%)')
+    plt.xlabel('Subsidy (Euro/MWh)')
     plt.ylabel('Objective Value Effect (Million Euro)')
-    plt.title('Objective Value Effect vs Max H2 Throughput')
+    plt.title('Objective Value Effect vs Subsidy')
     plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
-    plt.savefig(os.path.join(folder, "objective_vs_max_h2.png"))
+    plt.savefig(os.path.join(folder, "objective_vs_subsidy.png"))
     plt.close()
 
 
-def plot_net_effect(objective_dict, h2_dict, folder, co2_method="zero"):
+def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
     os.makedirs(folder, exist_ok=True)
 
     plt.figure(figsize=(10, 5))
@@ -379,27 +584,28 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method="zero"):
 
     print("CO2 cost per Mcsm:", co2_savings_unit)
 
-    for j, (subsidy, obj_stats) in enumerate(sorted(objective_dict.items())):
-        h2_stats = h2_dict[subsidy]
+    for j, label in enumerate(sorted(objective_dict.keys())):
+        obj_stats = objective_dict[label]
+        h2_stats = h2_dict[label]
 
         sorted_data = sorted(
-            zip(obj_stats["max_h2_value"], obj_stats["runs"], h2_stats["runs"]),
+            zip(obj_stats["subsidy"], obj_stats["runs"], h2_stats["runs"]),
             key=lambda x: x[0]
         )
 
-        max_h2_vals, obj_runs, h2_runs = zip(*sorted_data)
+        subs, obj_runs, h2_runs = zip(*sorted_data)
 
         # STEP 1: compute net effect per run
         net_runs = []
         base_obj_runs = obj_runs[0]
 
-        for max_h2, r_obj, r_h2 in zip(max_h2_vals, obj_runs, h2_runs):
+        for s, r_obj, r_h2 in zip(subs, obj_runs, h2_runs):
             min_len = min(len(base_obj_runs), len(r_obj), len(r_h2))
 
             net_r = []
             for i in range(min_len):
                 delta_obj = r_obj[i] - base_obj_runs[i]
-                sub_cost = subsidy * HYDROGEN_MSCM_MWH * r_h2[i]
+                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i]
                 co2_savings = r_h2[i] * co2_savings_unit
 
                 net = delta_obj - sub_cost + co2_savings
@@ -429,26 +635,36 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method="zero"):
             diff_ses.append(se)
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
-        max_h2_vals = [h2 *100 for h2 in max_h2_vals]  # Convert to percentage
 
         # Line (no markers)
-        plt.plot(max_h2_vals, diff_means, '-', label=f"Subsidy {int(subsidy)}€/MWh", color=color)
+        plt.plot(subs, diff_means, '-', label=f"Deviation {label* 100}%", color=color)
 
         # Shaded band
         lower = [m - se for m, se in zip(diff_means, diff_ses)]
         upper = [m + se for m, se in zip(diff_means, diff_ses)]
 
-        plt.fill_between(max_h2_vals, lower, upper, color=color, alpha=0.2)
+        plt.fill_between(subs, lower, upper, color=color, alpha=0.2)
 
-    plt.xlabel('Max H2 Throughput (%)')
+    plt.xlabel('Subsidy (Euro/MWh)')
     plt.ylabel('Net Effect (Euro)')
     plt.title('Net Welfare Effect of Subsidy')
     plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
-    plt.savefig(os.path.join(folder, f"net_effect_vs_max_h2_{co2_method}.png"))
+    plt.savefig(os.path.join(folder, f"net_effect_vs_subsidy_{co2_method}.png"))
     plt.close()
 
+        # Social cost savings per displaced mwh (transformed to mscm)
+        # Sources:
+        # Costs per kwh :   https://co2emissiefactoren.nl/ 
+        # Conversion rates : https://www.engineeringtoolbox.com/fuels-higher-calorific-values-d_169.html
+        # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2
+
+        # Social cost savings per mscm
+        # Sources:
+        # https://h2tools.org/hyarc/calculator-tools/hydrogen-conversions-calculator # KG to scm transformation h2
+        # https://co2emissiefactoren.nl/  Emissionfactors
+        # https://www-nature-com.vu-nl.idm.oclc.org/articles/s41586-022-05224-9  # social cost co2
 
 def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
     os.makedirs(folder, exist_ok=True)
@@ -474,36 +690,40 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
 
     print("CO2 cost per Mcsm:", co2_savings_unit)
 
-    for j, (subsidy, obj_stats) in enumerate(sorted(objective_dict.items())):
-        h2_stats = h2_dict[subsidy]
+    for j, label in enumerate(sorted(objective_dict.keys())):
+        obj_stats = objective_dict[label]
+        h2_stats = h2_dict[label]
 
         sorted_data = sorted(
-            zip(obj_stats["max_h2_value"], obj_stats["runs"], h2_stats["runs"]),
+            zip(
+                obj_stats["subsidy"],
+                obj_stats["runs"],
+                h2_stats["runs"]
+            ),
             key=lambda x: x[0]
         )
 
-        max_h2_vals, obj_runs, h2_runs = zip(*sorted_data)
+        subs, obj_runs, h2_runs = zip(*sorted_data)
 
         # STEP 1: compute ROI per run
         roi_runs = []
         base_obj_runs = obj_runs[0]
 
-        for max_h2, r_obj, r_h2 in zip(max_h2_vals, obj_runs, h2_runs):
+        for s, r_obj, r_h2 in zip(subs, obj_runs, h2_runs):
             min_len = min(len(base_obj_runs), len(r_obj), len(r_h2))
 
             roi_r = []
             for i in range(min_len):
                 delta_obj = r_obj[i] - base_obj_runs[i]
                 scaling_factor = 0
-                sub_cost = subsidy * HYDROGEN_MSCM_MWH * r_h2[i]
+                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i]
                 co2_savings = r_h2[i] * co2_savings_unit
 
-                if  subsidy > 30:
-                    if sub_cost > 0 :  # Avoid division by zero
-                        roi = (delta_obj - sub_cost + co2_savings) / (sub_cost + scaling_factor)
-                    else:
-                        roi = 0
-                    roi_r.append(roi)
+                if sub_cost > 0 and s >= 30:
+                    roi = (delta_obj - sub_cost + co2_savings) / (sub_cost + scaling_factor)
+                else:
+                    roi = 0
+                roi_r.append(roi)
 
             roi_runs.append(roi_r)
 
@@ -518,7 +738,10 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
         roi_means = []
         roi_ses = []
 
-        for d in diffs:
+        for i, d in enumerate(diffs):
+            if i < len(subs) and subs[i] < 30:
+                continue
+            
             d = np.array(d)
             n = len(d)
 
@@ -526,29 +749,30 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
             se = np.std(d, ddof=1) / np.sqrt(n) if n > 1 else 0
 
             roi_means.append(mean * 100)
-            roi_ses.append(se * 100)
+            roi_ses.append(se * 100) # convert to percentage for better readability
+
+        # Match subs
+        filtered_subs = [s for s in subs if s >= 30]
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
-        max_h2_vals = [h2 *100 for h2 in max_h2_vals]  # Convert to percentage
+
         # Line (no markers)
-        if len(roi_means) > 0:
-            plt.plot(max_h2_vals, roi_means, '-', label=f"Subsidy {int(subsidy)}€/MWh", color=color)
+        plt.plot(filtered_subs, roi_means, '-', label=f"Deviation {int(label * 100)}%", color=color)
 
         # Shaded band
         lower = [m - se for m, se in zip(roi_means, roi_ses)]
         upper = [m + se for m, se in zip(roi_means, roi_ses)]
 
-        plt.fill_between(max_h2_vals, lower, upper, color=color, alpha=0.2)
+        plt.fill_between(filtered_subs, lower, upper, color=color, alpha=0.2)
 
-    plt.xlabel('Max H2 Throughput (%)')
+    plt.xlabel('Subsidy (Euro/MWh)')
     plt.ylabel('Return on investment (%)')
     plt.title('Return on investment of Subsidy')
     plt.grid(alpha=0.3, axis="y")
     plt.legend()
 
-    plt.savefig(os.path.join(folder, f"roi_vs_max_h2_{co2_method}.png"))
+    plt.savefig(os.path.join(folder, f"roi_vs_subsidy_{co2_method}.png"))
     plt.close()
-
 
 def plot_roi_cost(objective_dict, h2_dict, folder, co2_method="zero"):
     os.makedirs(folder, exist_ok=True)
@@ -574,22 +798,27 @@ def plot_roi_cost(objective_dict, h2_dict, folder, co2_method="zero"):
 
     print("CO2 cost per Mcsm:", co2_savings_unit)
 
-    for j, (subsidy, obj_stats) in enumerate(sorted(objective_dict.items())):
-        h2_stats = h2_dict[subsidy]
+    for j, label in enumerate(sorted(objective_dict.keys())):
+        obj_stats = objective_dict[label]
+        h2_stats = h2_dict[label]
 
         sorted_data = sorted(
-            zip(obj_stats["max_h2_value"], obj_stats["runs"], h2_stats["runs"]),
+            zip(
+                obj_stats["subsidy"],
+                obj_stats["runs"],
+                h2_stats["runs"]
+            ),
             key=lambda x: x[0]
         )
 
-        max_h2_vals, obj_runs, h2_runs = zip(*sorted_data)
+        subs, obj_runs, h2_runs = zip(*sorted_data)
 
         # STEP 1: compute ROI per run
         roi_runs = []
         sub_costs = []
         base_obj_runs = obj_runs[0]
 
-        for max_h2, r_obj, r_h2 in zip(max_h2_vals, obj_runs, h2_runs):
+        for s, r_obj, r_h2 in zip(subs, obj_runs, h2_runs):
             min_len = min(len(base_obj_runs), len(r_obj), len(r_h2))
 
             roi_r = []
@@ -597,10 +826,10 @@ def plot_roi_cost(objective_dict, h2_dict, folder, co2_method="zero"):
             for i in range(min_len):
                 delta_obj = r_obj[i] - base_obj_runs[i]
                 scaling_factor = 0
-                sub_cost = subsidy * HYDROGEN_MSCM_MWH * r_h2[i]
+                sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i]
                 co2_savings = r_h2[i] * co2_savings_unit
 
-                if sub_cost > 0:
+                if sub_cost > 0 and s >= 30:
                     roi = (delta_obj - sub_cost + co2_savings) / (sub_cost + scaling_factor)
                 else:
                     roi = 0
@@ -608,7 +837,7 @@ def plot_roi_cost(objective_dict, h2_dict, folder, co2_method="zero"):
                 sub_cost_list.append(sub_cost)
 
             roi_runs.append(roi_r)
-            sub_costs.append(np.mean(sub_cost_list) / 1_000_000)
+            sub_costs.append(np.mean(sub_cost_list) / 1_000_000)  # Convert to Million Euro
 
         # STEP 2: CRN differences
         diffs = []
@@ -620,8 +849,12 @@ def plot_roi_cost(objective_dict, h2_dict, folder, co2_method="zero"):
 
         roi_means = []
         roi_ses = []
+        filtered_sub_costs = []
 
-        for d in diffs:
+        for i, d in enumerate(diffs):
+            if i < len(subs) and subs[i] < 30:
+                continue
+            
             d = np.array(d)
             n = len(d)
 
@@ -629,18 +862,19 @@ def plot_roi_cost(objective_dict, h2_dict, folder, co2_method="zero"):
             se = np.std(d, ddof=1) / np.sqrt(n) if n > 1 else 0
 
             roi_means.append(mean * 100)
-            roi_ses.append(se * 100)
+            roi_ses.append(se * 100)  # convert to percentage for better readability
+            filtered_sub_costs.append(sub_costs[i])
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
 
         # Line (no markers)
-        plt.plot(sub_costs, roi_means, '-', label=f"Subsidy {int(subsidy)}€/MWh", color=color)
+        plt.plot(filtered_sub_costs, roi_means, '-', label=f"Deviation {int(label * 100)}%", color=color)
 
         # Shaded band
         lower = [m - se for m, se in zip(roi_means, roi_ses)]
         upper = [m + se for m, se in zip(roi_means, roi_ses)]
 
-        plt.fill_between(sub_costs, lower, upper, color=color, alpha=0.2)
+        plt.fill_between(filtered_sub_costs, lower, upper, color=color, alpha=0.2)
 
     plt.xlabel('Subsidy Cost (Million Euro)')
     plt.ylabel('Return on investment (%)')
@@ -781,7 +1015,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
     # Create map
     # -------------------------------
     center = gdf.geometry.union_all().centroid
-    m = folium.Map(location=[center.y +3, center.x+2], zoom_start=4.5, tiles="CartoDB positron")
+    m = folium.Map(location=[center.y, center.x], zoom_start=7, tiles="CartoDB positron")
 
     # -------------------------------
     # Helpers
@@ -849,7 +1083,7 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
 
         # Thickness scaling
         weight_intensity = total_flow / max_tot_flow if max_tot_flow > 0 else 0
-        weight = 2 + 6 * np.power(weight_intensity, 0.7)
+        weight = 2 + 6 * np.power(weight_intensity, 0.3)
         
 
         for line in lines:
@@ -976,40 +1210,44 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
 # RUN
 # ---------------------------
 if __name__ == "__main__":
-    base_folder = f"study_case_model/figures/technical_experiment/{EXPERIMENT}/"
+    base_folder = f"study_case_model/figures/subsidy_experiment/{EXPERIMENT}/"
     sub_values = [30.0, 45.0, 70.0]
-    tech_allowed = [0.0, 0.1, 0.2]
+    dev_values = [0.0, 0.1, 1.0]
 
     for sub_value in sub_values:
-        for tech_value in tech_allowed:
-            network_plot_hydrogen_production(sub_value, tech_value, base_folder, f"study_case_model/figures/technical_experiment/combined_results/html_networks/{EXPERIMENT}/")
+        for dev_value in dev_values:
+            network_plot_hydrogen_production(sub_value, dev_value, base_folder, f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/{EXPERIMENT}/")
 
     results = analyze_experiment(base_folder)
 
     if LOAD_ONE_RUN:
-        plot_hydrogen_production(results, folder=f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_subsidy_cost(results, folder =f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
     else:
-        plot_hydrogen_production(results, folder=f"study_case_model/figures/technical_experiment/combined_results/")
-        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/technical_experiment/combined_results/")
-        plot_subsidy_cost(results, folder =f"study_case_model/figures/technical_experiment/combined_results/")
+        plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], "study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/")
 
     objective_dict = analyze_objectives(base_folder)
 
     if LOAD_ONE_RUN:
-        plot_objective_values(objective_dict, folder=f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
+        plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
     else:
-        plot_objective_values(objective_dict, folder=f"study_case_model/figures/technical_experiment/combined_results/")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/", co2_method="energy")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/", co2_method="volume")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/", co2_method="energy")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/technical_experiment/combined_results/", co2_method="volume")
+        plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
