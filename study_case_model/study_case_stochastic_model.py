@@ -523,6 +523,11 @@ def add_flow_constraints(model):
 
     model.flow_balance = pyo.Constraint(model.N, model.C, model.M[3], rule=flow_balance_rule)
 
+    # Maximum pipe flow
+    def max_pipe_flow_rule(m, a1, a2, m_3):
+        return sum(m.f[a1, a2, c, m_3] for c in m.C) <= m.M_a[a1, a2]
+    
+    model.max_pipe_flow = pyo.Constraint(model.A, model.M[3], rule=max_pipe_flow_rule)
 
 def add_weymouth_constraints(model):
 
@@ -2097,5 +2102,5 @@ if __name__ == "__main__":
     plot_results(model, folder = FOLDER)
     save_model_values(model, "study_case_model/scenario_variables/main_model.pkl")
 
-    model_values = load_param_values("results/basic_model")
+    model_values = load_param_values("study_case_model/scenario_variables/main_model.pkl")
     print(model_values["variables"]["w"])

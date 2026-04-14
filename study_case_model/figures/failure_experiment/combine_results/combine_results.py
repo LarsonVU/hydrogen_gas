@@ -1,7 +1,14 @@
 from pathlib import Path
+import folium
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
+import ast
+import os
+import geopandas as gpd
+import pandas as pd
+import numbers
+
 
 EXPERIMENT = "run_13426_2"
 LOAD_ONE_RUN = None  # "run0"
@@ -235,6 +242,369 @@ def plot_remaining_h2(summary, baseline_summary=None, output_path=None):
 
     plt.close()
 
+
+def map_name(name):
+    mapping = {
+        "GJØA": "GJOA",
+        "VISUND": "VISUND",
+        "NORNE ERB": "NORNE_ERB",
+        "KÅRSTØ": "KARSTO",
+        "DRAUPNER S": "DRAUPNER_S",
+        "DORNUM": "DORNUM",
+        "DUNKERQUE": "DUNKERQUE",
+        "H-7 BP": "H-7_BP",
+        "EMDEN": "EMDEN"
+    }
+    return mapping.get(name, name)
+
+
+def analyze_network_flows(subsidy, failed_element, base_folder):
+    """
+    Extract all flow variables for a given (subsidy, failed_element) setting.
+
+    Returns:
+        dict with:
+            - "flows": list of flow dictionaries per run
+            - "aggregated": mean and SE per variable
+    """
+    base = Path(base_folder)
+
+    # 🔥 Apply mapping here as well (important!)
+    failed_element_mapped = map_name(failed_element)
+
+    max_h2_dir = base / f"maxh2_{failed_element_mapped}"
+    sub_dir = max_h2_dir / f"sub{subsidy}"
+
+    flows = []
+
+    for run_dir in sorted(sub_dir.glob("run*/")):
+        files = list(run_dir.glob("*.pkl"))
+        if not files:
+            continue
+
+        with open(files[0], "rb") as f:
+            snapshot = pickle.load(f)
+
+        flow_dict = {}
+
+        f_vals = snapshot["variables"]["f"]
+        sp = snapshot["parameters"]["sp"]
+
+        for (a_in, a_out, c, s), val in f_vals.items():
+            prob = sp[3, s]
+
+            # ✅ APPLY MAPPING HERE
+            a_in_mapped = map_name(a_in)
+            a_out_mapped = map_name(a_out)
+
+            key = (a_in_mapped, a_out_mapped)
+
+            if key not in flow_dict:
+                flow_dict[key] = {}
+
+            if c not in flow_dict[key]:
+                flow_dict[key][c] = 0.0
+
+            flow_dict[key][c] += prob * val
+
+        flows.append(flow_dict)
+
+    if len(flows) == 0:
+        return None
+
+    # ---------------------------
+    # AGGREGATION
+    # ---------------------------
+    aggregated = {}
+
+    # Collect all variable names across runs (safer than flows[0])
+    var_names = set()
+    for flow in flows:
+        var_names.update(flow.keys())
+
+    for vname in var_names:
+        values = []
+
+        for flow in flows:
+            if vname not in flow:
+                continue
+
+            if isinstance(flow[vname], dict):
+                values.append(list(flow[vname].values()))
+            else:
+                values.append([flow[vname]])
+
+        values = np.array(values)
+
+        if len(values) == 0:
+            continue
+
+        mean = np.mean(values, axis=0)
+        se = np.std(values, axis=0, ddof=1) / np.sqrt(values.shape[0])
+
+        aggregated[vname] = {
+            "mean": mean,
+            "se": se
+        }
+
+    return {
+        "flows": flows,
+        "aggregated": aggregated
+    }
+
+def find_node_by_coords(node_rows, coords, tol=1e-6):
+    try:
+        coords = ast.literal_eval(coords)
+    except (ValueError, SyntaxError):
+        return coords
+
+    x, y = coords
+    matches = node_rows[
+        node_rows.geometry.apply(
+            lambda g: abs(g.x - x) < tol and abs(g.y - y) < tol
+        )
+    ]
+    if len(matches) == 0:
+        raise ValueError(f"No node found near {coords}")
+    if len(matches) > 1:
+        raise ValueError(f"Multiple nodes found near {coords}")
+    return matches.iloc[0]["location"]
+
+def network_plot_hydrogen_production(subsidy, failed_element, base_folder, output_folder):
+    # -------------------------------
+    # Load flows
+    # -------------------------------
+    result = analyze_network_flows(subsidy, failed_element, base_folder)
+    if result is None:
+        print("No flow data found.")
+        return None
+
+    # ---- Average flows over runs ----
+    avg_flow = result["aggregated"]
+
+    # -------------------------------
+    # Load geo data
+    # -------------------------------
+    FOLDER = "data/data_analysis_results/Geojson_pipelines/"
+    input_path = FOLDER + "study_case_network.geojson"
+    os.makedirs(output_folder, exist_ok=True)
+    output_html = os.path.join(output_folder, f"network_h2_sub{subsidy}_failed{failed_element}.html")
+
+    gdf = gpd.read_file(input_path)
+
+    nodes = gdf[gdf.geometry.type == "Point"].copy()
+    edges = gdf[gdf.geometry.type.isin(["LineString", "MultiLineString"])].copy()
+
+    # -------------------------------
+    # Create map
+    # -------------------------------
+    center = gdf.geometry.union_all().centroid
+    m = folium.Map(location=[center.y, center.x], zoom_start=7, tiles="CartoDB positron")
+
+    # -------------------------------
+    # Helpers
+    # -------------------------------
+    def is_nan_safe(val):
+        if isinstance(val, numbers.Number):
+            return np.isnan(val)
+        if isinstance(val, pd.Timestamp):
+            return not pd.isna(val)
+        return False
+
+    def make_tooltip(row):
+        props = []
+        for col in row.index:
+            if col in ["pipName", "fromFacili", "toFacility", "max_flow", "location", "node_type"]:
+                val = row[col]
+                if val is not None and not is_nan_safe(val):
+                    props.append(f"<b>{col}</b>: {val}")
+        return "<br>".join(props)
+
+    # -------------------------------
+    # Determine max H2 flow (for scaling)
+    # -------------------------------
+    h2_values = []
+    tot_flow_values = []
+    for arc in avg_flow.keys():
+        h2_values.append(avg_flow[arc]["mean"][2])
+        tot_flow_values.append(sum(avg_flow[arc]["mean"]))
+
+    #max_flow = 5 #max(h2_values) if h2_values else 1.0
+    max_tot_flow = 30 #max(tot_flow_values) if tot_flow_values else 1.0
+
+
+
+    # -------------------------------
+    # Add edges (WITH hydrogen coloring)
+    # -------------------------------
+    for _, row in edges.iterrows():
+        geom = row.geometry
+        lines = geom.geoms if geom.geom_type == "MultiLineString" else [geom]
+
+        # ---- Map arc ----
+        a_in = find_node_by_coords(nodes, row.get("from_node"))
+        a_out = find_node_by_coords(nodes, row.get("to_node"))
+
+        h2_flow = avg_flow[a_in, a_out]["mean"][2]
+        total_flow = sum(avg_flow[a_in, a_out]["mean"])
+
+        # Normalize
+        intensity = h2_flow / total_flow if total_flow > 0 else 0 # max_flow
+
+        # Blue gradient (light → strong blue)
+        def interpolate_color(intensity, start=(60, 60, 60), end=(0, 201, 255)):
+            intensity = intensity * 5 # Max 20% accross pipelines
+            r = int(start[0] + (end[0] - start[0]) * intensity)
+            g = int(start[1] + (end[1] - start[1]) * intensity)
+            b = int(start[2] + (end[2] - start[2]) * intensity)
+            return f"rgb({r}, {g}, {b})"
+
+        def adjust_intensity(intensity):
+            return np.power(intensity, 0.8)  # Adjust exponent for better contrast
+
+        color_intensity = adjust_intensity(intensity)
+        color = interpolate_color(color_intensity)
+
+        # Thickness scaling
+        weight_intensity = total_flow / max_tot_flow if max_tot_flow > 0 else 0
+        weight = 2 + 6 * np.power(weight_intensity, 0.3)
+        
+
+        for line in lines:
+            coords = [(lat, lon) for lon, lat in line.coords]
+
+            tooltip = make_tooltip(row) + f"<br><b>H2 flow</b>: {h2_flow:.2f}" + f"<br><b>Total flow</b>: {total_flow:.2f}"
+
+            folium.PolyLine(
+                coords,
+                color=color,
+                weight=weight,
+                opacity=0.85,
+                tooltip=folium.Tooltip(tooltip, sticky=True),
+            ).add_to(m)
+
+    # -------------------------------
+    # Add nodes (unchanged)
+    # -------------------------------
+    for _, row in nodes.iterrows():
+        point = row.geometry
+        tooltip = make_tooltip(row)
+
+        color_map = {
+            "Generation": "#FFB3BA",
+            "Processing": "#BAFFC9",
+            "Market": "#BAE1FF",
+            "Compression": "#FFFFBA",
+            "Junction": "#E0BBE4",
+        }
+
+        node_type = row.get("node_type", "junction")
+        color = color_map.get(node_type, "#CCCCCC")
+
+        folium.CircleMarker(
+            location=[point.y, point.x],
+            radius=5,
+            color=color,
+            fill=True,
+            fill_color=color,
+            fill_opacity=0.9,
+            tooltip=folium.Tooltip(tooltip, sticky=True),
+        ).add_to(m)
+
+    # -------------------------------
+    # Add legend (with hydrogen)
+    # -------------------------------
+    # Precompute example values
+    flow_ticks = [0, 0.25, 0.5, 0.75, 1.0]
+    flow_values = [f"{t * max_tot_flow:.1f}" for t in flow_ticks]
+
+    legend_html = f'''
+        <div style="position: fixed; 
+            bottom: 50px; right: 50px; width: 260px; height: auto; 
+            background-color: white; border:2px solid grey; z-index:9999; 
+            font-size:14px; padding: 12px; overflow-y: auto;">
+
+        <p style="margin: 0 0 10px 0; font-weight: bold;">Legend</p>
+
+        <p><b>Node Types</b></p>
+        <p><span style="background-color: #FFB3BA; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Generation</p>
+        <p><span style="background-color: #BAFFC9; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Processing</p>
+        <p><span style="background-color: #BAE1FF; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Market</p>
+        <p><span style="background-color: #FFFFBA; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Compression</p>
+        <p><span style="background-color: #E0BBE4; width: 15px; height: 15px; display: inline-block; border-radius: 50%;"></span> Junction</p>
+
+        <p><b>Hydrogen (%)</b></p>
+        <div style="width: 100%; height: 15px; 
+            background: linear-gradient(to right, 
+            {interpolate_color(adjust_intensity(0))}, 
+            {interpolate_color(adjust_intensity(0.05))}, 
+            {interpolate_color(adjust_intensity(0.1))}, 
+            {interpolate_color(adjust_intensity(0.15))}, 
+            {interpolate_color(adjust_intensity(0.2))}); 
+            border: 1px solid black;">
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span>0</span>
+            <span>10</span>
+            <span>20</span>
+        </div>
+
+        <p><b>Flow (Mscm)</b></p>
+
+        <div style="width: 100%; height: 20px; position: relative;">
+
+            <!-- Tapered thickness bar -->
+            <div style="
+                width: 100%; 
+                height: 100%;
+                background: linear-gradient(to right,
+                    rgba(0,0,0,0.2) 0%,
+                    rgba(0,0,0,0.4) 25%,
+                    rgba(0,0,0,0.6) 50%,
+                    rgba(0,0,0,0.8) 75%,
+                    rgba(0,0,0,1.0) 100%);
+                clip-path: polygon(
+                    0% 50%, 
+                    100% 0%, 
+                    100% 100%
+                );
+            "></div>
+
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span>{flow_values[0]}</span>
+            <span>{flow_values[2]}</span>
+            <span>{flow_values[4]}</span>
+        </div>
+        </div>
+        '''
+    m.get_root().html.add_child(folium.Element(legend_html))
+
+    # -------------------------------
+    # Save
+    # -------------------------------
+    m.save(output_html)
+    print(f"Saved interactive map to: {output_html}")
+
+    return m
+    
+# Mapping, reverse to original names for failed elements
+def map_name(name):
+    mapping = {
+        "GJOA": "GJØA",
+        "VISUND": "VISUND",
+        "NORNE_ERB": "NORNE ERB",
+        "KARSTO": "KÅRSTØ",
+        "DRAUPNER_S": "DRAUPNER S",
+        "DORNUM": "DORNUM",
+        "DUNKERQUE": "DUNKERQUE",
+        "H-7_BP": "H-7 BP",
+        "EMDEN": "EMDEN"
+    }
+    return mapping.get(name, name)
+
+
 # ---------------------------
 # MAIN
 # ---------------------------
@@ -243,6 +613,12 @@ if __name__ == "__main__":
     base_folder_no_failure = f"study_case_model/figures/subsidy_experiment/combined_runs_new/"
 
     sub_values = [30.0, 45.0, 70.0]
+
+    
+    # Example: Plot network for one failure case
+    network_plot_hydrogen_production(subsidy=45.0, failed_element="KARSTO_to_DORNUM",
+                                      base_folder=base_folder_failure, 
+                                      output_folder="study_case_model/figures/failure_experiment/combine_results/")
 
     # Failure results
     summary_failure = analyze_failed_experiment(base_folder_failure)
