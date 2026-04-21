@@ -8,10 +8,16 @@ import pandas as pd
 import os
 from scipy.optimize import minimize
 import matplotlib.colors as mcolors
+import yaml
+from pathlib import Path
+
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
+
 
 np.random.seed(42)
 
-GEOJSON_FILE = "data/data_analysis_results/Geojson_pipelines/study_case_network.geojson"
+GEOJSON_FILE = Path(config["paths"]["geojson_output"])
 
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1 : 1, 2 : 5, 3: 1}
@@ -73,7 +79,7 @@ def skewed_cutting_plane_pairs(n_p_out=NUMBER_OF_CUTTING_PLANES_P_OUT,
         if low is None:
             low = max(p_in_low, p_out)  # ensure p_in >= p_out
         t = np.linspace(0, 1, n_points)
-        t_skewed = np.power(t, 10)  # adjust exponent for more/less skew
+        t_skewed = np.power(t, 10)  # adjust exponent for more/less skew (manually tuned)
         return low + (high - low) * t_skewed
     
     # Create p_in values for each p_out

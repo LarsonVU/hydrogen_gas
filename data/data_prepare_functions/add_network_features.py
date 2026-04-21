@@ -3,13 +3,22 @@ import networkx as nx
 import pandas as pd
 import math
 import ast
+import yaml
+from pathlib import Path
 
-DATA_FOLDER = "data/"
-GDF_FILE = DATA_FOLDER + "data_analysis_results/Geojson_pipelines/graphed_pipeline_network_threshold_20.geojson"
-NODE_INFO_FILE = DATA_FOLDER + "data_sources/node_info.xlsx"
-GENERATION_NODES_FILE = DATA_FOLDER + "data_sources/generation_fields.xlsx"
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
-OUTPUT_FILE = DATA_FOLDER + "data_analysis_results/Geojson_pipelines/study_case_network.geojson"
+paths = config["paths"]
+
+GDF_FILE = Path(paths["geojson_raw"])
+NODE_INFO_FILE = Path(paths["node_info"])
+GENERATION_NODES_FILE = Path(paths["generation_nodes"])
+OUTPUT_FILE = Path(paths["geojson_output"])
+
+for path in [GDF_FILE, NODE_INFO_FILE, GENERATION_NODES_FILE]:
+    if not path.exists():
+        raise FileNotFoundError(f"Missing file: {path}")
 
 # ==============================
 # Units
@@ -48,7 +57,7 @@ def add_booking_cost(gdf, node_info):
         if row["type"] == "node":
             node_id = row["location_id"]
             booking_cost = node_info[node_info["Location ID"] == str(node_id)]["Tariff"]
-            gdf.at[idx, "base_booking_cost"] = booking_cost.iloc[0] / 11.28 # NOK to Euro 23-2-2026
+            gdf.at[idx, "base_booking_cost"] = booking_cost.iloc[0] / 11.28 # NOK to Euro 23-2-2026 (google exchange rate)
     return gdf
 
 def add_supplier(gdf, supplier_data):
@@ -65,7 +74,7 @@ def add_supplier(gdf, supplier_data):
 
 def add_supply_capacity(gdf):
     gdf["supply_capacity"] = None  # ensures object dtype
-    gdf.loc[gdf["location"] == "AASTA HANSTEEN PLEM", "supply_capacity"] =  8.92 /365 *1000
+    gdf.loc[gdf["location"] == "AASTA HANSTEEN PLEM", "supply_capacity"] =  8.92 /365 *1000 #Mcsm per day
     gdf.loc[gdf["location"] == "GJØA", "supply_capacity"] = 3.4 /365 *1000
     gdf.loc[gdf["location"] == "NORNE ERB", "supply_capacity"] = 0.1 /365 *1000
     gdf.loc[gdf["location"] == "OSEBERG D", "supply_capacity"] = 8.37 /365 *1000
@@ -125,12 +134,12 @@ def add_compression_constants(gdf):
     gdf["compression_constants"] = None  # ensures object dtype
     compression_nodes = ["B-11", "EUROPIPE-SCP", "NORPIPE Y", "ZEEPIPE-SCP"]
     normal_inlet_pressure = 100  # bar
-    normal_flow  = 25
-    T = 288.15
-    T_std = 288.15
+    normal_flow  = 25 # Mscm
+    T = 288.15 # Kelvin
+    T_std = 288.15 # Kelvin
     eta =0.72
-    p_std =1.01325
-    w_to_hour = 3600
+    p_std =1.01325 # Air pressure in bar
+    w_to_hour = 3600 # seconds in an hour
     constant = T * p_std / (T_std * eta * w_to_hour)
     for node in compression_nodes:
         normal_discharge_pressure = normal_inlet_pressure * gdf.loc[gdf["location"] == node, "compression_increase"].iloc[0]  # bar
@@ -158,6 +167,7 @@ def add_market_prices(gdf):
     return gdf
 
 def add_long_term_std(gdf):
+    # source https://www.ice.com/products/71085679/Dutch-TTF-Natural-Gas-Options-Futures-Style-Margin
     gdf["long_term_price_std"] = None  # ensures object dtype
     gdf.loc[gdf["location"] == "DUNKERQUE", "long_term_price_std"] = 0.10
     gdf.loc[gdf["location"] == "EASINGTON", "long_term_price_std"] = 0.15
@@ -168,6 +178,7 @@ def add_long_term_std(gdf):
     return gdf
 
 def add_day_ahead_std(gdf):
+    #source https://www.ice.com/products/71085679/Dutch-TTF-Natural-Gas-Options-Futures-Style-Margin
     gdf["day_ahead_price_std"] = None  # ensures object dtype
     gdf.loc[gdf["location"] == "DUNKERQUE", "day_ahead_price_std"] = 0.01
     gdf.loc[gdf["location"] == "EASINGTON", "day_ahead_price_std"] = 0.01
@@ -180,7 +191,7 @@ def add_day_ahead_std(gdf):
 def add_average_demand(gdf):
     # Average Demand in Gwh
     gdf["average_demand_mwh_x1000"] = None
-    gdf.loc[gdf["location"] == "DUNKERQUE", "average_demand_mwh_x1000"] =  50.0 #*2 #+ 56.25 + 43.75
+    gdf.loc[gdf["location"] == "DUNKERQUE", "average_demand_mwh_x1000"] =  50.0 # Mcsm per day
     gdf.loc[gdf["location"] == "EASINGTON", "average_demand_mwh_x1000"] = 12.5 #* 4
     gdf.loc[gdf["location"] == "ST.FERGUS", "average_demand_mwh_x1000"] = 12.5 #* 4
     gdf.loc[gdf["location"] == "EMDEN", "average_demand_mwh_x1000"] = 25.0 # *2 + 56.25 
@@ -189,7 +200,8 @@ def add_average_demand(gdf):
     return gdf
 
 def add_demand_variance(gdf):
-    # Variance expressed as fraction (e.g. 0.3 == 30%)
+    # Variance expressed as fraction (e.g. 0.3 == 30%) Taken from 
+    # https://ir.theice.com/press/news-details/2025/Open-Interest-across-ICEs-Global-Futures-and-Options-Markets-Reaches-a-Record-107-Million-Contracts/default.aspx
     gdf["demand_variance"] = None
     for loc in ["DUNKERQUE", "EASINGTON", "ST.FERGUS", "EMDEN", "DORNUM", "ZEEBRUGGE"]:
         gdf.loc[gdf["location"] == loc, "demand_variance"] = 0.3
@@ -207,7 +219,7 @@ def add_max_component_percentages(gdf):
 
 def add_min_pressure(gdf):
     gdf["min_outlet_pressure"] = None
-    # Set minimum outlet pressures (bar)
+    # Set minimum outlet pressures (bar) (from Gassco https://gassco.eu/wp-content/uploads/2026/01/Gassled-Terms-and-Conditions-01.01.2026-with-Appendices.pdf)
     gdf.loc[gdf["location"] == "DUNKERQUE", "min_outlet_pressure"] = 60
     gdf.loc[gdf["location"] == "EASINGTON", "min_outlet_pressure"] = 70
     gdf.loc[gdf["location"] == "ST.FERGUS", "min_outlet_pressure"] = 41
@@ -238,7 +250,7 @@ def add_market_and_demand_parameters(gdf):
     return gdf
 
 def add_arc_capacities(gdf):
-    # Known ones
+    # Known ones (mcsm per day)
     gdf.loc[gdf["idPipeline"] == 444927.0, "max_flow"] = 57.6  # Polarled
     gdf.loc[gdf["idPipeline"] == 319132.0, "max_flow"] = 11.0  # Norne Gasstransport
     gdf.loc[gdf["idPipeline"] == 323042.0, "max_flow"] = 44.4  # Statpipe (1)
@@ -285,7 +297,7 @@ def haversine_km(pt1, pt2):
     return R * c
 
 def add_weymouth_constant(gdf):
-    constant = 3.7435 * 10**(-9)
+    constant = 3.7435 * 10**(-9) # see report
     standard_temp = 288.15
     standard_press = 1.01325
     compressibility_factor = 0.9 # Choice from menon 2005
@@ -310,13 +322,13 @@ def add_weymouth_constant(gdf):
 def add_moap(gdf):
     for idx, row in gdf.iterrows():
         if row["type"] == "edge":
-             gdf.at[idx,"max_inlet_pressure"] = 150
+             gdf.at[idx,"max_inlet_pressure"] = 150 # bar
     return gdf
 
 def add_arc_pressure_costs(gdf):
     for idx, row in gdf.iterrows():
         if row["type"] == "edge":
-             gdf.at[idx,"pressure_cost"] = 100
+             gdf.at[idx,"pressure_cost"] = 100 # chosen constant
     return gdf
 
 def add_arc_max_ratios(gdf):
