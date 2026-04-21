@@ -7,12 +7,21 @@ import time
 import os
 import sys
 import argparse
+import yaml
+import yaml
+import yaml
+import yaml
 
 # =========================
 # Path setup
 # =========================
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
+
+# Load config
+config_path = ROOT / "config.yaml"
+with open(config_path, "r") as f:
+    config = yaml.safe_load(f)
 
 from study_case_stochastic_model import solve_model, create_model, generate_cutting_plane_pairs, save_model_values
 from study_case_problem_file import build_base_graph, create_scenarios

@@ -12,6 +12,7 @@ sys.path.append(str(ROOT))
 
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scpf
+from study_case_model.Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy
 
 
 # =========================
@@ -50,24 +51,6 @@ THREADS = args.threads
 SUBSIDY = args.subsidy
 DEVIATION = args.deviation
 RUN = args.run
-
-# =========================
-# Helper functions
-# =========================
-def subsidy_per_mwh_to_mscm(mwh_subsidy, gcv_mwh_per_kscm=2.78):
-    return mwh_subsidy * gcv_mwh_per_kscm * 1000
-
-
-def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
-    G_changed = G.copy()
-
-    for node in G.nodes:
-        if not pd.isna(G.nodes[node][variable_name]):
-            if G.nodes[node]["component_ratio"]["H2"] > 0:
-                G_changed.nodes[node][variable_name] = (
-                    float(G.nodes[node][variable_name]) - subsidy_value
-                )
-    return G_changed
 
 
 # =========================

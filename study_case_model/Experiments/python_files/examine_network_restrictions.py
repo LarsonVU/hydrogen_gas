@@ -5,6 +5,7 @@ import sys
 import os
 import argparse
 from pathlib import Path
+from study_case_model.Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy, apply_technical_restriction_h2
 
 # Add parent directory
 ROOT = Path(__file__).resolve().parents[2]
@@ -51,31 +52,7 @@ SUBSIDY = args.subsidy
 ALLOWED_HYDROGEN = args.allowed_hydrogen
 RUN = args.run
 
-# =========================
-# Helper functions
-# =========================
-def subsidy_per_mwh_to_mscm(mwh_subsidy, gcv_mwh_per_kscm=2.78):
-    return mwh_subsidy * gcv_mwh_per_kscm * 1000
 
-
-def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
-    G_changed = G.copy()
-
-    for node in G.nodes:
-        if not pd.isna(G.nodes[node][variable_name]):
-            if G.nodes[node]["component_ratio"]["H2"] > 0:
-                G_changed.nodes[node][variable_name] = (
-                    float(G.nodes[node][variable_name]) - subsidy_value
-                )
-    return G_changed
-
-
-def apply_technical_restriction(G, allowed_hydrogen):
-    G_changed = G.copy()
-    for edge in G_changed.edges:
-        G_changed.edges[edge]["max_pipe_fractions"][0]["H2"] = allowed_hydrogen
-
-    return G_changed
 
 # =========================
 # Main execution
@@ -91,7 +68,7 @@ if __name__ == "__main__":
     # Apply subsidy
     G_changed = apply_subsidy(G, subsidy_mscm)
     # Apply market restriction
-    G_changed = apply_technical_restriction(G_changed, ALLOWED_HYDROGEN)
+    G_changed = apply_technical_restriction_h2(G_changed, ALLOWED_HYDROGEN)
 
     # Create scenario folder
     data_folder = os.path.join(

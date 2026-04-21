@@ -15,6 +15,7 @@ with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
 GEOJSON_FILE = Path(config["paths"]["geojson_output"])
+SCENARIO_VARIABLES_FOLDER = Path(config["paths"]["scenario_variables"])
 
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1 : 1, 2 : 5, 3: 1}
@@ -421,12 +422,12 @@ def print_nodes_network_scenario(scenario):
 if __name__ == "__main__":
     G = build_base_graph()
     print(G)
-    scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, seed=1, folder="study_case_model/scenario_variables/")
+    scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, seed=1, folder=SCENARIO_VARIABLES_FOLDER)
     cutting_plane = generate_cutting_plane_pairs(method= "skewed")
-    plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/cut_plane_skewed")
+    plot_grid(cutting_plane, file_path = config["paths"]["figures_cutting_planes"])
 
     # cutting_plane = generate_cutting_plane_pairs(method= "max")
-    # plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/cut_plane_max")
+    # plot_grid(cutting_plane, file_path = config["paths"]["figures_cutting_planes"])
 
     #Print a specific scenario for verification
     print_nodes_network_scenario(scenarios[3][4])

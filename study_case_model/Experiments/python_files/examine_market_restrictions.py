@@ -5,10 +5,22 @@ import sys
 import os
 import argparse
 from pathlib import Path
+import yaml
+from study_case_model.Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy, apply_market_restriction
 
 # Add parent directory
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
+
+# Load config
+config_path = ROOT / "config.yaml"
+with open(config_path, "r") as f:
+    config = yaml.safe_load(f)
+
+# Load config
+config_path = ROOT / "config.yaml"
+with open(config_path, "r") as f:
+    config = yaml.safe_load(f)
 
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scpf
@@ -53,30 +65,6 @@ MARKET = args.market
 ALLOWED_HYDROGEN = args.allowed_hydrogen
 RUN = args.run
 
-# =========================
-# Helper functions
-# =========================
-def subsidy_per_mwh_to_mscm(mwh_subsidy, gcv_mwh_per_kscm=2.78):
-    return mwh_subsidy * gcv_mwh_per_kscm * 1000
-
-
-def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
-    G_changed = G.copy()
-
-    for node in G.nodes:
-        if not pd.isna(G.nodes[node][variable_name]):
-            if G.nodes[node]["component_ratio"]["H2"] > 0:
-                G_changed.nodes[node][variable_name] = (
-                    float(G.nodes[node][variable_name]) - subsidy_value
-                )
-    return G_changed
-
-
-def apply_market_restriction(G, market, allowed_hydrogen):
-    G_changed = G.copy()
-    G_changed.nodes[market]["max_fractions"]["H2"] = allowed_hydrogen
-
-    return G_changed
 
 # =========================
 # Main execution

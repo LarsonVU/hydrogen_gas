@@ -34,6 +34,7 @@ NUMBER_OF_DENSITY_BOUNDS = 1
 RHO_LOW = 0.55
 RHO_HIGH = 0.70
 
+# Do not put this too high, can cause the model to slow down
 NUMBER_OF_HOMOGENEOUS_SPLITS =11
 splits_per_arc = np.linspace(0, 1, NUMBER_OF_HOMOGENEOUS_SPLITS)
 
@@ -124,7 +125,8 @@ def build_sets(model, network, scenarios, cutting_plane_pairs, splits_per_arc, n
 
     E_nz_init = {}
 
-    # Homogeneous splitting parameters
+    # Homogeneous splitting parameters, 
+    # Higher splits per arc, increases objective, but also slows down model
     for n, arcs in model.A_n_minus.items():
         if n in model.N_s:
             order_arcs = len(arcs)
@@ -781,6 +783,18 @@ def create_model(network: networkx.Graph, scenarios=None,
 
     return model
 
+def get_solver():
+    # Try Gurobi first
+    if pyo.SolverFactory('gurobi').available(False):
+        return pyo.SolverFactory('gurobi')
+    
+    # Fallback options (ordered by strength)
+    for s in ['cbc', 'glpk', 'ipopt']:
+        if pyo.SolverFactory(s).available(False):
+            return pyo.SolverFactory(s)
+    
+    raise RuntimeError("No suitable solver found.")
+
 def solve_model(
     model,
     verbose=True,
@@ -790,7 +804,7 @@ def solve_model(
     nodefile_start=1,   # GB before spilling to disk
     node_file_folder = None
 ):
-    solver = pyo.SolverFactory('gurobi')
+    solver = get_solver()
 
 
     # -----------------------------

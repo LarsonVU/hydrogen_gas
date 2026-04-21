@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+import yaml
 
 
 # Add parent directory
@@ -15,26 +16,31 @@ sys.path.append(str(ROOT))
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scsp
 
+# Load config
+config_path = ROOT / "config.yaml"
+with open(config_path, "r") as f:
+    config = yaml.safe_load(f)
+
 
 # -----------------------------
 # Default settings
 # -----------------------------
 NETWORKS = {
-    "smaller_network": "data/data_analysis_results/Geojson_pipelines/smaller_network.geojson",
-    "bigger_network": "data/data_analysis_results/Geojson_pipelines/bigger_network.geojson",
-    "study_case_network": "data/data_analysis_results/Geojson_pipelines/study_case_network.geojson",
+    "smaller_network": config['paths']['smaller_network_geojson'],
+    "bigger_network": config['paths']['bigger_network_geojson'],
+    "study_case_network": config['paths']['geojson_output'],
 }
 
 DATA_FOLDERS = {
-    "bigger_network": "study_case_model/scenario_variables/compare_models/bigger_network/",
-    "smaller_network": "study_case_model/scenario_variables/compare_models/smaller_network/",
-    "study_case_network": "study_case_model/scenario_variables/compare_models/study_case_network/",
+    "bigger_network": config['paths']['compare_models_scenario_bigger'],
+    "smaller_network": config['paths']['compare_models_scenario_smaller'],
+    "study_case_network": config['paths']['compare_models_scenario_study_case'],
 }
 
 FIGURES_FOLDERS = {
-    "bigger_network": "study_case_model/figures/compare_models/bigger_network/",
-    "smaller_network": "study_case_model/figures/compare_models/smaller_network/",
-    "study_case_network": "study_case_model/figures/compare_models/study_case_network/",
+    "bigger_network": config['paths']['compare_models_figures_bigger'],
+    "smaller_network": config['paths']['compare_models_figures_smaller'],
+    "study_case_network": config['paths']['compare_models_figures_study_case'],
 }
 
 

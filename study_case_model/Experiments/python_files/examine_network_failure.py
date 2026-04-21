@@ -6,6 +6,8 @@ import sys
 import os
 import argparse
 from pathlib import Path
+from study_case_model.Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy, apply_technical_restriction
+
 
 # Add parent directory
 ROOT = Path(__file__).resolve().parents[2]
@@ -55,67 +57,6 @@ RUN = args.run
 
 FAILED = args.failed_pipe_from + "_to_" + args.failed_pipe_to if args.failed_pipe_from is not None else args.failed_plant
 
-# =========================
-# Helper functions
-# =========================
-def subsidy_per_mwh_to_mscm(mwh_subsidy, gcv_mwh_per_kscm=2.78):
-    return mwh_subsidy * gcv_mwh_per_kscm * 1000
-
-
-def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
-    G_changed = G.copy()
-
-    for node in G.nodes:
-        if not pd.isna(G.nodes[node][variable_name]):
-            if G.nodes[node]["component_ratio"]["H2"] > 0:
-                G_changed.nodes[node][variable_name] = (
-                    float(G.nodes[node][variable_name]) - subsidy_value
-                )
-    return G_changed
-
-def map_name(name):
-    mapping = {
-        "GJØA": "GJOA",
-        "VISUND": "VISUND",
-        "NORNE ERB": "NORNE_ERB",
-        "KÅRSTØ": "KARSTO",
-        "DRAUPNER S": "DRAUPNER_S",
-        "DORNUM": "DORNUM",
-        "DUNKERQUE": "DUNKERQUE",
-        "H-7 BP": "H-7_BP",
-        "EMDEN": "EMDEN"
-    }
-    return mapping.get(name, name)
-
-def apply_technical_restriction(G):
-    G_changed = G.copy()
-
-    # Rename all nodes using the mapping
-    node_mapping = {node: map_name(node) for node in G_changed.nodes()}
-    G_changed = nx.relabel_nodes(G_changed, node_mapping)
-
-    # Also update edge metadata that stores original node IDs
-    for u, v, data in G_changed.edges(data=True):
-        for key in ("from_node", "to_node", "from", "to"):
-            if key in data:
-                data[key] = node_mapping.get(data[key], data[key])
-
-    print("Renamed nodes according to mapping.")
-    print("Nodes after renaming:", G_changed.nodes(data=False))
-    print("Edges after renaming:", G_changed.edges(data=False))
-    if args.failed_pipe_from is not None and args.failed_pipe_to is not None:
-        edge = (map_name(args.failed_pipe_from), map_name(args.failed_pipe_to))
-        G_changed.edges[edge]["max_flow"] = 0
-        print(G_changed.edges[edge])
-
-    if args.failed_plant is not None:
-        if args.failed_plant == "None":
-            print("No plant failure specified (baseline).")
-            return G_changed
-        node = map_name(args.failed_plant)
-        G_changed.nodes[node]["supply_capacity"] = 0
-
-    return G_changed
 
 # =========================
 # Main execution
@@ -131,7 +72,7 @@ if __name__ == "__main__":
     # Apply subsidy
     G_changed = apply_subsidy(G, subsidy_mscm)
     # Apply market restriction
-    G_changed = apply_technical_restriction(G_changed)
+    G_changed = apply_technical_restriction(G_changed, failed_pipe_from=args.failed_pipe_from, failed_pipe_to=args.failed_pipe_to, failed_plant=args.failed_plant)
 
     # Create scenario folder
     data_folder = os.path.join(
