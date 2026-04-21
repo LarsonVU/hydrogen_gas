@@ -353,7 +353,7 @@ def plot_network(G):
         nodes.geometry.apply(lambda g: g.x).mean()
     )
 
-    m = folium.Map(location=center, zoom_start=5)
+    m = folium.Map(location=center, zoom_start=5, tiles = None)
 
     # edges
     for _, row in edges.iterrows():

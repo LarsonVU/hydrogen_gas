@@ -8,9 +8,10 @@ import os
 import geopandas as gpd
 import pandas as pd
 import numbers
+import matplotlib.colors as mcolors
 
 
-EXPERIMENT = "run_13426_2"
+EXPERIMENT = "run_14426"
 LOAD_ONE_RUN = None  # "run0"
 MINIMUM_RUNS = 2
 HYDROGEN_MSCM_MWH = 2.78 * 1000 
@@ -100,12 +101,14 @@ def analyze_failed_experiment(base_folder):
                 summary.setdefault(FAILED, {
                     "subs": [],
                     "mean": [],
-                    "se": []
+                    "se": [],
+                    "runs": []
                 })
 
                 summary[FAILED]["subs"].append(SUBSIDY)
                 summary[FAILED]["mean"].append(mean)
                 summary[FAILED]["se"].append(stderr)
+                summary[FAILED]["runs"].append(results)
 
                 print(f"FAILED={FAILED}, sub={SUBSIDY} | mean={mean:.4f}, se={stderr:.4f}, n={n}")
 
@@ -141,14 +144,14 @@ def process_subsidy_folder(folder):
 
     return mean, stderr, len(results), results
 
-def analyze_subsidy_experiment(base_folder, deviation = 0.0, sub_values = [30.0, 45.0, 70.0]):
+def analyze_subsidy_experiment(base_folder,  sub_values = [30.0, 45.0, 70.0]):
     summary = {}
     base = Path(base_folder)
 
     print("\nBaseline H2 Production (no failures):")
 
     for sub in sub_values:
-        sub_dir = base / f"dev{deviation}" / f"sub{sub}"
+        sub_dir = base / f"sub{sub}"
         print(f"Looking for folder: {sub_dir}")
         if not sub_dir.exists():
             print(f"Missing folder for subsidy {sub}")
@@ -161,87 +164,162 @@ def analyze_subsidy_experiment(base_folder, deviation = 0.0, sub_values = [30.0,
             summary[sub] = {
                 "mean": mean,
                 "se": stderr,
-                "n": n
+                "n": n,
+                "runs": results
             }
 
             print(f"sub={sub} | mean={mean:.4f}, se={stderr:.4f}, n={n}")
 
     return summary
 
+def adjust_color(color, factor=0.7):
+    """
+    Darken (<1) or lighten (>1) a color.
+    """
+    rgb = np.array(mcolors.to_rgb(color))
+    if factor < 1:
+        return tuple(rgb * factor)  # darken
+    else:
+        return tuple(1 - (1 - rgb) / factor)  # lighten
+
+
 # ---------------------------
 # PLOTTING
 # ---------------------------
-def plot_remaining_h2(summary, baseline_summary=None, output_path=None):
-    failed_labels = []
+def plot_remaining_h2(summary, baseline_summary=None, output_path=None, failed_elements=None, failed_labels_custom=None, type_failure = "Generation Node"):
+    """
+    Plot remaining H2 production for failed scenarios.
+    
+    Args:
+        summary: dict with failure analysis results
+        baseline_summary: dict with baseline results
+        output_path: path to save figure
+        failed_elements: list of failed element keys to include (None = all)
+        failed_labels_custom: dict mapping failed element keys to custom display names
+    """
+    if failed_elements is None:
+        failed_elements = list(summary.keys())
+    
+    if failed_labels_custom is None:
+        failed_labels_custom = {elem: elem for elem in failed_elements}
+    
+    # Filter and prepare data
+    filtered_data = {elem: summary[elem] for elem in failed_elements if elem in summary}
+    
     all_means = []
     all_errors = []
+    display_labels = []
     subsidy_values = []
 
     # Collect subsidies
-    for data in summary.values():
+    for data in filtered_data.values():
         subsidy_values.extend(data["subs"])
     subsidy_values = sorted(set(subsidy_values))
 
-    # Collect data
-    for FAILED, data in summary.items():
-        failed_labels.append(FAILED)
-        all_means.append(data["mean"])
-        all_errors.append(data["se"])
-
-    x = np.arange(len(failed_labels))
-    width = 0.25
+    # Collect data in filtered order
+    for elem in failed_elements:
+        if elem in filtered_data:
+            data = filtered_data[elem]
+            display_labels.append(failed_labels_custom[elem])
+            all_means.append(data["mean"])
+            all_errors.append(data["se"])
+    
+    x = np.arange(len(display_labels))
+    width = 0.4
 
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
+    y_lim = [1, 10, 10]
     for plot_idx, subsidy in enumerate(subsidy_values[:3]):
         ax = axes[plot_idx]
 
         means_for_subsidy = [
-            means[plot_idx] if plot_idx < len(means) else 0
+            means[plot_idx] * HYDROGEN_MSCM_MWH / 1000 if plot_idx < len(means) else 0
             for means in all_means
         ]
-        errors_for_subsidy = [
-            errors[plot_idx] if plot_idx < len(errors) else 0
-            for errors in all_errors
+
+        ses_for_subsidy = [
+            ses[plot_idx] * HYDROGEN_MSCM_MWH / 1000 if plot_idx < len(ses) else 0
+            for ses in all_errors
         ]
 
+        # ---- MAIN BARS ----
         ax.bar(
             x,
             means_for_subsidy,
             width,
-            yerr=errors_for_subsidy,
-            capsize=5,
-            color=PASTEL_COLORS[plot_idx],
-            label=f"Remaining H2 (Sub {subsidy})"
+            color=PASTEL_COLORS[plot_idx]
         )
 
+        # ---- ERROR BAND ----
+        bottom = [m - se for m, se in zip(means_for_subsidy, ses_for_subsidy)]
+        top    = [m + se for m, se in zip(means_for_subsidy, ses_for_subsidy)]
+
+        ax.bar(
+            x,
+            [2 * se for se in ses_for_subsidy],
+            width,
+            bottom=bottom,
+            color=adjust_color(PASTEL_COLORS[plot_idx], factor=1.15),
+            alpha=0.2,
+            edgecolor='none'
+        )
+
+        # ---- DASHED TOP & BOTTOM ----
+        for xi, low, high in zip(x, bottom, top):
+            ax.hlines(
+                high,
+                xi - width/2,
+                xi + width/2,
+                colors=adjust_color(PASTEL_COLORS[plot_idx], factor=0.6),
+                linestyles='dashed',
+                linewidth=1
+            )
+            ax.hlines(
+                low,
+                xi - width/2,
+                xi + width/2,
+                colors=adjust_color(PASTEL_COLORS[plot_idx], factor=0.6),
+                linestyles='dashed',
+                linewidth=1
+            )
+        
         # ---- BASELINE LINE ----
         if baseline_summary and subsidy in baseline_summary:
-            baseline = baseline_summary[subsidy]["mean"]
+            baseline = baseline_summary[subsidy]["mean"] * HYDROGEN_MSCM_MWH /1000
             ax.axhline(
                 baseline,
                 linestyle="--",
                 linewidth=2,
-                color="black",
-                label="Baseline (no failure)"
+                color="black"
             )
 
         ax.set_xticks(x)
-        ax.set_xticklabels(failed_labels, rotation=45, ha="right")
-        ax.set_ylabel("Hydrogen Production")
-        ax.set_xlabel("Failed Pipeline / Generation Node")
-        ax.set_title(f"Impact of Failures (Subsidy {subsidy})")
-        ax.legend()
+        ax.set_ylim(0, y_lim[plot_idx])
+        ax.set_xticklabels(display_labels, rotation=0, ha="center")
+        ax.set_ylabel("Hydrogen Production (Gwh)")
+        ax.set_xlabel(type_failure)
+        ax.set_title(f"Impact of Failures (Subsidy {int(subsidy)} Eur/MWh)")
+
+    # Create single legend on the right
+    legend_handles = [
+        plt.Rectangle((0, 0), 1, 1, fc=PASTEL_COLORS[i], label=f"Subsidy {int(subsidy)} Eur/MWh")
+        for i, subsidy in enumerate(subsidy_values[:3])
+    ]
+    legend_handles.append(
+        plt.Line2D([0], [0], linestyle="--", linewidth=2, color="black", label="Baseline (no closure)")
+    )
+    
+    fig.legend(handles=legend_handles, bbox_to_anchor=(1.12, 1.0))
 
     plt.tight_layout()
 
     if output_path:
-        plt.savefig(output_path, dpi=300)
+        plt.savefig(output_path, dpi=300, bbox_inches="tight")
     else:
         plt.show()
 
     plt.close()
-
 
 def map_name(name):
     mapping = {
@@ -270,7 +348,7 @@ def analyze_network_flows(subsidy, failed_element, base_folder):
     base = Path(base_folder)
 
     # 🔥 Apply mapping here as well (important!)
-    failed_element_mapped = map_name(failed_element)
+    failed_element_mapped = failed_element #map_name(failed_element)
 
     max_h2_dir = base / f"maxh2_{failed_element_mapped}"
     sub_dir = max_h2_dir / f"sub{subsidy}"
@@ -463,12 +541,16 @@ def network_plot_hydrogen_production(subsidy, failed_element, base_folder, outpu
             return np.power(intensity, 0.8)  # Adjust exponent for better contrast
 
         color_intensity = adjust_intensity(intensity)
-        color = interpolate_color(color_intensity)
 
         # Thickness scaling
         weight_intensity = total_flow / max_tot_flow if max_tot_flow > 0 else 0
         weight = 2 + 6 * np.power(weight_intensity, 0.3)
         
+        if total_flow == 0:
+            color = "#CCCCCC"
+            weight = 4
+        else:
+            color = interpolate_color(color_intensity)
 
         for line in lines:
             coords = [(lat, lon) for lon, lat in line.coords]
@@ -610,21 +692,29 @@ def map_name(name):
 # ---------------------------
 if __name__ == "__main__":
     base_folder_failure = f"study_case_model/figures/failure_experiment/{EXPERIMENT}/"
-    base_folder_no_failure = f"study_case_model/figures/subsidy_experiment/combined_runs_new/"
+    base_folder_no_failure = f"study_case_model/figures/failure_experiment/{EXPERIMENT}/maxh2_None/"
 
     sub_values = [30.0, 45.0, 70.0]
-
+    failed_elements = [
+        "KARSTO_to_DRAUPNER_S",
+        "KARSTO_to_DORNUM",
+        "VISUND",
+        "NORNE_ERB",
+    ]
     
     # Example: Plot network for one failure case
-    network_plot_hydrogen_production(subsidy=45.0, failed_element="KARSTO_to_DORNUM",
-                                      base_folder=base_folder_failure, 
-                                      output_folder="study_case_model/figures/failure_experiment/combine_results/")
+    for sub in sub_values:
+        for failed_element in failed_elements:
+            print(f"\nGenerating network plot for subsidy {sub} and failed element {failed_element}...")
+            network_plot_hydrogen_production(subsidy=sub, failed_element=failed_element,
+                                            base_folder=base_folder_failure,
+                                            output_folder="study_case_model/figures/failure_experiment/combine_results/")
 
     # Failure results
     summary_failure = analyze_failed_experiment(base_folder_failure)
 
     # Baseline results
-    baseline_summary = analyze_subsidy_experiment(base_folder_no_failure, deviation=0.0, sub_values=sub_values)
+    baseline_summary = analyze_subsidy_experiment(base_folder_no_failure,sub_values=sub_values)
 
     print("\nBaseline summary:")
     for sub, data in baseline_summary.items():
@@ -634,5 +724,46 @@ if __name__ == "__main__":
     plot_remaining_h2(
         summary_failure,
         baseline_summary=baseline_summary,
-        output_path="study_case_model/figures/failure_experiment/combine_results/remaining_h2.png"
+        output_path="study_case_model/figures/failure_experiment/combine_results/remaining_h2_generation.png",
+        failed_elements=[
+            "KARSTO_to_DRAUPNER_S",
+            "KARSTO_to_DORNUM",
+            # "DRAUPNER_S_to_DUNKERQUE",
+            # "H-7_BP_to_EMDEN",
+            "VISUND",
+            "NORNE_ERB"
+            "GJOA",
+        ],
+        failed_labels_custom={
+            "KARSTO_to_DRAUPNER_S": "KÅRSTØ → \n DRAUPNER S",
+            "KARSTO_to_DORNUM": "KÅRSTØ → \n DORNUM",
+            # "DRAUPNER_S_to_DUNKERQUE": "Pipeline: DRAUPNER S → DUNKERQUE",
+            # "H-7_BP_to_EMDEN": "Pipeline: H-7 BP → EMDEN",
+            "VISUND": "VISUND",
+            "NORNE_ERB": "NORNE ERB",
+            "GJOA": "GJØA",
+        },
+        type_failure="Pipeline / Generation Node"
+
     )
+
+    # plot_remaining_h2(
+    #     summary_failure,
+    #     baseline_summary=baseline_summary,
+    #     output_path="study_case_model/figures/failure_experiment/combine_results/remaining_h2_pipelines.png",
+    #     failed_elements=[
+    #         "KARSTO_to_DRAUPNER_S",
+    #         "KARSTO_to_DORNUM",
+    #         #"DRAUPNER_S_to_DUNKERQUE",
+    #         #"H-7_BP_to_EMDEN",
+
+    #     ],
+    #     failed_labels_custom={
+    #         "KARSTO_to_DRAUPNER_S": " KÅRSTØ → \n DRAUPNER S",
+    #         "KARSTO_to_DORNUM": "KÅRSTØ → \n DORNUM",
+    #         #"DRAUPNER_S_to_DUNKERQUE": " DRAUPNER S → \n DUNKERQUE",
+    #         #"H-7_BP_to_EMDEN": " H-7 BP → \n EMDEN",
+    #     },
+    #     type_failure="Pipeline"
+
+    # )

@@ -9,6 +9,7 @@ import geopandas as gpd
 import numbers
 import pandas as pd
 import ast
+import matplotlib.colors as mcolors
 
 EXPERIMENT = "combined_runs_new"
 LOAD_ONE_RUN = None #"run0"
@@ -1206,48 +1207,437 @@ def network_plot_hydrogen_production(subsidy, deviation, base_folder, output_fol
     return m
 
 
+def compute_overprovision(snapshot):
+    """
+    Compute entry and exit overprovision values from a snapshot.
+
+    Returns:
+        entry_overprovisions (list), exit_overprovisions (list)
+    """
+
+    f_vals = snapshot["variables"]["f"]
+    entry_vals = snapshot["variables"]["x_entry"]
+    exit_vals = snapshot["variables"]["x_exit"]
+
+    # =========================
+    # Total capacity per node
+    # =========================
+    entry_overprovision = []
+    exit_overprovision = []
+
+    M_3 = set(s for (a_in, a_out, c, s) in f_vals.keys())
+    K = [1,2,3]
+
+    N = set(n for (n, k, s) in entry_vals.keys())
+
+    for s in M_3:
+        entry_overprovision_nodes = 0
+        exit_overprovision_nodes = 0
+        entry_amount = 0
+        exit_amount = 0
+
+        for n in N:
+
+            entry_val = 0
+            exit_val = 0
+
+            for k in K:
+                if k ==1:
+                    s_prime =1
+                elif k ==2:
+                    s_prime = (s-1) // 8 +1
+                else:
+                    s_prime = s
+                # average over scenarios of that stage
+                entry_val += entry_vals[n, k, s_prime]
+                exit_val += exit_vals[n, k, s_prime]
+
+            inflow = sum(val for (a_in, a_out, c, s_prime), val in f_vals.items() if a_out == n and s_prime == s )
+            outflow = sum(val for (a_in, a_out, c, s_prime), val in f_vals.items() if a_in == n and s_prime == s )
+
+
+            net_flow = inflow - outflow
+            # if abs(net_flow) > 1:
+            #     print(n, net_flow)
+
+
+            if net_flow >0.01:
+                e_overprovision = entry_val
+                ex_overprovision = max(exit_val - net_flow, 0)
+                # print(n, e_overprovision)
+                # print(n, ex_overprovision)
+            elif net_flow < -0.01:
+                e_overprovision = max(entry_val + net_flow, 0)
+                ex_overprovision = exit_val
+                # print(n, e_overprovision)
+                # print(n, ex_overprovision)
+            else:
+                e_overprovision = 0
+                ex_overprovision = 0
+                entry_val =0 
+                ex_val = 0
+
+            
+            entry_overprovision_nodes += e_overprovision
+            exit_overprovision_nodes += ex_overprovision
+            entry_amount += entry_val
+            exit_amount += exit_val
+        
+        entry_overprovision.append(entry_overprovision_nodes/ entry_amount if entry_amount > 0 else 0)
+        exit_overprovision.append(exit_overprovision_nodes/ exit_amount if exit_amount > 0 else 0)
+
+    return entry_overprovision, exit_overprovision
+
+def analyze_overprovision(base_folder, deviation, subsidy):
+    base = Path(base_folder)
+
+    dev_dir = base / f"dev{deviation}"
+    sub_dir = dev_dir / f"sub{subsidy}"
+    print(sub_dir)
+    entry_overprovisions = []
+    exit_overprovisions = []
+
+    for run_dir in sorted(sub_dir.glob("run*/")):
+        files = list(run_dir.glob("*.pkl"))
+        if not files:
+            continue
+
+        with open(files[0], "rb") as f:
+            snapshot = pickle.load(f)
+            entry_overprovision, exit_overprovision = compute_overprovision(snapshot)
+            entry_overprovisions.append(np.mean(entry_overprovision))
+            exit_overprovisions.append(np.mean(exit_overprovision))
+
+    return entry_overprovisions, exit_overprovisions
+
+
+def adjust_color(color, factor=0.7):
+    """
+    Darken (<1) or lighten (>1) a color.
+    """
+    rgb = np.array(mcolors.to_rgb(color))
+    if factor < 1:
+        return tuple(rgb * factor)  # darken
+    else:
+        return tuple(1 - (1 - rgb) / factor)  # lighten
+
+
+def plot_overprovision_distribution(base_folder, deviation, subsidies, folder="figures/", show=False):
+    """
+    Create violin plots for entry and exit overprovisions across subsidies.
+
+    Args:
+        base_folder: path to experiment folder
+        deviation: deviation value
+        subsidies: list of subsidy values
+        folder: output folder
+        show: whether to display plot
+    """
+
+    # =========================
+    # Collect data
+    # =========================
+    arc_data_selected = []
+
+    for sub in subsidies:
+        entry, exit_ = analyze_overprovision(base_folder, deviation, sub)
+
+        entry = [e *100 for e in entry]
+        exit_ = [e * 100 for e in exit_]
+
+        arc_data_selected.append({
+            "label": f"{int(sub)}",
+            "entry": entry,
+            "exit": exit_
+        })
+
+    # =========================
+    # Prepare plotting data
+    # =========================
+    data = []
+    labels = []
+    positions = []
+
+    pos = 1
+    spacing = 1.5
+
+    for d in arc_data_selected:
+        # Entry (inlet)
+        data.append(d["entry"])
+        labels.append(f"{d['label']} \n (Entry)")
+        positions.append(pos)
+
+        # Exit (outlet)
+        data.append(d["exit"])
+        labels.append(f"{d['label']} \n (Exit)")
+        positions.append(pos + 0.6)
+
+        pos += spacing
+
+    # =========================
+    # Plot vertical violins
+    # =========================
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+
+    parts = ax.violinplot(
+        data,
+        positions=positions,
+        vert=True,
+        showmeans=False,
+        showmedians=False,
+        showextrema=False
+    )
+
+    # =========================
+    # Styling
+    # =========================
+    for i, pc in enumerate(parts['bodies']):
+        color_idx = i % 2
+        pc.set_facecolor(PASTEL_COLORS[color_idx % len(PASTEL_COLORS)])
+        pc.set_edgecolor(PASTEL_COLORS[color_idx % len(PASTEL_COLORS)])
+        pc.set_alpha(0.7)
+
+    # =========================
+    # Overlay TRUE data points
+    # =========================
+    for i, vals in enumerate(data):
+        vals = np.array(vals)
+
+        if len(vals) == 0:
+            continue
+
+        sorted_vals = np.sort(vals)
+        unique_vals, counts = np.unique(sorted_vals, return_counts=True)
+
+        x_positions = []
+        y_positions = []
+
+        for val, count in zip(unique_vals, counts):
+            offsets = [0] if count == 1 else np.linspace(-0.08, 0.08, count)
+            for offset in offsets:
+                x_positions.append(positions[i] + offset)
+                y_positions.append(val)
+
+        base_color = PASTEL_COLORS[i % 2]
+        point_color = adjust_color(base_color, factor=0.9)
+
+        ax.scatter(
+            x_positions,
+            y_positions,
+            s=14,
+            alpha=1,
+            color=point_color,
+            edgecolors='none'
+        )
+
+    # =========================
+    # Labels and layout
+    # =========================
+    ax.set_xticks(positions)
+    ax.set_xticklabels(labels)
+    ax.grid(alpha=0.3, axis="y")
+
+    ax.set_xlabel("Subsidy (Euro/Mwh)")
+    ax.set_ylabel("Overprovision (%)")
+    ax.set_title(f"Entry and Exit Overprovision Distributions (Deviation: {int(deviation*100)}%)")
+
+    plt.tight_layout()
+    Path(folder).mkdir(parents=True, exist_ok=True)
+    plt.savefig(f"{folder}/overprovision_violin_dev{deviation}.png")
+
+    if show:
+        plt.show()
+
+    plt.close(fig)
+
+def plot_overprovision_bar(base_folder, deviation, subsidies, folder="figures/", show=False):
+    """
+    Create bar plot (mean + std) for entry and exit overprovisions across subsidies.
+    """
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from pathlib import Path
+
+    entry_means, exit_means = [], []
+    entry_stds, exit_stds = [], []
+
+    # =========================
+    # Collect + summarize data
+    # =========================
+    for sub in subsidies:
+        entry, exit_ = analyze_overprovision(base_folder, deviation, sub)
+
+        entry = np.array(entry) * 100
+        exit_ = np.array(exit_) * 100
+
+        entry_means.append(np.mean(entry) if len(entry) else 0)
+        exit_means.append(np.mean(exit_) if len(exit_) else 0)
+
+        entry_stds.append(np.std(entry) if len(entry) else 0)
+        exit_stds.append(np.std(exit_) if len(exit_) else 0)
+
+    # =========================
+    # Plot
+    # =========================
+    x = np.arange(len(subsidies))
+    width = 0.35
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Standard errors
+    entry_ses = [std / np.sqrt(3) for std in entry_stds]
+    exit_ses  = [std / np.sqrt(3) for std in exit_stds]
+
+    # ---- ENTRY ----
+    # Main bar (add outline)
+    ax.bar(
+        x - width/2,
+        entry_means,
+        width,
+        label="Entry Capacity",
+        color=PASTEL_COLORS[0],
+        alpha=1,
+        edgecolor=adjust_color(PASTEL_COLORS[0], factor=0.6),
+        linewidth=1.0
+    )
+
+    # Error band (fill)
+    entry_bottom = [m - se for m, se in zip(entry_means, entry_ses)]
+    entry_top    = [m + se for m, se in zip(entry_means, entry_ses)]
+
+    ax.bar(
+        x - width/2,
+        [2 * se for se in entry_ses],
+        width,
+        bottom=entry_bottom,
+        color=adjust_color(PASTEL_COLORS[0], factor=1.15),
+        alpha=0.2,
+        edgecolor='none'
+    )
+
+    # Dashed top & bottom خطوط
+    for xi, low, high in zip(x - width/2, entry_bottom, entry_top):
+        ax.hlines(high, xi - width/2, xi + width/2,
+                colors=adjust_color(PASTEL_COLORS[0], factor=0.6),
+                linestyles='dashed', linewidth=1)
+        ax.hlines(low, xi - width/2, xi + width/2,
+                colors=adjust_color(PASTEL_COLORS[0], factor=0.6),
+                linestyles='dashed', linewidth=1)
+
+
+    # ---- EXIT ----
+    # Main bar (add outline)
+    ax.bar(
+        x + width/2,
+        exit_means,
+        width,
+        label="Exit Capacity",
+        color=PASTEL_COLORS[1],
+        alpha=1,
+        edgecolor=adjust_color(PASTEL_COLORS[1], factor=0.6),
+        linewidth=1.0
+    )
+
+    # Error band (fill)
+    exit_bottom = [m - se for m, se in zip(exit_means, exit_ses)]
+    exit_top    = [m + se for m, se in zip(exit_means, exit_ses)]
+
+    ax.bar(
+        x + width/2,
+        [2 * se for se in exit_ses],
+        width,
+        bottom=exit_bottom,
+        color=adjust_color(PASTEL_COLORS[1], factor=1.15),
+        alpha=0.2,
+        edgecolor='none'
+    )
+
+    # Dashed top & bottom lines
+    for xi, low, high in zip(x + width/2, exit_bottom, exit_top):
+        ax.hlines(high, xi - width/2, xi + width/2,
+                colors=adjust_color(PASTEL_COLORS[1], factor=0.6),
+                linestyles='dashed', linewidth=1)
+        ax.hlines(low, xi - width/2, xi + width/2,
+                colors=adjust_color(PASTEL_COLORS[1], factor=0.6),
+                linestyles='dashed', linewidth=1)
+
+    # =========================
+    # Labels & layout
+    # =========================
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"{int(s)}" for s in subsidies])
+
+    ax.set_xlabel("Subsidy (Euro/MWh)")
+    ax.set_ylabel("Overprovision (%)")
+    ax.set_title(f"Average Overprovision (Deviation: {int(deviation*100)}%)")
+
+    ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+
+    plt.tight_layout()
+    Path(folder).mkdir(parents=True, exist_ok=True)
+    plt.savefig(f"{folder}/overprovision_bar_dev{deviation}.png")
+
+    if show:
+        plt.show()
+
+    plt.close(fig)
+    
+
 # ---------------------------
 # RUN
 # ---------------------------
 if __name__ == "__main__":
     base_folder = f"study_case_model/figures/subsidy_experiment/{EXPERIMENT}/"
-    sub_values = [30.0, 45.0, 70.0]
-    dev_values = [0.0, 0.1, 1.0]
+    sub_values = [0.0, 30.0, 45.0, 70.0]
+    # dev_values = [0.0, 0.1, 1.0]
 
-    for sub_value in sub_values:
-        for dev_value in dev_values:
-            network_plot_hydrogen_production(sub_value, dev_value, base_folder, f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/{EXPERIMENT}/")
+    # for sub_value in sub_values:
+    #     for dev_value in dev_values:
+    #         network_plot_hydrogen_production(sub_value, dev_value, base_folder, f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/{EXPERIMENT}/")
 
-    results = analyze_experiment(base_folder)
+    # results = analyze_experiment(base_folder)
 
+    # if LOAD_ONE_RUN:
+    #     plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+    #     plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+    #     plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+    #     plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+    #     plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+    # else:
+    #     plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+    #     plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+    #     plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], "study_case_model/figures/subsidy_experiment/combined_results/")
+    #     plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/")
+    #     plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/")
+
+    # objective_dict = analyze_objectives(base_folder)
+
+    # if LOAD_ONE_RUN:
+    #     plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
+    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
+    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
+    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
+    # else:
+    #     plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
+    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
+    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
+    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
+
+    sub_values = [0.0, 25.0, 30.0, 36.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0]
+    sub_values = [0.0, 30.0, 40.0, 50.0, 60.0, 70.0]
+    dev = 0.0
     if LOAD_ONE_RUN:
-        plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        #plot_overprovision_distribution(base_folder,deviation=0.0,subsidies= sub_values, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_overprovision_bar(base_folder,deviation=dev,subsidies= sub_values, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
     else:
-        plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], "study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/")
-
-    objective_dict = analyze_objectives(base_folder)
-
-    if LOAD_ONE_RUN:
-        plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
-    else:
-        plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
+        #plot_overprovision_distribution(base_folder,deviation=0.0,subsidies= sub_values, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_overprovision_bar(base_folder,deviation=dev,subsidies= sub_values, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
