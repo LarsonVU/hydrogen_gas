@@ -1,7 +1,5 @@
 from study_case_problem_file import build_base_graph, create_scenarios, generate_cutting_plane_pairs
 from study_case_figures import plot_results
-import matplotlib.pyplot as plt
-import matplotlib
 #matplotlib.use('Agg')  # Ensure it works in Codespaces terminal
 import pyomo.environ as pyo
 import networkx
@@ -15,6 +13,7 @@ from datetime import datetime
 import shutil
 import yaml
 from pathlib import Path
+from pyomo.opt import TerminationCondition, SolverStatus
 
 with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
@@ -28,7 +27,7 @@ for path in [FIGURES_FOLDER, PICKLE_FILE]:
 
 
 NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1: 1, 2: 1, 3: 1}
+BRANCHES_PER_STAGE = {1: 1, 2: 8, 3: 8}
 ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 
 NUMBER_OF_DENSITY_BOUNDS = 1
@@ -569,7 +568,7 @@ def add_weymouth_constraints(model):
 
     model.upperbound_rho = pyo.Constraint(model.A, model.Z_theta, model.M[3], rule=upperbound_rho_rule)
 
-    # Cutting planes
+    # Cutting planes (linearized weymouth expression)
     def weymouth_cutting_plane_rule(m, a1, a2, z, l, m_3):
         total_flow = sum(m.f[a1, a2, c, m_3] for c in m.C)
 
@@ -622,6 +621,7 @@ def add_pressure_constraints(model):
 
 def add_compression_constraints(model):
 
+    # Fuel consumption (van der hoeven 2004)
     def fuel_consumption_rule(m, n, c, m_3):
         if n in m.N_gamma and len(m.A_n_minus[n]) >0 and len(m.A_n_plus[n]) >0:
             a = m.A_n_minus[n].first()
@@ -636,6 +636,7 @@ def add_compression_constraints(model):
 
     model.fuel_consumption = pyo.Constraint(model.N_gamma, model.C, model.M[3], rule=fuel_consumption_rule)
 
+    # Flow out =Flow in - Fuel
     def fuel_flow_balance_rule(m, n, c, m_3):
         if n in m.N_gamma :
             if len(m.A_n_minus[n]) >0 and len(m.A_n_plus[n]) >0:
@@ -646,6 +647,7 @@ def add_compression_constraints(model):
 
     model.fuel_flow_balance = pyo.Constraint(model.N_gamma, model.C, model.M[3], rule=fuel_flow_balance_rule)
 
+    # Compression increase (inlet * pressure increase = outlet)
     def compression_increase_rule(m, n, m_3):
         if n in m.N_gamma and len(m.A_n_minus[n]) >0 and len(m.A_n_plus[n]) >0:
             a = m.A_n_minus[n].first()
@@ -657,18 +659,19 @@ def add_compression_constraints(model):
 
 def add_quality_constraints(model):
 
-    # Pipe composition
+    # Pipe composition upper restriction
     def pipe_composition_max_rule(m, a1, a2, c, m_3):
         return m.f[a1, a2, c, m_3] <= m.q_plus_arc[a1, a2, c] * sum(m.f[a1, a2, cp, m_3] for cp in m.C)
 
     model.pipe_composition_max = pyo.Constraint(model.A, model.C, model.M[3], rule=pipe_composition_max_rule)
 
+    # Pipe composition lower restriction
     def pipe_composition_min_rule(m, a1, a2, c, m_3):
         return m.f[a1, a2, c, m_3] >= m.q_minus_arc[a1, a2, c] * sum(m.f[a1, a2, cp, m_3] for cp in m.C)
 
     model.pipe_composition_min = pyo.Constraint(model.A, model.C, model.M[3], rule=pipe_composition_min_rule)
 
-    # Market composition
+    # Market composition upper restriction
     def market_node_max_rule(m, n, c, m_3):
         return (
             sum(m.f[a, c, m_3] for a in m.A_n_plus[n])
@@ -677,6 +680,7 @@ def add_quality_constraints(model):
 
     model.market_node_max = pyo.Constraint(model.N_m, model.C, model.M[3], rule=market_node_max_rule)
 
+    # Market composition lower restriction
     def market_node_min_rule(m, n, c, m_3):
         return (
             sum(m.f[a, c, m_3] for a in m.A_n_plus[n])
@@ -687,7 +691,7 @@ def add_quality_constraints(model):
 
 
 def add_homogeneous_splitting_constraints(model):
-
+    # Only choose one split
     def SOS1_v(m, n, m_3):
         if len(model.Z_v[n]) == 0:
             return pyo.Constraint.Skip
@@ -696,6 +700,7 @@ def add_homogeneous_splitting_constraints(model):
 
     model.S1_v = pyo.Constraint(model.N_s, model.M[3], rule=SOS1_v)
 
+    #Link split to single choice
     def choice_v_flow_rule(m, n, z, m_3):
         if len(model.Z_v[n]) == 0:
             return pyo.Constraint.Skip
@@ -703,6 +708,7 @@ def add_homogeneous_splitting_constraints(model):
 
     model.choice_v_flow = pyo.Constraint(model.v_index, model.M[3], rule=choice_v_flow_rule)
 
+    # Let flow equal chosen split
     def homogeneous_split_rule(m, a1, a2, n, c, m_3):
         if len(model.Z_v[n]) == 0:
             return pyo.Constraint.Skip
@@ -713,10 +719,11 @@ def add_homogeneous_splitting_constraints(model):
     model.homogeneous_split = pyo.Constraint(model.A, model.N_s, model.C, model.M[3], rule=homogeneous_split_rule)
 
 def add_booking_constraints(model):
-    # Booking-flow consistency
+    # Booking-flow consistency (entry)
     def sufficient_entry_booking_rule(m, n, m_3):
         return sum(m.x_entry[n, k_prime, m_prime] for k_prime, m_prime in m.pred_chain[3, m_3]) >= sum(m.f[a, c, m_3] for a in m.A_n_minus[n] for c in m.C) - sum(m.f[a, c, m_3] for a in m.A_n_plus[n] for c in m.C)
 
+    # Booking-flow consistency (exit)
     def sufficient_exit_booking_rule(m, n, m_3):
         if n in m.N_gamma :
             return pyo.Constraint.Skip
@@ -913,9 +920,12 @@ if __name__ == "__main__":
 
     results = solve_model(model, time_limit= None, precision= 0.002)
     print(results)
-    plot_results(model, folder = FIGURES_FOLDER)
 
-    save_model_values(model, PICKLE_FILE)
+    if results.solver.termination_condition == TerminationCondition.optimal or  results.solver.status == SolverStatus.ok:
 
-    model_values = load_param_values(PICKLE_FILE)
-    print(model_values["variables"]["w"])
+        plot_results(model, folder = FIGURES_FOLDER)
+
+        save_model_values(model, PICKLE_FILE)
+
+        model_values = load_param_values(PICKLE_FILE)
+        print(model_values["variables"]["w"])

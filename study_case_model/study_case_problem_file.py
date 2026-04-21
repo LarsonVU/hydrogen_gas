@@ -14,9 +14,6 @@ from pathlib import Path
 with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
-
-np.random.seed(42)
-
 GEOJSON_FILE = Path(config["paths"]["geojson_output"])
 
 NUMBER_OF_STAGES = 3
@@ -138,9 +135,8 @@ def max_cutting_plane_pairs(
 
             for i in range(L):
                 val = plane(pin, pout, Pin[i], Pout[i])
-                approx = val
 
-            err = approx - true_val
+            err = val - true_val
             worst = max(worst, err)
         print(worst)
         return worst
@@ -309,7 +305,7 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
                 variance = float(node_data.get("demand_variance", 0))
                 
                 # Sample variance multiplier from normal distribution
-                variance_multiplier = np.random.normal(1, variance)
+                variance_multiplier = np.random.normal(1, variance) # Negative demand is equal to zero (unconstrained)
                 sampled_demand = max(avg_demand * variance_multiplier,0)
                 
                 # Apply supplier ratios if available
@@ -360,7 +356,7 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
 
     price_df.to_excel(filename, index=False)
 
-# This function is currently useless and repeats data, but allows for changes per scenario if needed
+# The complexity of this function is overdone and repeats data, but allows for changes per scenario if needed
 def add_generation_costs(scenarios, branches_per_stage = BRANCHES_PER_STAGE):
     for scenario in scenarios[3]:
         for node in scenario.G.nodes:

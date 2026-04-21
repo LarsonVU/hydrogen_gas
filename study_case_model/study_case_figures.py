@@ -864,7 +864,7 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
     # =========================
     exit_totals = df.groupby("node")["exit"].sum()
     exit_nodes = exit_totals[exit_totals > 0].sort_values(ascending=False).index
-    exit_nodes = [n for n in exit_nodes if any(flow_dif[n] < 0 for n in [n])]
+    exit_nodes = [n for n in exit_nodes if any(flow_dif[n] < -0.01 for n in [n])]
 
     if len(exit_nodes) > 0:
         exit_df = df[df["node"].isin(exit_nodes)]
