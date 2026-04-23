@@ -3,6 +3,7 @@ import os
 # =========================
 # Parameters (same as your script)
 # =========================
+# Different density of subsidies to illuminate trend
 subsidies = [0,25] + [26 + i * 2 for i in range(8)] + [45 + 5* i for i in range(5)] + [70]  # 0,5,...,80
 deviations = [0, 0.05, 0.1, 0.2 ,1]
 runs = 4

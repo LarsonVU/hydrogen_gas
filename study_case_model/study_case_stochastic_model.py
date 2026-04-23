@@ -33,6 +33,7 @@ ALLOWED_DEVIATION = 0  # x% deviation from nominal values for scenarios
 NUMBER_OF_DENSITY_BOUNDS = 1
 RHO_LOW = 0.55
 RHO_HIGH = 0.70
+SEED =42
 
 # Do not put this too high, can cause the model to slow down
 NUMBER_OF_HOMOGENEOUS_SPLITS =11
@@ -928,7 +929,7 @@ def print_select_model_values(value_dict = {}):
 
 if __name__ == "__main__":
     G = build_base_graph()
-    scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
+    scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, seed =SEED)
 
     model = create_model(G, scenarios, cutting_plane_pairs=generate_cutting_plane_pairs(method = "skewed"))
 

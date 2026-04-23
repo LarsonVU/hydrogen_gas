@@ -28,7 +28,7 @@ NUMBER_OF_CUTTING_PLANES_P_OUT = 10
 P_OUT_LOW = 40
 P_OUT_HIGH = 150
 
-def plot_grid(pairs, file_path):
+def plot_grid(pairs, file_path, method = "skewed"):
     os.makedirs(file_path, exist_ok=True)
     # Extract p_in and p_out values
     p_in_values = [pair[0] for pair in pairs]
@@ -58,7 +58,7 @@ def plot_grid(pairs, file_path):
     colorbar.set_label('Linearize approximation values')
 
     plt.tight_layout()
-    plt.savefig(file_path, dpi=300)
+    plt.savefig(file_path + f"_{method}", dpi=300)
     plt.show()
 
 
@@ -307,8 +307,17 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
                 
                 # Sample variance multiplier from normal distribution
                 variance_multiplier = np.random.normal(1, variance) # Negative demand is equal to zero (unconstrained)
+               
+                ### Alternative: Sample from log-normal distribution to ensure positivity, but right skewed demand
+                # tau2 = np.log(variance**2 + 1)  # Convert to log-space variance
+                # mu = -0.5 * tau2
+                # variance_multiplier = np.random.lognormal(mean=mu, sigma=np.sqrt(tau2))  # Sample from log-normal distribution
+                
+                # Ensure demand is non-negative
                 sampled_demand = max(avg_demand * variance_multiplier,0)
                 
+                
+
                 # Apply supplier ratios if available
                 if "supplier_ratios" in node_data and not pd.isna(node_data["supplier_ratios"]):
                     supplier_ratios = node_data["supplier_ratios"][0] if isinstance(node_data["supplier_ratios"], list) else node_data["supplier_ratios"]
@@ -336,6 +345,12 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
                 
                 # Sample price multiplier from normal distribution
                 price_multiplier = np.random.normal(1, price_std)
+
+                ### Alternative: Sample from log-normal distribution to ensure positivity, but right skewed prices
+                # tau2 = np.log(price_std**2 + 1)  # Convert to log-space variance
+                # mu = -0.5 * tau2
+                # price_multiplier = np.random.lognormal(mean=mu, sigma=np.sqrt(tau2))  # Sample from log-normal distribution
+                
                 sampled_price = avg_price * price_multiplier
                 
                 scenario.G.nodes[node]["price"] = sampled_price
@@ -349,6 +364,11 @@ def add_price_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, file
                     price_std = float(node_data.get("day_ahead_price_std", 0))
                     # Sample price multiplier from normal distribution
                     price_multiplier = np.random.normal(1, price_std)
+                        ### Alternative: Sample from log-normal distribution to ensure positivity, but right skewed prices
+                        # tau2 = np.log(price_std**2 + 1)  # Convert to log-space variance
+                        # mu = -0.5 * tau2
+                        # price_multiplier = np.random.lognormal(mean=mu, sigma=np.sqrt(tau2))
+                    # Only apply lower bound in stage three to allow stage 2 to flip back
                     price = max(predecessor.G.nodes[node]["price"] * price_multiplier, 0)
                     scenario.G.nodes[node]["price"] = price
                     price_df.loc[len(price_df)] = [scenario.stage, scenario.index, node, price]
@@ -373,7 +393,7 @@ def add_booking_costs(scenarios, branches_per_stage = BRANCHES_PER_STAGE, percen
                     scenario.G.nodes[node]["booking_cost"] = scenario.G.nodes[node]["base_booking_cost"] * (1+percentage_increase.get(k, 0)) * 1000000 # Cost in euro/MScm
                     
                     
-def add_scenario_attributes(scenarios, branches_per_stage = BRANCHES_PER_STAGE, folder = "study_case_model/scenario_variables/"):
+def add_scenario_attributes(scenarios, branches_per_stage = BRANCHES_PER_STAGE, folder = Path("study_case_model/scenario_variables/")):
     add_demand_scenarios(scenarios, branches_per_stage=branches_per_stage, filename=folder + f"demand_scenarios{''.join(str(v) for v in branches_per_stage.values())}.xlsx") 
     add_price_scenarios(scenarios, branches_per_stage=branches_per_stage, filename=folder + f"price_scenarios{''.join(str(v) for v in branches_per_stage.values())}.xlsx")
     add_generation_costs(scenarios, branches_per_stage=branches_per_stage)
@@ -424,10 +444,10 @@ if __name__ == "__main__":
     print(G)
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, seed=1, folder=SCENARIO_VARIABLES_FOLDER)
     cutting_plane = generate_cutting_plane_pairs(method= "skewed")
-    plot_grid(cutting_plane, file_path = config["paths"]["figures_cutting_planes"])
+    plot_grid(cutting_plane, file_path = config["paths"]["figures_cutting_plane"])
 
-    # cutting_plane = generate_cutting_plane_pairs(method= "max")
-    # plot_grid(cutting_plane, file_path = config["paths"]["figures_cutting_planes"])
+    cutting_plane = generate_cutting_plane_pairs(method= "max")
+    plot_grid(cutting_plane, file_path = config["paths"]["figures_cutting_plane"], method = "max")
 
     #Print a specific scenario for verification
     print_nodes_network_scenario(scenarios[3][4])
