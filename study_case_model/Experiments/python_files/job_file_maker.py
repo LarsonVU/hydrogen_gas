@@ -8,17 +8,17 @@ subsidies = [0,25] + [26 + i * 2 for i in range(8)] + [45 + 5* i for i in range(
 deviations = [0, 0.05, 0.1, 0.2 ,1]
 runs = 4
 
-data_folder = "study_case_model/scenario_variables/subsidy_experiment/run_06426/"
-pickle_folder = "study_case_model/figures/subsidy_experiment/run_06426/"
+data_folder = "study_case_model/scenario_variables/subsidy_experiment/run_24426/"
+pickle_folder = "study_case_model/figures/subsidy_experiment/run_24426/"
 threads = 48
-output_file = "study_case_model/Experiments/slurm_files/jobs_06426.txt"
+output_file = "study_case_model/Experiments/slurm_files/jobs_24426.txt"
 precision = 0.002
 
 # =========================
 # Generate jobs
 # =========================
 lines = []
-for run_idx in range(5,runs +5):
+for run_idx in range(0,runs):
     for dev_idx, dev in enumerate(deviations):
         for sub_idx, sub in enumerate(subsidies):
             cmd = (

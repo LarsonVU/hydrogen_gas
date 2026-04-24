@@ -6,22 +6,23 @@ from folium.features import DivIcon
 import numpy as np
 import numbers
 import pandas as pd
+import yaml
+import os
+
+# -------------------------------
+# Load config
+# -------------------------------
+config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config.yaml')
+with open(config_path, 'r') as file:
+    config = yaml.safe_load(file)
 
 # -------------------------------
 # Config
 # -------------------------------
 
-FOLDER = "data/data_analysis_results/Geojson_pipelines/"
-input_path = FOLDER + f"study_case_network.geojson"
-output_html = "data/data_analysis_results/graphed_pipeline_network.html"
-
-# Smaller network
-# input_path = FOLDER + f"smaller_network.geojson"
-# output_html = "data/data_analysis_results/graphed_smaller_network.html"
-
-# Bigger Network
-input_path = FOLDER + f"bigger_network.geojson"
-output_html = "data/data_analysis_results/graphed_bigger_network.html"
+# Bigger Network (also use: smaller_network_geojson for smaller network and study_case_network_geojson for study case network)
+input_path = config['paths']['bigger_network_geojson']
+output_html = config['paths']['graphed_bigger_network']
 
 # -------------------------------
 # Load data

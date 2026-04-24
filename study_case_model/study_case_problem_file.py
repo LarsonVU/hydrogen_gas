@@ -306,12 +306,12 @@ def add_demand_scenarios(scenarios, branches_per_stage = BRANCHES_PER_STAGE, fil
                 variance = float(node_data.get("demand_variance", 0))
                 
                 # Sample variance multiplier from normal distribution
-                variance_multiplier = np.random.normal(1, variance) # Negative demand is equal to zero (unconstrained)
+                #variance_multiplier = np.random.normal(1, variance) # Negative demand is equal to zero (unconstrained)
                
-                ### Alternative: Sample from log-normal distribution to ensure positivity, but right skewed demand
-                # tau2 = np.log(variance**2 + 1)  # Convert to log-space variance
-                # mu = -0.5 * tau2
-                # variance_multiplier = np.random.lognormal(mean=mu, sigma=np.sqrt(tau2))  # Sample from log-normal distribution
+                ### Alternative: Sample from log-normal distribution to ensure positivity, with right skewed demand
+                tau2 = np.log(variance**2 + 1)  # Convert to log-space variance
+                mu = -0.5 * tau2
+                variance_multiplier = np.random.lognormal(mean=mu, sigma=np.sqrt(tau2))  # Sample from log-normal distribution
                 
                 # Ensure demand is non-negative
                 sampled_demand = max(avg_demand * variance_multiplier,0)
