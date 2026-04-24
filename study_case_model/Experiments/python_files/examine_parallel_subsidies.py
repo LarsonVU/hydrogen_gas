@@ -12,7 +12,7 @@ sys.path.append(str(ROOT))
 
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scpf
-from study_case_model.Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy
+from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy
 
 
 # =========================
