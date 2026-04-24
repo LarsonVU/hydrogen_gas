@@ -1,6 +1,6 @@
 #!/bin/bash
 # Set Job Requirements
-#SBATCH -t 48:00:00
+#SBATCH -t 8:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=48
@@ -26,4 +26,4 @@ source activate hydrogen_venv
 cd $HOME/projects/hydrogen_gas
 
 i=${SLURM_ARRAY_TASK_ID}
-$(head -$i study_case_model/Experiments/slurm_files/jobs_06426.txt | tail -1)
+$(head -$i study_case_model/Experiments/slurm_files/jobs_24426.txt | tail -1)
