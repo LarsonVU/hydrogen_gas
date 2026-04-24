@@ -8,14 +8,14 @@ import pandas as pd
 import os
 from scipy.optimize import minimize
 import matplotlib.colors as mcolors
-import yaml
+# import yaml
 from pathlib import Path
 
-with open("config.yaml", "r") as f:
-    config = yaml.safe_load(f)
+# with open("config.yaml", "r") as f:
+#     config = yaml.safe_load(f)
 
-GEOJSON_FILE = Path(config["paths"]["geojson_output"])
-SCENARIO_VARIABLES_FOLDER = Path(config["paths"]["scenario_variables"])
+GEOJSON_FILE = "data/data_analysis_results/Geojson_pipelines/study_case_network.geojson" #Path(config["paths"]["geojson_output"])
+SCENARIO_VARIABLES_FOLDER = "study_case_model/scenario_variables/" #Path(config["paths"]["scenario_variables"])
 
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1 : 1, 2 : 5, 3: 1}
@@ -444,10 +444,10 @@ if __name__ == "__main__":
     print(G)
     scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, seed=1, folder=SCENARIO_VARIABLES_FOLDER)
     cutting_plane = generate_cutting_plane_pairs(method= "skewed")
-    plot_grid(cutting_plane, file_path = config["paths"]["figures_cutting_plane"])
+    plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/") #config["paths"]["figures_cutting_plane"])
 
     cutting_plane = generate_cutting_plane_pairs(method= "max")
-    plot_grid(cutting_plane, file_path = config["paths"]["figures_cutting_plane"], method = "max")
+    plot_grid(cutting_plane, file_path = "study_case_model/figures/cutting_plane_grid/", method = "max") #config["paths"]["figures_cutting_plane"], method = "max")
 
     #Print a specific scenario for verification
     print_nodes_network_scenario(scenarios[3][4])
