@@ -21,9 +21,9 @@ from pyomo.opt import TerminationCondition, SolverStatus
 FIGURES_FOLDER =  "study_case_model/figures/main_run/" #Path(config["paths"]["figures"])
 PICKLE_FILE = "study_case_model/scenario_variables/main_model.pkl"#Path(config["paths"]["pickle_file"])
 
-for path in [FIGURES_FOLDER, PICKLE_FILE]:
-    if not path.exists():
-        raise FileNotFoundError(f"Missing file: {path}")
+# for path in [FIGURES_FOLDER, PICKLE_FILE]:
+#     if not path.exists():
+#         raise FileNotFoundError(f"Missing file: {path}")
 
 
 NUMBER_OF_STAGES = 3
