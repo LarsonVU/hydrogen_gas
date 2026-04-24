@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=48
 #SBATCH --partition=genoa
-#SBATCH --array=1-320%9
+#SBATCH --array=1-320%6
 #SBATCH --output=logs/%A_%a.out
 #SBATCH --mail-type=BEGIN,FAIL,END
 #SBATCH --mail-user=l.m.j.beemster@student.vu.nl
