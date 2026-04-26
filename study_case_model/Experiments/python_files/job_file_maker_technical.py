@@ -7,8 +7,8 @@ subsidies = [30, 45, 70]
 allowed_hydrogen = np.linspace(0, 0.2, 21) 
 runs = 4
 
-data_folder = "study_case_model/scenario_variables/technical_experiment/run_10426/"
-pickle_folder = "study_case_model/figures/technical_experiment/run_10426/"
+data_folder = "study_case_model/scenario_variables/technical_experiment/run_26426/"
+pickle_folder = "study_case_model/figures/technical_experiment/run_26426/"
 threads = 48
 output_file = "study_case_model/Experiments/slurm_files/technical_jobs.txt"
 precision = 0.002

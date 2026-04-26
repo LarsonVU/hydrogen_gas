@@ -11,7 +11,7 @@ import pandas as pd
 import ast
 import matplotlib.colors as mcolors
 
-EXPERIMENT = "combined_runs_new"
+EXPERIMENT = "run_24426"
 LOAD_ONE_RUN = None #"run0"
 MINIMUM_RUNS = 2
 HYDROGEN_MSCM_MWH = 2.78 * 1000 
@@ -1592,48 +1592,48 @@ def plot_overprovision_bar(base_folder, deviation, subsidies, folder="figures/",
 if __name__ == "__main__":
     base_folder = f"study_case_model/figures/subsidy_experiment/{EXPERIMENT}/"
     sub_values = [0.0, 30.0, 45.0, 70.0]
-    # dev_values = [0.0, 0.1, 1.0]
+    dev_values = [0.0, 0.1, 1.0]
 
-    # for sub_value in sub_values:
-    #     for dev_value in dev_values:
-    #         network_plot_hydrogen_production(sub_value, dev_value, base_folder, f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/{EXPERIMENT}/")
+    for sub_value in sub_values:
+        for dev_value in dev_values:
+            network_plot_hydrogen_production(sub_value, dev_value, base_folder, f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/{EXPERIMENT}/")
 
-    # results = analyze_experiment(base_folder)
+    results = analyze_experiment(base_folder)
 
-    # if LOAD_ONE_RUN:
-    #     plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-    #     plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-    #     plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-    #     plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-    #     plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-    # else:
-    #     plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-    #     plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-    #     plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], "study_case_model/figures/subsidy_experiment/combined_results/")
-    #     plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/")
-    #     plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/")
+    if LOAD_ONE_RUN:
+        plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+    else:
+        plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], "study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/")
 
-    # objective_dict = analyze_objectives(base_folder)
+    objective_dict = analyze_objectives(base_folder)
 
-    # if LOAD_ONE_RUN:
-    #     plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
-    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
-    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
-    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
-    # else:
-    #     plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
-    #     plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
-    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
-    #     plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
+    if LOAD_ONE_RUN:
+        plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
+    else:
+        plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
 
     sub_values = [0.0, 25.0, 30.0, 36.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0]
-    sub_values = [0.0, 30.0, 40.0, 50.0, 60.0, 70.0]
+    #sub_values = [0.0, 30.0, 40.0, 50.0, 60.0, 70.0]
     dev = 0.0
     if LOAD_ONE_RUN:
         #plot_overprovision_distribution(base_folder,deviation=0.0,subsidies= sub_values, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
