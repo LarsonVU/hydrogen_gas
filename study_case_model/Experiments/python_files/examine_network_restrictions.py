@@ -5,12 +5,12 @@ import sys
 import os
 import argparse
 from pathlib import Path
-from study_case_model.Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy, apply_technical_restriction_h2
 
 # Add parent directory
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
 
+from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy, apply_technical_restriction_h2
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scpf
 
