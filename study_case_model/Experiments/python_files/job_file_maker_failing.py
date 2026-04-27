@@ -3,14 +3,14 @@ import numpy as np
 # =========================
 # Parameters (same as your script)
 # =========================
-subsidies = [30, 45, 70] 
+subsidies = [0, 30, 45, 70] 
 generation_plants = ["GJOA", "VISUND", "NORNE_ERB", "None"]  # Include None to represent no plant failure
 pipelines = [("KARSTO", "DRAUPNER_S"), ("KARSTO", "DORNUM"), ("DRAUPNER_S", "DUNKERQUE"), ("H-7_BP", "EMDEN")]
 
 runs = 4
 
-data_folder = "study_case_model/scenario_variables/failure_experiment/run_14426/"
-pickle_folder = "study_case_model/figures/failure_experiment/run_14426/"
+data_folder = "study_case_model/scenario_variables/failure_experiment/run_27426/"
+pickle_folder = "study_case_model/figures/failure_experiment/run_27426/"
 threads = 48
 output_file = "study_case_model/Experiments/slurm_files/failure_jobs.txt"
 precision = 0.002
