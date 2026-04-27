@@ -51,7 +51,7 @@ sys.path.append(str(ROOT))
 
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scpf
-
+from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy
 
 # =========================
 # Argument parsing
@@ -74,7 +74,7 @@ parser.add_argument("--pickle_folder", type=str, default="study_case_model/figur
 parser.add_argument("--output_csv", type=str, default="study_case_model/figures/vss/vss_results.csv")
 
 # Additional runs for statistical significance
-parser.add_argument("--n_runs", type=int, default=1,
+parser.add_argument("--n_runs", type=int, default=20,
                     help="Number of independent runs (each with different seed)")
 
 args = parser.parse_args()
@@ -87,22 +87,6 @@ NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1: 1, 2: args.branches_stage2, 3: args.branches_stage3}
 
 
-# =========================
-# Helper functions
-# =========================
-def subsidy_per_mwh_to_mscm(mwh_subsidy, gcv_mwh_per_kscm=2.78):
-    return mwh_subsidy * gcv_mwh_per_kscm * 1000
-
-
-def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
-    G_changed = G.copy()
-    for node in G.nodes:
-        if not pd.isna(G.nodes[node][variable_name]):
-            if G.nodes[node]["component_ratio"]["H2"] > 0:
-                G_changed.nodes[node][variable_name] = (
-                    float(G.nodes[node][variable_name]) - subsidy_value
-                )
-    return G_changed
 
 
 def create_deterministic_scenarios(G, folder):
@@ -206,6 +190,60 @@ def fix_first_stage_decisions(stoch_model, ev_model):
     return stoch_model
 
 
+def build_single_path_scenarios(leaf_scenario):
+    """Build a single deterministic scenario tree for one stage-3 path."""
+    if leaf_scenario.stage != 3:
+        raise ValueError("leaf_scenario must be a stage-3 leaf")
+
+    stage2 = leaf_scenario.predecessor
+    if stage2 is None or stage2.predecessor is None:
+        raise ValueError("leaf_scenario is missing its predecessor chain")
+
+    stage1 = stage2.predecessor
+
+    scenario1 = scpf.Scenario(1, 1, 1.0, stage1.G.copy())
+    scenario2 = scpf.Scenario(2, 1, 1.0, stage2.G.copy(), predecessor=scenario1)
+    scenario3 = scpf.Scenario(3, 1, 1.0, leaf_scenario.G.copy(), predecessor=scenario2)
+
+    return {1: [scenario1], 2: [scenario2], 3: [scenario3]}
+
+
+def compute_evpi(network, leaf_scenarios, allowed_deviation, number_of_density_bounds, threads, precision, time_limit, seed):
+    """Compute the expected value of perfect information (EVPI)."""
+    evpi = 0.0
+    total_prob = 0.0
+
+    for leaf in leaf_scenarios:
+        deterministic_scenarios = build_single_path_scenarios(leaf)
+        model_ws = scsm.create_model(
+            network, deterministic_scenarios,
+            allowed_deviation=allowed_deviation,
+            number_of_density_bounds=number_of_density_bounds
+        )
+
+        node_file = os.path.join(os.environ.get("TMPDIR", "/tmp"), f"gurobi_evpi_run{seed}_scenario{leaf.index}")
+        try:
+            scsm.solve_model(
+                model_ws, threads=threads, verbose=False,
+                precision=precision, time_limit=time_limit,
+                node_file_folder=node_file
+            )
+            objective = pyo.value(model_ws.objective)
+            if objective is None:
+                raise ValueError("Objective is None after solve")
+
+            evpi += leaf.probability * objective
+            total_prob += leaf.probability
+        except Exception as e:
+            print(f"  WARNING: EVPI solve failed for leaf scenario {leaf.index}: {e}")
+            return None
+
+    if not np.isclose(total_prob, 1.0):
+        print(f"  WARNING: total leaf probability = {total_prob:.6f} (expected 1.0)")
+
+    return evpi
+
+
 def extract_vss_metrics(model, label):
     """Extract objective and key metrics from a solved model."""
     metrics = {"model_type": label}
@@ -282,6 +320,21 @@ if __name__ == "__main__":
             continue
 
         scsm.save_model_values(model_rp, os.path.join(pickle_folder_rp, "model_snapshot.pkl"))
+
+        # ---- EVPI: Solve each leaf deterministically and average ----
+        print("\n[EVPI] Solving each scenario deterministically for perfect information...")
+        EV_PI = compute_evpi(
+            G, scenarios_rp[3],
+            allowed_deviation=args.deviation,
+            number_of_density_bounds=args.upper_bounds,
+            threads=args.threads,
+            precision=args.precision,
+            time_limit=args.time_limit,
+            seed=seed
+        )
+        EVPI = None if EV_PI is None or RP is None else EV_PI - RP
+        print(f"  EV_PI expected objective: {EV_PI}")
+        print(f"  EVPI (EV_PI - RP): {EVPI}")
 
         # ---- Step 2: Solve deterministic (EV) model ----
         print("\n[Step 2] Solving deterministic Expected Value model...")
@@ -372,6 +425,8 @@ if __name__ == "__main__":
         print(f"  EEV (EV decisions)  = {EEV:,.2f}" if EEV else "  EEV = N/A (infeasible)")
         print(f"  VSS = RP - EEV      = {VSS:,.2f}" if VSS else "  VSS = N/A")
         print(f"  VSS as % of RP      = {VSS_pct:.2f}%" if VSS_pct else "  VSS% = N/A")
+        print(f"  EV_PI (perfect info) = {EV_PI:,.2f}" if EV_PI else "  EV_PI = N/A")
+        print(f"  EVPI = EV_PI - RP    = {EVPI:,.2f}" if EVPI is not None else "  EVPI = N/A")
 
         if EEV is not None and EEV > RP:
             print(f"  WARNING: EEV > RP — this should not happen. Check model consistency.")
@@ -386,6 +441,8 @@ if __name__ == "__main__":
             "RP": RP,
             "EV": EV,
             "EEV": EEV,
+            "EV_PI": EV_PI,
+            "EVPI": EVPI,
             "VSS": VSS,
             "VSS_pct": VSS_pct,
             # RP details
@@ -423,5 +480,13 @@ if __name__ == "__main__":
                 print(f"  → Stochastic formulation provides MODERATE value over deterministic.")
             else:
                 print(f"  → Stochastic formulation provides MARGINAL value — consider if complexity is justified.")
+
+        evpi_values = [r["EVPI"] for r in all_results if r.get("EVPI") is not None]
+        if evpi_values:
+            print(f"\n  EVPI summary across {len(evpi_values)} runs:")
+            print(f"    Mean EVPI: {np.mean(evpi_values):,.2f}")
+            print(f"    Std EVPI:  {np.std(evpi_values):,.2f}")
+            print(f"    Min EVPI:  {np.min(evpi_values):,.2f}")
+            print(f"    Max EVPI:  {np.max(evpi_values):,.2f}")
 
     print("\nFinished VSS experiment!", flush=True)

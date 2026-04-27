@@ -11,7 +11,7 @@ import numbers
 import matplotlib.colors as mcolors
 
 
-EXPERIMENT = "run_14426"
+EXPERIMENT = "run_27426"
 LOAD_ONE_RUN = None  # "run0"
 MINIMUM_RUNS = 2
 HYDROGEN_MSCM_MWH = 2.78 * 1000 
@@ -186,7 +186,7 @@ def adjust_color(color, factor=0.7):
 # ---------------------------
 # PLOTTING
 # ---------------------------
-def plot_remaining_h2(summary, baseline_summary=None, output_path=None, failed_elements=None, failed_labels_custom=None, type_failure = "Generation Node"):
+def  plot_remaining_h2(summary, baseline_summary=None, output_path=None, failed_elements=None, failed_labels_custom=None, type_failure = "Generation Node"):
     """
     Plot remaining H2 production for failed scenarios.
     
@@ -227,10 +227,10 @@ def plot_remaining_h2(summary, baseline_summary=None, output_path=None, failed_e
     x = np.arange(len(display_labels))
     width = 0.4
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    fig, axes = plt.subplots(1, len(subsidy_values), figsize=(18, 6))
 
-    y_lim = [1, 10, 10]
-    for plot_idx, subsidy in enumerate(subsidy_values[:3]):
+    y_lim = [1, 1, 10,10]
+    for plot_idx, subsidy in enumerate(subsidy_values):
         ax = axes[plot_idx]
 
         means_for_subsidy = [
@@ -304,7 +304,7 @@ def plot_remaining_h2(summary, baseline_summary=None, output_path=None, failed_e
     # Create single legend on the right
     legend_handles = [
         plt.Rectangle((0, 0), 1, 1, fc=PASTEL_COLORS[i], label=f"Subsidy {int(subsidy)} Eur/MWh")
-        for i, subsidy in enumerate(subsidy_values[:3])
+        for i, subsidy in enumerate(subsidy_values)
     ]
     legend_handles.append(
         plt.Line2D([0], [0], linestyle="--", linewidth=2, color="black", label="Baseline (no closure)")
@@ -700,6 +700,8 @@ if __name__ == "__main__":
         "KARSTO_to_DORNUM",
         "VISUND",
         "NORNE_ERB",
+        "GJOA",
+        "DRAUPNER_S_to_DUNKERQUE",
     ]
     
     # Example: Plot network for one failure case
@@ -726,44 +728,36 @@ if __name__ == "__main__":
         baseline_summary=baseline_summary,
         output_path="study_case_model/figures/failure_experiment/combine_results/remaining_h2_generation.png",
         failed_elements=[
-            "KARSTO_to_DRAUPNER_S",
-            "KARSTO_to_DORNUM",
-            # "DRAUPNER_S_to_DUNKERQUE",
-            # "H-7_BP_to_EMDEN",
             "VISUND",
             "NORNE_ERB"
             "GJOA",
         ],
         failed_labels_custom={
-            "KARSTO_to_DRAUPNER_S": "KÅRSTØ → \n DRAUPNER S",
-            "KARSTO_to_DORNUM": "KÅRSTØ → \n DORNUM",
-            # "DRAUPNER_S_to_DUNKERQUE": "Pipeline: DRAUPNER S → DUNKERQUE",
-            # "H-7_BP_to_EMDEN": "Pipeline: H-7 BP → EMDEN",
             "VISUND": "VISUND",
             "NORNE_ERB": "NORNE ERB",
             "GJOA": "GJØA",
         },
-        type_failure="Pipeline / Generation Node"
+        type_failure="Generation Node"
 
     )
 
-    # plot_remaining_h2(
-    #     summary_failure,
-    #     baseline_summary=baseline_summary,
-    #     output_path="study_case_model/figures/failure_experiment/combine_results/remaining_h2_pipelines.png",
-    #     failed_elements=[
-    #         "KARSTO_to_DRAUPNER_S",
-    #         "KARSTO_to_DORNUM",
-    #         #"DRAUPNER_S_to_DUNKERQUE",
-    #         #"H-7_BP_to_EMDEN",
+    plot_remaining_h2(
+        summary_failure,
+        baseline_summary=baseline_summary,
+        output_path="study_case_model/figures/failure_experiment/combine_results/remaining_h2_pipelines.png",
+        failed_elements=[
+            "KARSTO_to_DRAUPNER_S",
+            "KARSTO_to_DORNUM",
+            "DRAUPNER_S_to_DUNKERQUE",
+            "H-7_BP_to_EMDEN",
 
-    #     ],
-    #     failed_labels_custom={
-    #         "KARSTO_to_DRAUPNER_S": " KÅRSTØ → \n DRAUPNER S",
-    #         "KARSTO_to_DORNUM": "KÅRSTØ → \n DORNUM",
-    #         #"DRAUPNER_S_to_DUNKERQUE": " DRAUPNER S → \n DUNKERQUE",
-    #         #"H-7_BP_to_EMDEN": " H-7 BP → \n EMDEN",
-    #     },
-    #     type_failure="Pipeline"
+        ],
+        failed_labels_custom={
+            "KARSTO_to_DRAUPNER_S": " KÅRSTØ → \n DRAUPNER S",
+            "KARSTO_to_DORNUM": "KÅRSTØ → \n DORNUM",
+            "DRAUPNER_S_to_DUNKERQUE": " DRAUPNER S → \n DUNKERQUE",
+            "H-7_BP_to_EMDEN": " H-7 BP → \n EMDEN",
+        },
+        type_failure="Pipeline"
 
-    # )
+    )
