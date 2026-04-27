@@ -59,8 +59,8 @@ from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, a
 parser = argparse.ArgumentParser(description="Value of Stochastic Solution experiment")
 
 parser.add_argument("--run", type=int, default=0)
-parser.add_argument("--branches_stage2", type=int, default=4)
-parser.add_argument("--branches_stage3", type=int, default=4)
+parser.add_argument("--branches_stage2", type=int, default=2)
+parser.add_argument("--branches_stage3", type=int, default=2)
 parser.add_argument("--subsidy", type=float, default=0)
 parser.add_argument("--deviation", type=float, default=0.0)
 
