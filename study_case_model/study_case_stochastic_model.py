@@ -14,6 +14,7 @@ import shutil
 #import yaml
 from pathlib import Path
 from pyomo.opt import TerminationCondition, SolverStatus
+import time
 
 # with open("config.yaml", "r") as f:
 #     config = yaml.safe_load(f)
@@ -839,7 +840,14 @@ def solve_model(
     solver.options['MemLimit'] = 60  # slightly below your 64GB total
 
     # --- Solve ---
-    results = solver.solve(model, tee=verbose)
+    for attempt in range(5):
+        try:
+            results = solver.solve(model)
+            break
+        except Exception as e:
+            print("Retrying:", e)
+            time.sleep(60)
+
 
     # -----------------------------
     # Cleanup node files
