@@ -59,22 +59,22 @@ from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, a
 parser = argparse.ArgumentParser(description="Value of Stochastic Solution experiment")
 
 parser.add_argument("--run", type=int, default=0)
-parser.add_argument("--branches_stage2", type=int, default=2)
-parser.add_argument("--branches_stage3", type=int, default=2)
-parser.add_argument("--subsidy", type=float, default=0)
+parser.add_argument("--branches_stage2", type=int, default=8)
+parser.add_argument("--branches_stage3", type=int, default=8)
+parser.add_argument("--subsidy", type=float, default=70)
 parser.add_argument("--deviation", type=float, default=0.0)
 
 parser.add_argument("--upper_bounds", type=int, default=1)
-parser.add_argument("--time_limit", type=float, default=600)
+parser.add_argument("--time_limit", type=float, default=None)
 parser.add_argument("--threads", type=int, default=8)
-parser.add_argument("--precision", type=float, default=0.001)
+parser.add_argument("--precision", type=float, default=0.002)
 
 parser.add_argument("--data_folder", type=str, default="scenario_variables/vss/")
 parser.add_argument("--pickle_folder", type=str, default="study_case_model/figures/vss/")
 parser.add_argument("--output_csv", type=str, default="study_case_model/figures/vss/vss_results.csv")
 
 # Additional runs for statistical significance
-parser.add_argument("--n_runs", type=int, default=20,
+parser.add_argument("--n_runs", type=int, default=1,
                     help="Number of independent runs (each with different seed)")
 
 args = parser.parse_args()
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
         node_file = os.path.join(os.environ.get("TMPDIR", "/tmp"), f"gurobi_vss_rp_run{seed}")
         results_rp = scsm.solve_model(
-            model_rp, threads=args.threads, verbose=False,
+            model_rp, threads=args.threads, verbose=True,
             precision=args.precision, time_limit=args.time_limit,
             node_file_folder=node_file
         )
