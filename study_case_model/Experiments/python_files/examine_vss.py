@@ -59,8 +59,8 @@ from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, a
 parser = argparse.ArgumentParser(description="Value of Stochastic Solution experiment")
 
 parser.add_argument("--run", type=int, default=0)
-parser.add_argument("--branches_stage2", type=int, default=8)
-parser.add_argument("--branches_stage3", type=int, default=8)
+parser.add_argument("--branches_stage2", type=int, default=2)
+parser.add_argument("--branches_stage3", type=int, default=2)
 parser.add_argument("--subsidy", type=float, default=70)
 parser.add_argument("--deviation", type=float, default=0.0)
 
@@ -454,12 +454,19 @@ if __name__ == "__main__":
             "eev_worst_scenario": eev_metrics.get("worst_scenario_obj"),
         }
         all_results.append(row)
+    
+    # Save row immediately (append if file exists)
+    os.makedirs(os.path.dirname(args.output_csv), exist_ok=True)
+
+    new_row_df = pd.DataFrame([row])
 
     # Save all results
-    os.makedirs(os.path.dirname(args.output_csv), exist_ok=True)
-    df = pd.DataFrame(all_results)
-    df.to_csv(args.output_csv, index=False)
-    print(f"\nResults saved to {args.output_csv}")
+    if os.path.exists(args.output_csv):
+        new_row_df.to_csv(args.output_csv, mode="a", header=False, index=False)
+    else:
+        new_row_df.to_csv(args.output_csv, mode="w", header=True, index=False)
+
+    print(f"Run {seed} appended to {args.output_csv}")
 
     # Final summary
     if len(all_results) > 0:
