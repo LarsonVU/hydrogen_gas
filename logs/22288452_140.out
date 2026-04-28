@@ -1,0 +1,34 @@
+Gurobi shell based on Python 3.13.1 can be launched with command `gurobi.sh`
+Gurobi Python Interface can be loaded in Python 3.13.1 with 'import gurobipy'
+/var/spool/slurm/slurmd/job22291658/slurm_script: line 24: activate: No such file or directory
+
+======================================================================
+RUN 1/10 (seed=0)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Traceback (most recent call last):
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/Experiments/python_files/examine_vss.py", line 308, in <module>
+    results_rp = scsm.solve_model(
+        model_rp, threads=args.threads, verbose=False,
+        precision=args.precision, time_limit=args.time_limit,
+        node_file_folder=node_file
+    )
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/study_case_stochastic_model.py", line 842, in solve_model
+    results = solver.solve(model, tee=verbose)
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/opt/base/solvers.py", line 639, in solve
+    _status = self._apply_solver()
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/solvers/plugins/solvers/GUROBI.py", line 707, in _apply_solver
+    self._soln = GUROBI_RUN.gurobi_run(
+                 ~~~~~~~~~~~~~~~~~~~~~^
+        problem_filename, warmstart_filename, None, options_dict, self._suffixes
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/solvers/plugins/solvers/GUROBI_RUN.py", line 63, in gurobi_run
+    model = read(model_file)
+  File "src/gurobipy/gurobi.pxi", line 336, in gurobipy._core.read
+  File "src/gurobipy/gurobi.pxi", line 116, in gurobipy._core.gurobi.read
+  File "src/gurobipy/gurobi.pxi", line 60, in gurobipy._core.gurobi._getdefaultenv
+  File "src/gurobipy/env.pxi", line 108, in gurobipy._core.Env.__init__
+gurobipy._exception.GurobiError: Could not resolve host: token.gurobi.com (code 6, command POST https://token.gurobi.com/api/v1/tokens)

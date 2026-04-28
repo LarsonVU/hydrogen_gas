@@ -1,0 +1,106 @@
+Gurobi shell based on Python 3.13.1 can be launched with command `gurobi.sh`
+Gurobi Python Interface can be loaded in Python 3.13.1 with 'import gurobipy'
+/var/spool/slurm/slurmd/job22291662/slurm_script: line 24: activate: No such file or directory
+
+======================================================================
+RUN 1/10 (seed=0)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+  RP objective: 21058149.387817442
+Saved model snapshot to study_case_model/figures/vss_experiment/rp/sub70.0/run0/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21078092.815595914
+  EVPI (EV_PI - RP): 19943.42777847126
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20565692.625499967
+Saved model snapshot to study_case_model/figures/vss_experiment/ev/sub70.0/run0/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 20965012.85154016
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 1)
+  ==================================================
+  RP  (stochastic)  = 21,058,149.39
+  EV  (deterministic) = 20,565,692.63
+  EEV (EV decisions)  = 20,965,012.85
+  VSS = RP - EEV      = 93,136.54
+  VSS as % of RP      = 0.44%
+  EV_PI (perfect info) = 21,078,092.82
+  EVPI = EV_PI - RP    = 19,943.43
+
+======================================================================
+RUN 2/10 (seed=1)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+WARNING: Loading a SolverResults object with an 'aborted' status, but
+containing a solution
+  RP objective: 21537836.67610903
+Saved model snapshot to study_case_model/figures/vss_experiment/rp/sub70.0/run1/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21568885.194122437
+  EVPI (EV_PI - RP): 31048.518013406545
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20565692.625499967
+Saved model snapshot to study_case_model/figures/vss_experiment/ev/sub70.0/run1/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21474334.95474893
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 2)
+  ==================================================
+  RP  (stochastic)  = 21,537,836.68
+  EV  (deterministic) = 20,565,692.63
+  EEV (EV decisions)  = 21,474,334.95
+  VSS = RP - EEV      = 63,501.72
+  VSS as % of RP      = 0.29%
+  EV_PI (perfect info) = 21,568,885.19
+  EVPI = EV_PI - RP    = 31,048.52
+
+======================================================================
+RUN 3/10 (seed=2)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+WARNING: Loading a SolverResults object with an 'aborted' status, but
+containing a solution
+  RP objective: 21205910.690501176
+Saved model snapshot to study_case_model/figures/vss_experiment/rp/sub70.0/run2/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  WARNING: EVPI solve failed for leaf scenario 1: Could not resolve host: token.gurobi.com (code 6, command POST https://token.gurobi.com/api/v1/tokens)
+  EV_PI expected objective: None
+  EVPI (EV_PI - RP): None
+
+[Step 2] Solving deterministic Expected Value model...
+Traceback (most recent call last):
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/Experiments/python_files/examine_vss.py", line 355, in <module>
+    results_ev = scsm.solve_model(
+        model_ev, threads=args.threads, verbose=False,
+        precision=args.precision, time_limit=args.time_limit,
+        node_file_folder=node_file
+    )
+  File "/gpfs/home5/lbeemster/projects/hydrogen_gas/study_case_model/study_case_stochastic_model.py", line 842, in solve_model
+    results = solver.solve(model, tee=verbose)
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/opt/base/solvers.py", line 639, in solve
+    _status = self._apply_solver()
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/solvers/plugins/solvers/GUROBI.py", line 707, in _apply_solver
+    self._soln = GUROBI_RUN.gurobi_run(
+                 ~~~~~~~~~~~~~~~~~~~~~^
+        problem_filename, warmstart_filename, None, options_dict, self._suffixes
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/lbeemster/.local/lib/python3.13/site-packages/pyomo/solvers/plugins/solvers/GUROBI_RUN.py", line 118, in gurobi_run
+    model.optimize()
+    ~~~~~~~~~~~~~~^^
+  File "src/gurobipy/_model.pyx", line 903, in gurobipy._model.Model.optimize
+gurobipy._exception.GurobiError: Could not resolve host: token.gurobi.com (code 6, command POST https://token.gurobi.com/api/v1/tokens)
+Warning: environment still referenced so free is deferred (Continue to use WLS)
