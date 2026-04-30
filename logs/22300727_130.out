@@ -1,0 +1,146 @@
+Gurobi shell based on Python 3.13.1 can be launched with command `gurobi.sh`
+Gurobi Python Interface can be loaded in Python 3.13.1 with 'import gurobipy'
+/var/spool/slurm/slurmd/job22301231/slurm_script: line 24: activate: No such file or directory
+
+======================================================================
+RUN 1/1 (seed=1)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22301231/tmpb54zv7w9.pyomo.lp
+Reading time = 0.24 seconds
+x1: 89089 rows, 25050 columns, 510656 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22301231/gurobi_vss_rp_run1"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 89089 rows, 25050 columns and 510656 nonzeros
+Model fingerprint: 0x20d5aaaf
+Variable types: 19738 continuous, 5312 integer (5312 binary)
+Coefficient statistics:
+  Matrix range     [6e-05, 1e+05]
+  Objective range  [3e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 2e+05]
+Presolve removed 17344 rows and 11134 columns
+Presolve time: 1.26s
+Presolved: 71745 rows, 13916 columns, 319544 nonzeros
+Variable types: 11108 continuous, 2808 integer (2808 binary)
+
+Deterministic concurrent LP optimizer: primal and dual simplex (primal and dual model)
+Showing primal log only...
+
+Root relaxation presolved: 69303 rows, 11474 columns, 314796 nonzeros
+
+Concurrent spin time: 0.02s
+
+Solved with primal simplex
+
+Root relaxation: objective 2.121007e+07, 8832 iterations, 0.46 seconds (0.42 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.1210e+07    0  169          - 2.1210e+07      -     -    2s
+H    0     0                    2.006308e+07 2.1210e+07  5.72%     -    3s
+H    0     0                    2.009844e+07 2.1187e+07  5.42%     -    4s
+     0     0 2.1187e+07    0  241 2.0098e+07 2.1187e+07  5.42%     -    4s
+H    0     0                    2.111011e+07 2.1187e+07  0.36%     -    5s
+H    0     0                    2.112282e+07 2.1187e+07  0.30%     -    5s
+     0     0 2.1187e+07    0  270 2.1123e+07 2.1187e+07  0.30%     -    5s
+     0     0 2.1187e+07    0  275 2.1123e+07 2.1187e+07  0.30%     -    5s
+     0     0 2.1186e+07    0  276 2.1123e+07 2.1186e+07  0.30%     -    7s
+     0     0 2.1185e+07    0  313 2.1123e+07 2.1185e+07  0.30%     -    7s
+     0     0 2.1185e+07    0  313 2.1123e+07 2.1185e+07  0.29%     -    8s
+     0     0 2.1185e+07    0  317 2.1123e+07 2.1185e+07  0.29%     -    8s
+     0     0 2.1185e+07    0  317 2.1123e+07 2.1185e+07  0.29%     -    8s
+     0     0 2.1183e+07    0  269 2.1123e+07 2.1183e+07  0.29%     -   10s
+H    0     0                    2.112793e+07 2.1183e+07  0.26%     -   10s
+H    0     0                    2.114006e+07 2.1183e+07  0.20%     -   10s
+     0     0 2.1183e+07    0  268 2.1140e+07 2.1183e+07  0.20%     -   10s
+     0     0 2.1183e+07    0  265 2.1140e+07 2.1183e+07  0.20%     -   11s
+     0     0 2.1183e+07    0  267 2.1140e+07 2.1183e+07  0.20%     -   11s
+     0     0 2.1183e+07    0  284 2.1140e+07 2.1183e+07  0.20%     -   11s
+     0     0 2.1183e+07    0  277 2.1140e+07 2.1183e+07  0.20%     -   11s
+H    0     0                    2.114208e+07 2.1183e+07  0.19%     -   12s
+
+Cutting planes:
+  Learned: 1
+  Gomory: 11
+  Cover: 29
+  Implied bound: 913
+  MIR: 622
+  Flow cover: 787
+  RLT: 9
+  Relax-and-lift: 285
+
+Explored 1 nodes (17144 simplex iterations) in 12.75 seconds (12.38 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 7: 2.11421e+07 2.11401e+07 2.11279e+07 ... 2.00631e+07
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.114207528927e+07, best bound 2.118250000923e+07, gap 0.1912%
+Deleted nodefile directory: /scratch-local/lbeemster.22301231/gurobi_vss_rp_run1
+  RP objective: 21142075.289268658
+Saved model snapshot to study_case_model/figures/vss_experiment/28426/rp/sub0.0/run1/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21176271.82282221
+  EVPI (EV_PI - RP): 34196.53355355188
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/28426/ev/sub0.0/run1/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21079385.83994006
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 1)
+  ==================================================
+  RP  (stochastic)  = 21,142,075.29
+  EV  (deterministic) = 20,390,479.47
+  EEV (EV decisions)  = 21,079,385.84
+  VSS = RP - EEV      = 62,689.45
+  VSS as % of RP      = 0.30%
+  EV_PI (perfect info) = 21,176,271.82
+  EVPI = EV_PI - RP    = 34,196.53
+
+Results saved to study_case_model/figures/vss_experiment/28426/vss_results_0_0.2_4_8.csv
+
+======================================================================
+VSS EXPERIMENT SUMMARY
+======================================================================
+  Across 1 runs:
+    Mean VSS:    62,689.45 (0.30% of RP)
+    Std VSS:     0.00
+    Min VSS:     62,689.45
+    Max VSS:     62,689.45
+  → Stochastic formulation provides MARGINAL value — consider if complexity is justified.
+
+  EVPI summary across 1 runs:
+    Mean EVPI: 34,196.53
+    Std EVPI:  0.00
+    Min EVPI:  34,196.53
+    Max EVPI:  34,196.53
+
+Finished VSS experiment!

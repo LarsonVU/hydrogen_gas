@@ -1,0 +1,123 @@
+Gurobi shell based on Python 3.13.1 can be launched with command `gurobi.sh`
+Gurobi Python Interface can be loaded in Python 3.13.1 with 'import gurobipy'
+/var/spool/slurm/slurmd/job22300920/slurm_script: line 24: activate: No such file or directory
+
+======================================================================
+RUN 1/1 (seed=3)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22300920/tmpu51zoeam.pyomo.lp
+Reading time = 0.06 seconds
+x1: 22273 rows, 6450 columns, 127664 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22300920/gurobi_vss_rp_run3"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 22273 rows, 6450 columns and 127664 nonzeros
+Model fingerprint: 0x2ed66a5b
+Variable types: 5122 continuous, 1328 integer (1328 binary)
+Coefficient statistics:
+  Matrix range     [6e-05, 1e+05]
+  Objective range  [1e+01, 5e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 2e+05]
+Presolve removed 4749 rows and 3238 columns
+Presolve time: 0.32s
+Presolved: 17524 rows, 3212 columns, 79910 nonzeros
+Variable types: 2504 continuous, 708 integer (708 binary)
+Found heuristic solution: objective 1.844378e+07
+Found heuristic solution: objective 1.881299e+07
+Root relaxation presolved: 17011 rows, 2699 columns, 78932 nonzeros
+
+Extra simplex iterations after uncrush: 147
+
+Root relaxation: objective 2.004706e+07, 2553 iterations, 0.19 seconds (0.20 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.0047e+07    0   37 1.8813e+07 2.0047e+07  6.56%     -    0s
+H    0     0                    1.931614e+07 2.0047e+07  3.78%     -    1s
+     0     0 2.0034e+07    0   48 1.9316e+07 2.0034e+07  3.72%     -    1s
+H    0     0                    2.003149e+07 2.0034e+07  0.01%     -    1s
+
+Cutting planes:
+  Gomory: 1
+  Cover: 4
+  Implied bound: 34
+  MIR: 21
+  Flow cover: 30
+  RLT: 2
+  Relax-and-lift: 14
+
+Explored 1 nodes (3068 simplex iterations) in 1.33 seconds (1.27 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 4: 2.00315e+07 1.93161e+07 1.8813e+07 1.84438e+07 
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.003149326000e+07, best bound 2.003437287773e+07, gap 0.0144%
+Deleted nodefile directory: /scratch-local/lbeemster.22300920/gurobi_vss_rp_run3
+  RP objective: 20031493.26000255
+Saved model snapshot to study_case_model/figures/vss_experiment/28426/rp/sub0.0/run3/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 20036954.974714663
+  EVPI (EV_PI - RP): 5461.714712113142
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/28426/ev/sub0.0/run3/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 19941584.78622263
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 1)
+  ==================================================
+  RP  (stochastic)  = 20,031,493.26
+  EV  (deterministic) = 20,390,479.47
+  EEV (EV decisions)  = 19,941,584.79
+  VSS = RP - EEV      = 89,908.47
+  VSS as % of RP      = 0.45%
+  EV_PI (perfect info) = 20,036,954.97
+  EVPI = EV_PI - RP    = 5,461.71
+
+Results saved to study_case_model/figures/vss_experiment/28426/vss_results_0_0.05_4_2.csv
+
+======================================================================
+VSS EXPERIMENT SUMMARY
+======================================================================
+  Across 1 runs:
+    Mean VSS:    89,908.47 (0.45% of RP)
+    Std VSS:     0.00
+    Min VSS:     89,908.47
+    Max VSS:     89,908.47
+  → Stochastic formulation provides MARGINAL value — consider if complexity is justified.
+
+  EVPI summary across 1 runs:
+    Mean EVPI: 5,461.71
+    Std EVPI:  0.00
+    Min EVPI:  5,461.71
+    Max EVPI:  5,461.71
+
+Finished VSS experiment!
