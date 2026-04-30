@@ -456,15 +456,11 @@ if __name__ == "__main__":
         all_results.append(row)
     
     # Save row immediately (append if file exists)
+    rows_df = pd.DataFrame(all_results)
+
     os.makedirs(os.path.dirname(args.output_csv), exist_ok=True)
 
-    new_row_df = pd.DataFrame([row])
-
-    # Save all results
-    if os.path.exists(args.output_csv):
-        new_row_df.to_csv(args.output_csv, mode="a", header=False, index=False)
-    else:
-        new_row_df.to_csv(args.output_csv, mode="w", header=True, index=False)
+    rows_df.to_csv(args.output_csv, mode="w", header=True, index=False)
 
     print(f"Run {seed} appended to {args.output_csv}")
 
