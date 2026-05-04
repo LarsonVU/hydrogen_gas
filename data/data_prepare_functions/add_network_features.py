@@ -140,15 +140,17 @@ def add_compression_constants(gdf):
     eta =0.72
     p_std =1.01325 # Air pressure in bar
     w_to_hour = 3600 # seconds in an hour
+    fractions = {"NG": 0.98, "CO2": 0.02, "H2": 0.00} # Assuming same compression factor for all components, based on Aasta Hansteen composition 
     constant = T * p_std / (T_std * eta * w_to_hour)
     for node in compression_nodes:
         normal_discharge_pressure = normal_inlet_pressure * gdf.loc[gdf["location"] == node, "compression_increase"].iloc[0]  # bar
         inlet_constant= constant * (normal_inlet_pressure * normal_flow) / ((2/3 * normal_inlet_pressure + 1/3 * normal_discharge_pressure) ** 2)
         outlet_constant = constant * (normal_discharge_pressure * normal_flow) / ((2/3 * normal_inlet_pressure + 1/3 * normal_discharge_pressure) ** 2)
         flow_constant = constant * (normal_discharge_pressure- normal_inlet_pressure ) / (2/3 * normal_inlet_pressure + 1/3 * normal_discharge_pressure)
-        gdf.loc[gdf["location"] == node, "compression_constants"] = [{"NG": {"K_into_pipe": inlet_constant, "K_out_pipe": outlet_constant, "K_flow": flow_constant},
-                                                                      "CO2": {"K_into_pipe": inlet_constant, "K_out_pipe": outlet_constant, "K_flow": flow_constant},
-                                                                      "H2": {"K_into_pipe": inlet_constant, "K_out_pipe": outlet_constant, "K_flow": flow_constant}}]
+        gdf.loc[gdf["location"] == node, "compression_constants"] = [{"NG": {"K_into_pipe": fractions["NG"] * inlet_constant, "K_out_pipe": fractions["NG"] * outlet_constant, "K_flow": flow_constant},
+                                                                      "CO2": {"K_into_pipe": fractions["CO2"] * inlet_constant, "K_out_pipe": fractions["CO2"] * outlet_constant, "K_flow": flow_constant},
+                                                                      "H2": {"K_into_pipe": fractions["H2"] * inlet_constant, "K_out_pipe": fractions["H2"] * outlet_constant, "K_flow": flow_constant}}]
+    print(gdf["compression_constants"].copy().dropna().iloc[0])
     return gdf
 
 def add_compression_node_parameters(gdf):

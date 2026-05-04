@@ -12,7 +12,6 @@ import pickle
 from datetime import datetime
 import shutil
 #import yaml
-from pathlib import Path
 from pyomo.opt import TerminationCondition, SolverStatus
 import time
 
@@ -842,7 +841,7 @@ def solve_model(
     # --- Solve ---
     for attempt in range(5):
         try:
-            results = solver.solve(model)
+            results = solver.solve(model, tee=verbose)
             break
         except Exception as e:
             print("Retrying:", e)

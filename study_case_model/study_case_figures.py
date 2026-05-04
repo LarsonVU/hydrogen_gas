@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import matplotlib.colors as mcolors
 import re
+from pathlib import Path
 
 # Soft pastel palette
 PASTEL_COLORS = [
@@ -1218,6 +1219,7 @@ def plot_flow_violins(model, folder="figures/", show=False, tol = 0.01):
 
 
 def plot_results(model, folder = "figures/"):
+    folder = Path(folder)
     if len(model.N) == 0:
         print("Warning: No plots were made as there are no nodes in the model")
         return None
