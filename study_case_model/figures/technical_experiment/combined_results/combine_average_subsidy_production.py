@@ -369,11 +369,11 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method="zero"):
         conversion_ng = 39.8 / 3.6 * 1000
         conversion_h2 = 12.7 / 3.6 * 1000
 
-        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+        co2_savings_unit = 200.65 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
     elif co2_method == "volume":
         co2_cost_ng = 2.134 * 1000
         co2_cost_green_h2 = 1.080 / 11.94 * 1000
-        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2)
+        co2_savings_unit = 200.65 * (co2_cost_ng - co2_cost_green_h2)
     else:
         raise Exception("No accepted co2 saving method")
 
@@ -464,11 +464,11 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
         conversion_ng = 39.8 / 3.6 * 1000
         conversion_h2 = 12.7 / 3.6 * 1000
 
-        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+        co2_savings_unit = 200.65 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
     elif co2_method == "volume":
         co2_cost_ng = 2.134 * 1000
         co2_cost_green_h2 = 1.080 / 11.94 * 1000
-        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2)
+        co2_savings_unit = 200.65 * (co2_cost_ng - co2_cost_green_h2)
     else:
         raise Exception("No accepted co2 saving method")
 
@@ -564,11 +564,11 @@ def plot_roi_cost(objective_dict, h2_dict, folder, co2_method="zero"):
         conversion_ng = 39.8 / 3.6 * 1000
         conversion_h2 = 12.7 / 3.6 * 1000
 
-        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+        co2_savings_unit = 200.65 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
     elif co2_method == "volume":
         co2_cost_ng = 2.134 * 1000
         co2_cost_green_h2 = 1.080 / 11.94 * 1000
-        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2)
+        co2_savings_unit = 200.65 * (co2_cost_ng - co2_cost_green_h2)
     else:
         raise Exception("No accepted co2 saving method")
 
@@ -600,7 +600,7 @@ def plot_roi_cost(objective_dict, h2_dict, folder, co2_method="zero"):
                 sub_cost = subsidy * HYDROGEN_MSCM_MWH * r_h2[i]
                 co2_savings = r_h2[i] * co2_savings_unit
 
-                if sub_cost > 0:
+                if sub_cost > 0 and subsidy >= 32:
                     roi = (delta_obj - sub_cost + co2_savings) / (sub_cost + scaling_factor)
                 else:
                     roi = 0

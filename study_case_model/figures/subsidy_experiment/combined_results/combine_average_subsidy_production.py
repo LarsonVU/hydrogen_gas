@@ -566,24 +566,30 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
 
     plt.figure(figsize=(10, 5))
 
+    true_social_cost = 200.65
+    abatement_cost = 75
+    co2_cost_ng = 2.134 * 1000
+    co2_cost_green_h2 = 1.080 / 11.94 * 1000
+
     if co2_method == "zero":
         co2_savings_unit = 0
     elif co2_method == "energy":
-        co2_cost_ng = 2.134 * 1000
-        co2_cost_green_h2 = 1.080 / 11.94 * 1000
-        
         conversion_ng = 39.8 / 3.6 * 1000
         conversion_h2 = 12.7 / 3.6 * 1000
 
-        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+        co2_savings_unit = true_social_cost * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+    elif co2_method == "abatement":
+        conversion_ng = 39.8 / 3.6 * 1000
+        conversion_h2 = 12.7 / 3.6 * 1000
+
+        co2_savings_unit =  abatement_cost * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+    
     elif co2_method == "volume":
-        co2_cost_ng = 2.134 * 1000
-        co2_cost_green_h2 = 1.080 / 11.94 * 1000
         co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2)
     else:
         raise Exception("No accepted co2 saving method")
 
-    print("CO2 cost per Mcsm:", co2_savings_unit)
+    print(f"CO2 cost per Mcsm ({co2_method}):", co2_savings_unit)
 
     for j, label in enumerate(sorted(objective_dict.keys())):
         obj_stats = objective_dict[label]
@@ -672,24 +678,32 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
 
     plt.figure(figsize=(10, 5))
 
+    
+    true_social_cost = 200.65
+    abatement_cost = 75
+    co2_cost_ng = 2.134 * 1000
+    co2_cost_green_h2 = 1.080 / 11.94 * 1000
+
     if co2_method == "zero":
         co2_savings_unit = 0
     elif co2_method == "energy":
-        co2_cost_ng = 2.134 * 1000
-        co2_cost_green_h2 = 1.080 / 11.94 * 1000
-        
         conversion_ng = 39.8 / 3.6 * 1000
         conversion_h2 = 12.7 / 3.6 * 1000
 
-        co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+        co2_savings_unit = true_social_cost * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+    elif co2_method == "abatement":
+        conversion_ng = 39.8 / 3.6 * 1000
+        conversion_h2 = 12.7 / 3.6 * 1000
+
+        co2_savings_unit =  abatement_cost * (co2_cost_ng - co2_cost_green_h2) * (conversion_h2 / conversion_ng)
+    
     elif co2_method == "volume":
-        co2_cost_ng = 2.134 * 1000
-        co2_cost_green_h2 = 1.080 / 11.94 * 1000
         co2_savings_unit = 185 * (co2_cost_ng - co2_cost_green_h2)
     else:
         raise Exception("No accepted co2 saving method")
 
-    print("CO2 cost per Mcsm:", co2_savings_unit)
+
+    print(f"CO2 cost per Mcsm ({co2_method}):", co2_savings_unit)
 
     for j, label in enumerate(sorted(objective_dict.keys())):
         obj_stats = objective_dict[label]
@@ -720,7 +734,7 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
                 sub_cost = s * HYDROGEN_MSCM_MWH * r_h2[i]
                 co2_savings = r_h2[i] * co2_savings_unit
 
-                if sub_cost > 0 and s >= 30:
+                if sub_cost > 0 and s >= 32:
                     roi = (delta_obj - sub_cost + co2_savings) / (sub_cost + scaling_factor)
                 else:
                     roi = 0
@@ -740,7 +754,7 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
         roi_ses = []
 
         for i, d in enumerate(diffs):
-            if i < len(subs) and subs[i] < 30:
+            if i < len(subs) and subs[i] < 32:
                 continue
             
             d = np.array(d)
@@ -753,7 +767,7 @@ def plot_roi(objective_dict, h2_dict, folder, co2_method="zero"):
             roi_ses.append(se * 100) # convert to percentage for better readability
 
         # Match subs
-        filtered_subs = [s for s in subs if s >= 30]
+        filtered_subs = [s for s in subs if s >= 32]
 
         color = PASTEL_COLORS[j % len(PASTEL_COLORS)]
 
@@ -1620,17 +1634,26 @@ if __name__ == "__main__":
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="abatement")
+        
         plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
         plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
         plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="abatement")
+    
     else:
         plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
         plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
+        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="abatement")
+        
         plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
         plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
         plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
+        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="abatement")
+
+
 
     sub_values = [0.0, 25.0, 30.0, 36.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0]
     #sub_values = [0.0, 30.0, 40.0, 50.0, 60.0, 70.0]
