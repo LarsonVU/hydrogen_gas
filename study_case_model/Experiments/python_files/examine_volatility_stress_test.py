@@ -42,6 +42,8 @@ sys.path.append(str(ROOT))
 
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scpf
+from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy, change_demand_constraint
+
 
 
 # =========================
@@ -87,21 +89,6 @@ BRANCHES_PER_STAGE = {1: 1, 2: args.branches_stage2, 3: args.branches_stage3}
 # =========================
 # Helper functions
 # =========================
-def subsidy_per_mwh_to_mscm(mwh_subsidy, gcv_mwh_per_kscm=2.78):
-    return mwh_subsidy * gcv_mwh_per_kscm * 1000
-
-
-def apply_subsidy(G, subsidy_value, variable_name="generation_cost"):
-    G_changed = G.copy()
-    for node in G.nodes:
-        if not pd.isna(G.nodes[node][variable_name]):
-            if G.nodes[node]["component_ratio"]["H2"] > 0:
-                G_changed.nodes[node][variable_name] = (
-                    float(G.nodes[node][variable_name]) - subsidy_value
-                )
-    return G_changed
-
-
 def apply_volatility_multiplier(G, vol_multiplier, demand_mult=True, price_mult=True):
     """
     Scale the demand variance and price standard deviations by a multiplier.
@@ -363,6 +350,9 @@ if __name__ == "__main__":
             allowed_deviation=args.deviation,
             number_of_density_bounds=args.upper_bounds
         )
+
+        model = change_demand_constraint(model)
+
 
         node_file_folder = os.environ.get("TMPDIR", "/tmp")
         node_file_folder = os.path.join(node_file_folder, f"gurobi_stress_{label}_run{args.run}")
