@@ -20,7 +20,7 @@ with open("study_case_model/Experiments/slurm_files/volatility_stress_jobs.txt",
             f"--branches_stage2 8 --branches_stage3 8 "
             f"--threads 48 --precision 0.02 "
             f"--correlation_price {correlation} --correlation_demand 0 "
-            f"{shock_flag} "
+            f"{shock_flag} {True} "
             f"--output_csv study_case_model/figures/volatility_stress/{date}/stress_test_results_{subsidy}_{correlation}_{shock}_{run}_.csv"
         )
         f.write(cmd + "\n")
