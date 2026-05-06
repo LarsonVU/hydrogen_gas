@@ -5,6 +5,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors as mcolors
+from scipy.stats import kruskal
+from scipy.stats import mannwhitneyu
 
 
 # Read all CSV files matching the pattern
@@ -167,3 +169,21 @@ for deviation_val in grouped.index.get_level_values('deviation').unique():
     )
 
     plt.close()
+
+    # Statistical testing across all subsidies
+    print(f"\n--- Deviation: {int(deviation_val * 100)}% ---")
+
+    # Split into branches_s2=2 vs others (across all subsidies)
+    s2_eq_2 = combined_df[(combined_df['branches_s2'] == 2) & (combined_df['deviation'] == deviation_val)]['VSS'].values
+    s2_others = combined_df[(combined_df['branches_s2'] != 2) & (combined_df['deviation'] == deviation_val)]['VSS'].values
+
+    if len(s2_eq_2) > 0 and len(s2_others) > 0:
+        # Mann-Whitney U test (non-parametric t-test)
+        stat, p_value = mannwhitneyu(s2_eq_2, s2_others)
+        print(f"VSS - Mann-Whitney U p-value (S2=2 vs others): {p_value:.4f}")
+        
+        s2_eq_2 = combined_df[(combined_df['branches_s2'] == 2) & (combined_df['deviation'] == deviation_val)]['EVPI'].values
+        s2_others = combined_df[(combined_df['branches_s2'] != 2) & (combined_df['deviation'] == deviation_val)]['EVPI'].values
+        
+        stat, p_value = mannwhitneyu(s2_eq_2, s2_others)
+        print(f"EVPI - Mann-Whitney U p-value (S2=2 vs others): {p_value:.4f}")
