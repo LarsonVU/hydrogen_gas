@@ -5,8 +5,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors as mcolors
-from scipy.stats import kruskal
+from itertools import combinations
 from scipy.stats import mannwhitneyu
+from statsmodels.stats.multitest import multipletests
 
 
 # Read all CSV files matching the pattern
@@ -170,20 +171,82 @@ for deviation_val in grouped.index.get_level_values('deviation').unique():
 
     plt.close()
 
-    # Statistical testing across all subsidies
-    print(f"\n--- Deviation: {int(deviation_val * 100)}% ---")
 
-    # Split into branches_s2=2 vs others (across all subsidies)
-    s2_eq_2 = combined_df[(combined_df['branches_s2'] == 2) & (combined_df['deviation'] == deviation_val)]['VSS'].values
-    s2_others = combined_df[(combined_df['branches_s2'] != 2) & (combined_df['deviation'] == deviation_val)]['VSS'].values
 
-    if len(s2_eq_2) > 0 and len(s2_others) > 0:
-        # Mann-Whitney U test (non-parametric t-test)
-        stat, p_value = mannwhitneyu(s2_eq_2, s2_others)
-        print(f"VSS - Mann-Whitney U p-value (S2=2 vs others): {p_value:.4f}")
-        
-        s2_eq_2 = combined_df[(combined_df['branches_s2'] == 2) & (combined_df['deviation'] == deviation_val)]['EVPI'].values
-        s2_others = combined_df[(combined_df['branches_s2'] != 2) & (combined_df['deviation'] == deviation_val)]['EVPI'].values
-        
-        stat, p_value = mannwhitneyu(s2_eq_2, s2_others)
-        print(f"EVPI - Mann-Whitney U p-value (S2=2 vs others): {p_value:.4f}")
+combined_df['VSS_pct'] = (combined_df['VSS'] / combined_df['RP']) * 100
+combined_df['EVPI_pct'] = (combined_df['EVPI'] / combined_df['RP']) * 100
+
+# Statistical testing across all subsidies
+print(f"\n--- Deviation: 0% and 100% combined tests ---")
+
+
+# Variables to test
+group_columns = ['branches_s2', 'branches_s3', 'subsidy']
+metrics = ['VSS_pct', 'EVPI_pct']
+
+for group_col in group_columns:
+    print(f"\n{'='*60}")
+    print(f"GROUP VARIABLE: {group_col}")
+    print(f"{'='*60}")
+
+    # Unique groups
+    groups = sorted(combined_df[group_col].dropna().unique())
+
+    for metric in metrics:
+        print(f"\n--- {metric} ---")
+
+        results = []
+
+        # Pairwise group comparisons
+        for g1, g2 in combinations(groups, 2):
+            sample1 = combined_df[
+                (combined_df[group_col] == g1) &
+                (combined_df['deviation'].isin([0.0, 1.0]))
+            ][metric].values
+
+            sample2 = combined_df[
+                (combined_df[group_col] == g2) &
+                (combined_df['deviation'].isin([0.0, 1.0]))
+            ][metric].values
+
+            if len(sample1) > 0 and len(sample2) > 0:
+
+                # Means
+                mean1 = sample1.mean()
+                mean2 = sample2.mean()
+
+                stat, p_value = mannwhitneyu(
+                    sample1,
+                    sample2,
+                    alternative='two-sided',
+                    method='asymptotic',
+                    use_continuity=True
+                )
+
+                results.append({
+                    'comparison': f"{g1} vs {g2}",
+                    'statistic': stat,
+                    'p_value': p_value,
+                    f'mean1': mean1,
+                    f'mean2': mean2
+                })
+
+        # Multiple testing correction
+        if results:
+            raw_pvals = [r['p_value'] for r in results]
+
+            reject, corrected_pvals, _, _ = multipletests(
+                raw_pvals,
+                method='bonferroni'
+            )
+
+            for i, r in enumerate(results):
+                print(
+                    f"{r['comparison']:>15} | "
+                    f"mean1 = {r['mean1']:8.2f} | "
+                    f"mean2 = {r['mean2']:8.2f} | "
+                    f"U-stat = {r['statistic']:10.2f} | "
+                    f"raw p = {r['p_value']:.4e} | "
+                    f"bonf p = {corrected_pvals[i]:.4e} | "
+                    f"significant = {reject[i]}"
+                )
