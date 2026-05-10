@@ -21,7 +21,7 @@ with open("study_case_model/Experiments/slurm_files/volatility_stress_jobs.txt",
             f"--threads 48 --precision 0.002 "
             f"--correlation_price {correlation} --correlation_demand 0 "
             f"{shock_flag} {True} "
-            f"--pickel_folder study_case_model/figures/volatility_stress/{date} "
+            f"--pickle_folder study_case_model/figures/volatility_stress/{date} "
             f"--output_csv study_case_model/figures/volatility_stress/{date}/stress_test_results_{subsidy}_{correlation}_{shock}_{run}_.csv"
         )
         f.write(cmd + "\n")
