@@ -60,7 +60,7 @@ parser.add_argument("--deviation", type=float, default=0.0)
 # Volatility multipliers to test
 parser.add_argument("--vol_multipliers", type=str, default="1.0,2.0,3.0,5.0,7.0,10.0",
                     help="Comma-separated volatility multipliers (1.0 = baseline)")
-parser.add_argument("--demand_shock", type=lambda x: x.lower() in ('true', '1', 'yes'), default=True,
+parser.add_argument("--demand_shock", type=lambda x: x.lower() in ('true', '1', 'yes'), default=False,
                     help="Only increase demand volatility, keep price stable")
 parser.add_argument("--price_shock_lt", type=lambda x: x.lower() in ('true', '1', 'yes'), default=False,
                     help="Only increase long term price volatility, keep demand stable")
@@ -184,6 +184,14 @@ def add_correlated_price_scenarios(scenarios, branches_per_stage, filename, corr
         0.0 = independent (baseline behavior)
         1.0 = perfectly correlated (all markets get same % shock)
     """
+    if args.price_shock_lt:
+        correlation_lt = correlation
+        correlation_st = 0.0
+    elif args.price_shock_st:
+        correlation_lt = 0.0
+        correlation_st = correlation
+
+
     price_df = pd.DataFrame(columns=["stage", "scenario_index", "node", "price_type", "price"])
 
     for scenario in scenarios[2]:
@@ -200,7 +208,7 @@ def add_correlated_price_scenarios(scenarios, branches_per_stage, filename, corr
 
                 # Correlated + idiosyncratic components for long-term price
                 idio_shock_lt = np.random.normal(0, 1)
-                combined_shock_lt = correlation * common_price_shock + np.sqrt(1 - correlation**2) * idio_shock_lt
+                combined_shock_lt = correlation_lt * common_price_shock + np.sqrt(1 - correlation_lt**2) * idio_shock_lt
                 price_multiplier_lt = 1 + long_term_std * combined_shock_lt
                 sampled_long_term_price = max(avg_long_term * price_multiplier_lt, 0)
                 scenario.G.nodes[node]["price"] = sampled_long_term_price
@@ -213,7 +221,7 @@ def add_correlated_price_scenarios(scenarios, branches_per_stage, filename, corr
 
                 # Correlated + idiosyncratic components for day-ahead price
                 idio_shock_da = np.random.normal(0, 1)
-                combined_shock_da = correlation * common_price_shock + np.sqrt(1 - correlation**2) * idio_shock_da
+                combined_shock_da = correlation_st * common_price_shock + np.sqrt(1 - correlation_st**2) * idio_shock_da
                 price_multiplier_da = 1 + day_ahead_std * combined_shock_da
                 sampled_day_ahead_price = max(avg_day_ahead * price_multiplier_da, 0)
                 scenario.G.nodes[node]["price"] = sampled_day_ahead_price
