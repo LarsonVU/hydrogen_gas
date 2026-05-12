@@ -8,10 +8,10 @@ subsidies = [0,25] + [26 + i * 2 for i in range(8)] + [45 + 5* i for i in range(
 deviations = [0, 0.05, 0.1, 0.2 ,1]
 runs = 4
 
-data_folder = "study_case_model/scenario_variables/subsidy_experiment/run_24426/"
-pickle_folder = "study_case_model/figures/subsidy_experiment/run_24426/"
+data_folder = "study_case_model/scenario_variables/subsidy_experiment/run_12526/"
+pickle_folder = "study_case_model/figures/subsidy_experiment/run_12526/"
 threads = 48
-output_file = "study_case_model/Experiments/slurm_files/jobs_24426.txt"
+output_file = "study_case_model/Experiments/slurm_files/jobs_12526.txt"
 precision = 0.002
 
 # =========================
@@ -22,10 +22,8 @@ for run_idx in range(0,runs):
     for dev_idx, dev in enumerate(deviations):
         for sub_idx, sub in enumerate(subsidies):
             cmd = (
-                "python study_case_model/Experiments/python_files/examine_parallel_subsidies.py "
+                "python study_case_model/Experiments/python_files/fixed_scenario_tree.py "
                 f"--run {run_idx} "
-                f"--branches_stage2 8 "
-                f"--branches_stage3 8 "
                 f"--subsidy {sub} "
                 f"--deviation {dev} "
                 f"--upper_bounds 1 "
