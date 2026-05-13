@@ -114,7 +114,11 @@ def add_fixed_demand_scenarios(scenarios, deviation):
             demand = max(avg * multiplier, 0)
 
             if "supplier_ratios" in node_data:
-                ratios = node_data["supplier_ratios"] if node_data["supplier_ratios"] is not None else {}
+                ratios = node_data["supplier_ratios"]
+                
+                if not isinstance(ratios, dict):
+                    ratios = {}  # fallback
+                
                 scenario.G.nodes[node]["demand"] = {
                     s: demand * r for s, r in ratios.items()
                 }
