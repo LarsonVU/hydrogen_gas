@@ -843,7 +843,7 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
 
         ax.set_title("Entry Capacity Bought per Stage")
         ax.set_xlabel("Node")
-        ax.set_ylim(0, 26)
+        ax.set_ylim(0, max(26, max(entry_totals) * 1.1))
         ax.set_xticklabels(entry_nodes, rotation=0, ha="center")
         ax.set_ylabel("Entry Capacity (Mscm)")
         ax.legend()
@@ -882,7 +882,7 @@ def plot_entry_exit_capacity(model, folder="figures/", show=False):
         ax.set_title("Exit Capacity Bought per Stage")
         ax.set_xlabel("Node")
         ax.set_xticklabels(exit_nodes, rotation=0, ha="center")
-        ax.set_ylim(0, 21)
+        ax.set_ylim(0, max(21, max(exit_totals) * 1.1))
         ax.set_ylabel("Exit Capacity (Mscm)")
         ax.legend()
         ax.grid(alpha=0.3, axis="y")

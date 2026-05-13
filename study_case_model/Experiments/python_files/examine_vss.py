@@ -62,7 +62,7 @@ parser.add_argument("--run", type=int, default=0)
 parser.add_argument("--branches_stage2", type=int, default=2)
 parser.add_argument("--branches_stage3", type=int, default=2)
 parser.add_argument("--subsidy", type=float, default=70)
-parser.add_argument("--deviation", type=float, default=0.0)
+parser.add_argument("--deviation", type=float, default=0.5)
 
 parser.add_argument("--upper_bounds", type=int, default=1)
 parser.add_argument("--time_limit", type=float, default=None)
@@ -217,7 +217,7 @@ def compute_evpi(network, leaf_scenarios, allowed_deviation, number_of_density_b
         deterministic_scenarios = build_single_path_scenarios(leaf)
         model_ws = scsm.create_model(
             network, deterministic_scenarios,
-            allowed_deviation=allowed_deviation,
+            allowed_deviation=np.ceil(allowed_deviation), # PI means the model can cheat for every scenario, so we allow it to use the full deviation if needed
             number_of_density_bounds=number_of_density_bounds
         )
 
@@ -267,6 +267,75 @@ def extract_vss_metrics(model, label):
         metrics["objective"] = None
 
     return metrics
+
+def extract_delta_values(model_rp): 
+    delta_values = {}
+
+    for idx in model_rp.delta:
+        val = pyo.value(model_rp.delta[idx])
+        delta_values[idx] = int(round(val))  # ensure 0/1
+
+    return delta_values
+
+def fix_delta_variables(model, delta_values, leaf_index):
+        if leaf_index in delta_values:
+            model.delta[1].fix(delta_values[leaf_index])
+
+
+def compute_conditional_evpi(
+    network,
+    leaf_scenarios,
+    delta_values_rp,
+    number_of_density_bounds,
+    threads,
+    precision,
+    time_limit,
+    seed
+):
+    value = 0.0
+    total_prob = 0.0
+
+    for leaf in leaf_scenarios:
+        deterministic_scenarios = build_single_path_scenarios(leaf)
+
+        model_ws = scsm.create_model(
+            network,
+            deterministic_scenarios,
+            allowed_deviation=1,  # irrelevant now
+            number_of_density_bounds=number_of_density_bounds
+        )
+
+        # 🔑 Fix deviation decisions from RP
+        fix_delta_variables(model_ws, delta_values_rp, leaf.index)
+        print(f"  Computing conditional EVPI for leaf scenario {leaf.index} with probability {leaf.probability:.4f} and fixed delta values from RP...")
+        print(f"    Fixed delta values: {delta_values_rp}")
+
+        node_file = os.path.join(
+            os.environ.get("TMPDIR", "/tmp"),
+            f"gurobi_conditional_evpi_run{seed}_scenario{leaf.index}"
+        )
+
+        try:
+            scsm.solve_model(
+                model_ws,
+                threads=threads,
+                verbose=False,
+                precision=precision,
+                time_limit=time_limit,
+                node_file_folder=node_file
+            )
+
+            objective = pyo.value(model_ws.objective)
+
+            value += leaf.probability * objective
+            total_prob += leaf.probability
+
+        except Exception as e:
+            print(f"WARNING: Conditional EVPI failed for scenario {leaf.index}: {e}")
+            return None
+
+    return value
+
 
 
 # =========================
@@ -319,9 +388,12 @@ if __name__ == "__main__":
             print("  Stochastic model infeasible — skipping this run.")
             continue
 
+        # 🔑 NEW: extract deviation structure
+        delta_values_rp = extract_delta_values(model_rp)
+
         scsm.save_model_values(model_rp, os.path.join(pickle_folder_rp, "model_snapshot.pkl"))
 
-        # ---- EVPI: Solve each leaf deterministically and average ----
+        # ---- EVPI ----
         print("\n[EVPI] Solving each scenario deterministically for perfect information...")
         EV_PI = compute_evpi(
             G, scenarios_rp[3],
@@ -333,8 +405,26 @@ if __name__ == "__main__":
             seed=seed
         )
         EVPI = None if EV_PI is None or RP is None else EV_PI - RP
+
         print(f"  EV_PI expected objective: {EV_PI}")
         print(f"  EVPI (EV_PI - RP): {EVPI}")
+
+        # ---- NEW: Conditional EVPI ----
+        print("\n[Conditional EVPI] Using RP deviation structure...")
+        EV_PI_cond = compute_conditional_evpi(
+            G,
+            scenarios_rp[3],
+            delta_values_rp,
+            args.upper_bounds,
+            args.threads,
+            args.precision,
+            args.time_limit,
+            seed
+        )
+        EVPI_cond = None if EV_PI_cond is None or RP is None else EV_PI_cond - RP
+
+        print(f"  EV_PI_cond expected objective: {EV_PI_cond}")
+        print(f"  Conditional EVPI: {EVPI_cond}")
 
         # ---- Step 2: Solve deterministic (EV) model ----
         print("\n[Step 2] Solving deterministic Expected Value model...")
@@ -347,7 +437,7 @@ if __name__ == "__main__":
 
         model_ev = scsm.create_model(
             G, scenarios_ev,
-            allowed_deviation=0,  # No deviation needed for deterministic
+            allowed_deviation=0,
             number_of_density_bounds=args.upper_bounds
         )
 
@@ -368,14 +458,13 @@ if __name__ == "__main__":
 
         scsm.save_model_values(model_ev, os.path.join(pickle_folder_ev, "model_snapshot.pkl"))
 
-        # ---- Step 3: Fix EV decisions, re-solve stochastic (EEV) ----
+        # ---- Step 3: EEV ----
         print("\n[Step 3] Solving EEV (stochastic model with fixed EV decisions)...")
         data_folder_eev = os.path.join(args.data_folder, f"eev/sub{args.subsidy}/run{seed}")
         pickle_folder_eev = os.path.join(args.pickle_folder, f"eev/sub{args.subsidy}/run{seed}")
         os.makedirs(data_folder_eev, exist_ok=True)
         os.makedirs(pickle_folder_eev, exist_ok=True)
 
-        # Re-create stochastic scenarios with SAME seed for comparability
         scenarios_eev = scpf.create_scenarios(
             NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G,
             seed=seed, folder=data_folder_eev
@@ -387,7 +476,6 @@ if __name__ == "__main__":
             number_of_density_bounds=args.upper_bounds
         )
 
-        # Fix first-stage decisions from EV solution
         model_eev = fix_first_stage_decisions(model_eev, model_ev)
 
         node_file = os.path.join(os.environ.get("TMPDIR", "/tmp"), f"gurobi_vss_eev_run{seed}")
@@ -403,7 +491,7 @@ if __name__ == "__main__":
             EEV = eev_metrics.get("objective")
 
         except Exception as e:
-            print(f"  EEV solve failed (likely infeasible with fixed EV decisions): {e}")
+            print(f"  EEV solve failed: {e}")
             EEV = None
             eev_metrics = {"model_type": "EEV", "objective": None}
 
@@ -417,21 +505,19 @@ if __name__ == "__main__":
             VSS = None
             VSS_pct = None
 
+        # ---- Summary ----
         print(f"\n  {'='*50}")
         print(f"  VALUE OF STOCHASTIC SOLUTION (Run {run_idx + 1})")
         print(f"  {'='*50}")
-        print(f"  RP  (stochastic)  = {RP:,.2f}" if RP else "  RP  = N/A")
-        print(f"  EV  (deterministic) = {EV:,.2f}" if EV else "  EV  = N/A")
-        print(f"  EEV (EV decisions)  = {EEV:,.2f}" if EEV else "  EEV = N/A (infeasible)")
-        print(f"  VSS = RP - EEV      = {VSS:,.2f}" if VSS else "  VSS = N/A")
-        print(f"  VSS as % of RP      = {VSS_pct:.2f}%" if VSS_pct else "  VSS% = N/A")
-        print(f"  EV_PI (perfect info) = {EV_PI:,.2f}" if EV_PI else "  EV_PI = N/A")
-        print(f"  EVPI = EV_PI - RP    = {EVPI:,.2f}" if EVPI is not None else "  EVPI = N/A")
+        print(f"  RP  = {RP:,.2f}")
+        print(f"  EV  = {EV:,.2f}")
+        print(f"  EEV = {EEV:,.2f}" if EEV else "  EEV = N/A")
+        print(f"  VSS = {VSS:,.2f}" if VSS else "  VSS = N/A")
+        print(f"  VSS% = {VSS_pct:.2f}%" if VSS_pct else "  VSS% = N/A")
+        print(f"  EVPI = {EVPI:,.2f}" if EVPI else "  EVPI = N/A")
+        print(f"  EVPI_cond = {EVPI_cond:,.2f}" if EVPI_cond else "  EVPI_cond = N/A")
 
-        if EEV is not None and EEV > RP:
-            print(f"  WARNING: EEV > RP — this should not happen. Check model consistency.")
-
-        # Record
+        # ---- Store results ----
         row = {
             "run": seed,
             "subsidy": args.subsidy,
@@ -443,53 +529,17 @@ if __name__ == "__main__":
             "EEV": EEV,
             "EV_PI": EV_PI,
             "EVPI": EVPI,
+            "EV_PI_cond": EV_PI_cond,
+            "EVPI_cond": EVPI_cond,
             "VSS": VSS,
             "VSS_pct": VSS_pct,
-            # RP details
-            "rp_avg_h2": rp_metrics.get("avg_h2_production"),
-            "rp_worst_scenario": rp_metrics.get("worst_scenario_obj"),
-            "rp_stage1_entry": rp_metrics.get("total_stage1_entry"),
-            # EEV details
-            "eev_avg_h2": eev_metrics.get("avg_h2_production"),
-            "eev_worst_scenario": eev_metrics.get("worst_scenario_obj"),
         }
+
         all_results.append(row)
-    
-    # Save row immediately (append if file exists)
-    rows_df = pd.DataFrame(all_results)
 
+    # ---- Save ----
+    df = pd.DataFrame(all_results)
     os.makedirs(os.path.dirname(args.output_csv), exist_ok=True)
+    df.to_csv(args.output_csv, index=False)
 
-    rows_df.to_csv(args.output_csv, mode="w", header=True, index=False)
-
-    print(f"Run {seed} appended to {args.output_csv}")
-
-    # Final summary
-    if len(all_results) > 0:
-        print("\n" + "=" * 70)
-        print("VSS EXPERIMENT SUMMARY")
-        print("=" * 70)
-        vss_values = [r["VSS"] for r in all_results if r["VSS"] is not None]
-        vss_pcts = [r["VSS_pct"] for r in all_results if r["VSS_pct"] is not None]
-        if vss_values:
-            print(f"  Across {len(vss_values)} runs:")
-            print(f"    Mean VSS:    {np.mean(vss_values):,.2f} ({np.mean(vss_pcts):.2f}% of RP)")
-            print(f"    Std VSS:     {np.std(vss_values):,.2f}")
-            print(f"    Min VSS:     {np.min(vss_values):,.2f}")
-            print(f"    Max VSS:     {np.max(vss_values):,.2f}")
-            if np.mean(vss_pcts) > 5:
-                print(f"  → Stochastic formulation provides SIGNIFICANT value over deterministic.")
-            elif np.mean(vss_pcts) > 1:
-                print(f"  → Stochastic formulation provides MODERATE value over deterministic.")
-            else:
-                print(f"  → Stochastic formulation provides MARGINAL value — consider if complexity is justified.")
-
-        evpi_values = [r["EVPI"] for r in all_results if r.get("EVPI") is not None]
-        if evpi_values:
-            print(f"\n  EVPI summary across {len(evpi_values)} runs:")
-            print(f"    Mean EVPI: {np.mean(evpi_values):,.2f}")
-            print(f"    Std EVPI:  {np.std(evpi_values):,.2f}")
-            print(f"    Min EVPI:  {np.min(evpi_values):,.2f}")
-            print(f"    Max EVPI:  {np.max(evpi_values):,.2f}")
-
-    print("\nFinished VSS experiment!", flush=True)
+    print(f"\nSaved results to {args.output_csv}")
