@@ -16,6 +16,8 @@ LOAD_ONE_RUN = None #"run0"
 MINIMUM_RUNS = 2
 HYDROGEN_MSCM_MWH = 2.78 * 1000 
 
+folder = f"study_case_model/figures/subsidy_experiment/combined_results/{EXPERIMENT}/"
+
 # =========================
 # COLOR PALETTE
 # =========================
@@ -1240,6 +1242,8 @@ def compute_overprovision(snapshot):
     exit_overprovision = []
 
     M_3 = set(s for (a_in, a_out, c, s) in f_vals.keys())
+    M_2 = set(s for (n, k, s) in entry_vals.keys() if k == 2)
+
     K = [1,2,3]
 
     N = set(n for (n, k, s) in entry_vals.keys())
@@ -1259,7 +1263,7 @@ def compute_overprovision(snapshot):
                 if k ==1:
                     s_prime =1
                 elif k ==2:
-                    s_prime = (s-1) // 8 +1
+                    s_prime = (s-1) % len(M_2) +1
                 else:
                     s_prime = s
                 # average over scenarios of that stage
@@ -1615,43 +1619,43 @@ if __name__ == "__main__":
     results = analyze_experiment(base_folder)
 
     if LOAD_ONE_RUN:
-        plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
+        plot_hydrogen_production(results, folder=folder + f"{LOAD_ONE_RUN}")
+        plot_hydrogen_production_by_subsidy(results, folder= folder +f"{LOAD_ONE_RUN}")
+        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], folder + f"{LOAD_ONE_RUN}")
+        plot_NG_consumption_by_market(base_folder,  dev_values[2], folder + f"{LOAD_ONE_RUN}")
+        plot_subsidy_cost(results, folder =folder + f"{LOAD_ONE_RUN}")
     else:
-        plot_hydrogen_production(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_hydrogen_production_by_subsidy(results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], "study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_NG_consumption_by_market(base_folder,  dev_values[2], f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_subsidy_cost(results, folder =f"study_case_model/figures/subsidy_experiment/combined_results/")
+        plot_hydrogen_production(results, folder=folder)
+        plot_hydrogen_production_by_subsidy(results, folder=folder)
+        plot_hydrogen_consumption_by_market(base_folder,  dev_values[2], folder)
+        plot_NG_consumption_by_market(base_folder,  dev_values[2], folder)
+        plot_subsidy_cost(results, folder =folder)
 
     objective_dict = analyze_objectives(base_folder)
 
     if LOAD_ONE_RUN:
-        plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="abatement")
+        plot_objective_values(objective_dict, folder=folder + f"{LOAD_ONE_RUN}")
+        plot_net_effect(objective_dict, results, folder=folder + f"{LOAD_ONE_RUN}")
+        plot_net_effect(objective_dict, results, folder=folder + f"{LOAD_ONE_RUN}", co2_method="energy")
+        plot_net_effect(objective_dict, results, folder=folder + f"{LOAD_ONE_RUN}", co2_method="volume")
+        plot_net_effect(objective_dict, results, folder=folder + f"{LOAD_ONE_RUN}", co2_method="abatement")
         
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="energy")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="volume")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/{LOAD_ONE_RUN}", co2_method="abatement")
+        plot_roi(objective_dict, results, folder=folder + f"{LOAD_ONE_RUN}")
+        plot_roi(objective_dict, results, folder=folder + f"{LOAD_ONE_RUN}", co2_method="energy")
+        plot_roi(objective_dict, results, folder=folder + f"{LOAD_ONE_RUN}", co2_method="volume")
+        plot_roi(objective_dict, results, folder=folder + f"{LOAD_ONE_RUN}", co2_method="abatement")
     
     else:
-        plot_objective_values(objective_dict, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
-        plot_net_effect(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="abatement")
+        plot_objective_values(objective_dict, folder=folder)
+        plot_net_effect(objective_dict, results, folder=folder)
+        plot_net_effect(objective_dict, results, folder=folder, co2_method="energy")
+        plot_net_effect(objective_dict, results, folder=folder, co2_method="volume")
+        plot_net_effect(objective_dict, results, folder=folder, co2_method="abatement")
         
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="energy")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="volume")
-        plot_roi(objective_dict, results, folder=f"study_case_model/figures/subsidy_experiment/combined_results/", co2_method="abatement")
+        plot_roi(objective_dict, results, folder=folder)
+        plot_roi(objective_dict, results, folder=folder, co2_method="energy")
+        plot_roi(objective_dict, results, folder=folder, co2_method="volume")
+        plot_roi(objective_dict, results, folder=folder, co2_method="abatement")
 
 
 

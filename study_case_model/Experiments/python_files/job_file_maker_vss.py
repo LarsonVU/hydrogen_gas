@@ -16,9 +16,9 @@ with open("study_case_model/Experiments/slurm_files/vss_jobs.txt", "w") as f:
             f"--subsidy {subsidy} --deviation {deviation} --run {run} "
             f"--branches_stage2 {branches2} --branches_stage3 {branches3} --n_runs {n_runs} "
             f"--threads 48 --precision 0.002 "
-            f"--data_folder study_case_model/scenario_variables/vss_experiment/30426/ "
-            f"--pickle_folder study_case_model/figures/vss_experiment/30426/ "
-            f"--output_csv study_case_model/figures/vss_experiment/30426/vss_results_{subsidy}_{deviation}_{branches2}_{branches3}.csv "
+            f"--data_folder study_case_model/scenario_variables/vss_experiment/14526/ "
+            f"--pickle_folder study_case_model/figures/vss_experiment/14526/ "
+            f"--output_csv study_case_model/figures/vss_experiment/14526/vss_results_{subsidy}_{deviation}_{branches2}_{branches3}.csv "
         )
         f.write(cmd + "\n")
 
