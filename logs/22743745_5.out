@@ -1,0 +1,1579 @@
+Gurobi shell based on Python 3.13.1 can be launched with command `gurobi.sh`
+Gurobi Python Interface can be loaded in Python 3.13.1 with 'import gurobipy'
+/var/spool/slurm/slurmd/job22743751/slurm_script: line 24: activate: No such file or directory
+
+======================================================================
+RUN 1/10 (seed=0)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmp1xd7e6xl.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run0"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0xe48c97e7
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 2e+05]
+Presolve removed 9557 rows and 6494 columns
+Presolve time: 0.66s
+Presolved: 34988 rows, 6156 columns, 152630 nonzeros
+Variable types: 4792 continuous, 1364 integer (1364 binary)
+Root relaxation presolved: 33854 rows, 5022 columns, 150450 nonzeros
+
+Extra simplex iterations after uncrush: 11
+
+Root relaxation: objective 2.184970e+07, 4618 iterations, 0.36 seconds (0.39 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.1850e+07    0   69          - 2.1850e+07      -     -    1s
+H    0     0                    2.089422e+07 2.1850e+07  4.57%     -    1s
+     0     0 2.1823e+07    0   70 2.0894e+07 2.1823e+07  4.45%     -    2s
+H    0     0                    2.163964e+07 2.1823e+07  0.85%     -    2s
+     0     0 2.1823e+07    0   72 2.1640e+07 2.1823e+07  0.85%     -    2s
+H    0     0                    2.180165e+07 2.1823e+07  0.10%     -    2s
+
+Cutting planes:
+  Gomory: 17
+  Cover: 18
+  Implied bound: 145
+  MIR: 74
+  Flow cover: 114
+  RLT: 2
+  Relax-and-lift: 63
+
+Explored 1 nodes (5825 simplex iterations) in 2.77 seconds (2.54 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 3: 2.18017e+07 2.16396e+07 2.08942e+07 
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.180165216014e+07, best bound 2.182327140279e+07, gap 0.0992%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run0
+  RP objective: 21801652.16013539
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run0/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21814889.11898657
+  EVPI (EV_PI - RP): 13236.95885118097
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 21811937.217763305
+  Conditional EVPI: 10285.057627916336
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run0/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21723379.022467215
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 1)
+  ==================================================
+  RP  = 21,801,652.16
+  EV  = 20,390,479.47
+  EEV = 21,723,379.02
+  VSS = 78,273.14
+  VSS% = 0.36%
+  EVPI = 13,236.96
+  EVPI_cond = 10,285.06
+
+======================================================================
+RUN 2/10 (seed=1)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmpcevai5vx.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run1"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0xb186a976
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 2e+05]
+Presolve removed 9565 rows and 6398 columns
+Presolve time: 0.67s
+Presolved: 34980 rows, 6252 columns, 152169 nonzeros
+Variable types: 4864 continuous, 1388 integer (1388 binary)
+Root relaxation presolved: 33815 rows, 5087 columns, 149907 nonzeros
+
+Extra simplex iterations after uncrush: 9
+
+Root relaxation: objective 2.114627e+07, 4504 iterations, 0.33 seconds (0.33 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.1146e+07    0   73          - 2.1146e+07      -     -    1s
+H    0     0                    2.025547e+07 2.1146e+07  4.40%     -    1s
+H    0     0                    2.025772e+07 2.1122e+07  4.27%     -    2s
+     0     0 2.1122e+07    0   99 2.0258e+07 2.1122e+07  4.27%     -    2s
+H    0     0                    2.110341e+07 2.1122e+07  0.09%     -    2s
+
+Cutting planes:
+  Gomory: 7
+  Cover: 8
+  Implied bound: 60
+  MIR: 55
+  Flow cover: 86
+  Relax-and-lift: 42
+
+Explored 1 nodes (5738 simplex iterations) in 2.76 seconds (2.62 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 3: 2.11034e+07 2.02577e+07 2.02555e+07 
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.110340995369e+07, best bound 2.112220952864e+07, gap 0.0891%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run1
+  RP objective: 21103409.95368734
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run1/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21120130.867428906
+  EVPI (EV_PI - RP): 16720.91374156624
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 21120412.601461798
+  Conditional EVPI: 17002.64777445793
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run1/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21014307.37066575
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 2)
+  ==================================================
+  RP  = 21,103,409.95
+  EV  = 20,390,479.47
+  EEV = 21,014,307.37
+  VSS = 89,102.58
+  VSS% = 0.42%
+  EVPI = 16,720.91
+  EVPI_cond = 17,002.65
+
+======================================================================
+RUN 3/10 (seed=2)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmp7s1gjp1a.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run2"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0xb8a208ea
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 1e+05]
+Presolve removed 9369 rows and 6254 columns
+Presolve time: 0.58s
+Presolved: 35176 rows, 6396 columns, 154852 nonzeros
+Variable types: 4972 continuous, 1424 integer (1424 binary)
+Root relaxation presolved: 34122 rows, 5342 columns, 152836 nonzeros
+
+Extra simplex iterations after uncrush: 97
+
+Root relaxation: objective 2.123005e+07, 4433 iterations, 0.33 seconds (0.35 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.1230e+07    0   65          - 2.1230e+07      -     -    1s
+H    0     0                    2.066548e+07 2.1230e+07  2.73%     -    1s
+     0     0 2.1220e+07    0   88 2.0665e+07 2.1220e+07  2.68%     -    1s
+H    0     0                    2.098841e+07 2.1220e+07  1.10%     -    2s
+     0     0 2.1218e+07    0   94 2.0988e+07 2.1218e+07  1.10%     -    2s
+     0     0 2.1218e+07    0   97 2.0988e+07 2.1218e+07  1.10%     -    2s
+H    0     0                    2.099956e+07 2.1218e+07  1.04%     -    2s
+     0     0 2.1217e+07    0  125 2.1000e+07 2.1217e+07  1.04%     -    2s
+     0     0 2.1217e+07    0  111 2.1000e+07 2.1217e+07  1.04%     -    2s
+     0     0 2.1217e+07    0  117 2.1000e+07 2.1217e+07  1.04%     -    2s
+     0     0 2.1217e+07    0  117 2.1000e+07 2.1217e+07  1.04%     -    3s
+     0     0 2.1217e+07    0  117 2.1000e+07 2.1217e+07  1.04%     -    3s
+     0     0 2.1216e+07    0  120 2.1000e+07 2.1216e+07  1.03%     -    3s
+H    0     0                    2.113221e+07 2.1216e+07  0.40%     -    4s
+     0     0 2.1216e+07    0  116 2.1132e+07 2.1216e+07  0.40%     -    4s
+     0     0 2.1216e+07    0  121 2.1132e+07 2.1216e+07  0.40%     -    4s
+     0     0 2.1216e+07    0  120 2.1132e+07 2.1216e+07  0.40%     -    4s
+     0     0 2.1215e+07    0  125 2.1132e+07 2.1215e+07  0.39%     -    4s
+H    0     0                    2.119863e+07 2.1215e+07  0.08%     -    4s
+
+Cutting planes:
+  Learned: 1
+  Gomory: 11
+  Cover: 15
+  Implied bound: 336
+  MIR: 138
+  Flow cover: 280
+  RLT: 1
+  Relax-and-lift: 109
+
+Explored 1 nodes (8416 simplex iterations) in 5.01 seconds (4.57 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 5: 2.11986e+07 2.11322e+07 2.09996e+07 ... 2.06655e+07
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.119863171526e+07, best bound 2.121543705910e+07, gap 0.0793%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run2
+  RP objective: 21198631.715261407
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run2/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21212864.93996245
+  EVPI (EV_PI - RP): 14233.224701043218
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 21213901.4924487
+  Conditional EVPI: 15269.777187291533
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run2/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21103409.073366053
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 3)
+  ==================================================
+  RP  = 21,198,631.72
+  EV  = 20,390,479.47
+  EEV = 21,103,409.07
+  VSS = 95,222.64
+  VSS% = 0.45%
+  EVPI = 14,233.22
+  EVPI_cond = 15,269.78
+
+======================================================================
+RUN 4/10 (seed=3)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmpuia2zcr1.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run3"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0xc81df9ee
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 2e+05]
+Presolve removed 9497 rows and 6286 columns
+Presolve time: 0.65s
+Presolved: 35048 rows, 6364 columns, 153433 nonzeros
+Variable types: 4948 continuous, 1416 integer (1416 binary)
+Found heuristic solution: objective 1.882034e+07
+Root relaxation presolved: 33850 rows, 5166 columns, 151133 nonzeros
+
+Extra simplex iterations after uncrush: 157
+
+Root relaxation: objective 2.011176e+07, 4496 iterations, 0.34 seconds (0.35 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.0112e+07    0   91 1.8820e+07 2.0112e+07  6.86%     -    1s
+H    0     0                    1.935705e+07 2.0112e+07  3.90%     -    2s
+     0     0 2.0102e+07    0  111 1.9357e+07 2.0102e+07  3.85%     -    2s
+H    0     0                    1.989968e+07 2.0102e+07  1.02%     -    2s
+     0     0 2.0100e+07    0  110 1.9900e+07 2.0100e+07  1.01%     -    2s
+     0     0 2.0099e+07    0  108 1.9900e+07 2.0099e+07  1.00%     -    2s
+     0     0 2.0099e+07    0  110 1.9900e+07 2.0099e+07  1.00%     -    3s
+     0     0 2.0099e+07    0  110 1.9900e+07 2.0099e+07  1.00%     -    3s
+     0     0 2.0099e+07    0  110 1.9900e+07 2.0099e+07  1.00%     -    3s
+     0     0 2.0097e+07    0  111 1.9900e+07 2.0097e+07  0.99%     -    3s
+     0     0 2.0096e+07    0  121 1.9900e+07 2.0096e+07  0.99%     -    3s
+     0     0 2.0096e+07    0  119 1.9900e+07 2.0096e+07  0.99%     -    3s
+     0     0 2.0096e+07    0  125 1.9900e+07 2.0096e+07  0.99%     -    3s
+     0     0 2.0096e+07    0  105 1.9900e+07 2.0096e+07  0.99%     -    4s
+H    0     0                    2.002130e+07 2.0096e+07  0.37%     -    4s
+     0     0 2.0096e+07    0  111 2.0021e+07 2.0096e+07  0.37%     -    4s
+     0     0 2.0096e+07    0  107 2.0021e+07 2.0096e+07  0.37%     -    4s
+     0     0 2.0096e+07    0  106 2.0021e+07 2.0096e+07  0.37%     -    4s
+     0     0 2.0096e+07    0   79 2.0021e+07 2.0096e+07  0.37%     -    5s
+     0     0 2.0095e+07    0   82 2.0021e+07 2.0095e+07  0.37%     -    5s
+     0     0 2.0095e+07    0   83 2.0021e+07 2.0095e+07  0.37%     -    5s
+     0     0 2.0095e+07    0   85 2.0021e+07 2.0095e+07  0.37%     -    5s
+     0     0 2.0095e+07    0   78 2.0021e+07 2.0095e+07  0.37%     -    6s
+     0     0 2.0095e+07    0   83 2.0021e+07 2.0095e+07  0.37%     -    6s
+     0     0 2.0095e+07    0   79 2.0021e+07 2.0095e+07  0.37%     -    6s
+     0     0 2.0095e+07    0   78 2.0021e+07 2.0095e+07  0.37%     -    6s
+H    0     0                    2.002807e+07 2.0095e+07  0.34%     -    6s
+H    0     0                    2.003447e+07 2.0095e+07  0.30%     -    6s
+     0     0 2.0095e+07    0   75 2.0034e+07 2.0095e+07  0.30%     -    6s
+     0     0 2.0095e+07    0   71 2.0034e+07 2.0095e+07  0.30%     -    7s
+     0     0 2.0095e+07    0   74 2.0034e+07 2.0095e+07  0.30%     -    7s
+     0     0 2.0095e+07    0   77 2.0034e+07 2.0095e+07  0.30%     -    7s
+H    0     0                    2.005476e+07 2.0095e+07  0.20%     -    7s
+     0     0 2.0095e+07    0   75 2.0055e+07 2.0095e+07  0.20%     -    7s
+     0     0 2.0095e+07    0   82 2.0055e+07 2.0095e+07  0.20%     -    7s
+     0     0 2.0095e+07    0   79 2.0055e+07 2.0095e+07  0.20%     -    8s
+     0     0 2.0095e+07    0   79 2.0055e+07 2.0095e+07  0.20%     -    9s
+     0     2 2.0095e+07    0   79 2.0055e+07 2.0095e+07  0.20%     -   10s
+H   32    64                    2.006833e+07 2.0095e+07  0.13%   102   11s
+H   34    64                    2.006895e+07 2.0095e+07  0.13%   102   11s
+H   40    64                    2.006910e+07 2.0095e+07  0.13%   100   11s
+
+Cutting planes:
+  Gomory: 16
+  Cover: 20
+  Implied bound: 628
+  MIR: 252
+  Flow cover: 365
+  RLT: 8
+  Relax-and-lift: 324
+
+Explored 63 nodes (18537 simplex iterations) in 11.17 seconds (10.33 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 10: 2.00691e+07 2.0069e+07 2.00683e+07 ... 1.88203e+07
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.006910373938e+07, best bound 2.009518442485e+07, gap 0.1300%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run3
+  RP objective: 20069103.739380963
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run3/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 20097979.96960872
+  EVPI (EV_PI - RP): 28876.230227757245
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 20095274.492303602
+  Conditional EVPI: 26170.75292263925
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run3/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 19960969.972262606
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 4)
+  ==================================================
+  RP  = 20,069,103.74
+  EV  = 20,390,479.47
+  EEV = 19,960,969.97
+  VSS = 108,133.77
+  VSS% = 0.54%
+  EVPI = 28,876.23
+  EVPI_cond = 26,170.75
+
+======================================================================
+RUN 5/10 (seed=4)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmpjmt_zfwp.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run4"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0x0382a0cd
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 1e+05]
+Presolve removed 9441 rows and 6270 columns
+Presolve time: 0.59s
+Presolved: 35104 rows, 6380 columns, 155585 nonzeros
+Variable types: 4960 continuous, 1420 integer (1420 binary)
+Root relaxation presolved: 34097 rows, 5373 columns, 153649 nonzeros
+
+Extra simplex iterations after uncrush: 137
+
+Root relaxation: objective 2.208490e+07, 4623 iterations, 0.33 seconds (0.34 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.2085e+07    0   67          - 2.2085e+07      -     -    1s
+H    0     0                    2.010145e+07 2.2085e+07  9.87%     -    1s
+H    0     0                    2.140611e+07 2.2085e+07  3.17%     -    2s
+     0     0 2.2050e+07    0  118 2.1406e+07 2.2050e+07  3.01%     -    2s
+H    0     0                    2.167343e+07 2.2050e+07  1.74%     -    2s
+     0     0 2.2050e+07    0  117 2.1673e+07 2.2050e+07  1.74%     -    2s
+     0     0 2.2050e+07    0  115 2.1673e+07 2.2050e+07  1.74%     -    2s
+     0     0 2.2050e+07    0  115 2.1673e+07 2.2050e+07  1.74%     -    2s
+     0     0 2.2047e+07    0  126 2.1673e+07 2.2047e+07  1.72%     -    3s
+     0     0 2.2046e+07    0  124 2.1673e+07 2.2046e+07  1.72%     -    3s
+     0     0 2.2046e+07    0  126 2.1673e+07 2.2046e+07  1.72%     -    3s
+     0     0 2.2046e+07    0  126 2.1673e+07 2.2046e+07  1.72%     -    3s
+     0     0 2.2046e+07    0  126 2.1673e+07 2.2046e+07  1.72%     -    3s
+H    0     0                    2.195831e+07 2.2046e+07  0.40%     -    4s
+     0     0 2.2044e+07    0  122 2.1958e+07 2.2044e+07  0.39%     -    4s
+H    0     0                    2.198191e+07 2.2044e+07  0.28%     -    4s
+     0     0 2.2044e+07    0  119 2.1982e+07 2.2044e+07  0.28%     -    4s
+     0     0 2.2044e+07    0  119 2.1982e+07 2.2044e+07  0.28%     -    4s
+     0     0 2.2044e+07    0  120 2.1982e+07 2.2044e+07  0.28%     -    4s
+     0     0 2.2044e+07    0  120 2.1982e+07 2.2044e+07  0.28%     -    4s
+     0     0 2.2044e+07    0  120 2.1982e+07 2.2044e+07  0.28%     -    4s
+     0     0 2.2044e+07    0  120 2.1982e+07 2.2044e+07  0.28%     -    4s
+     0     0 2.2044e+07    0  120 2.1982e+07 2.2044e+07  0.28%     -    4s
+H    0     0                    2.199882e+07 2.2044e+07  0.21%     -    4s
+     0     0 2.2044e+07    0  119 2.1999e+07 2.2044e+07  0.21%     -    4s
+     0     0 2.2044e+07    0  120 2.1999e+07 2.2044e+07  0.21%     -    4s
+     0     0 2.2044e+07    0  104 2.1999e+07 2.2044e+07  0.20%     -    5s
+H    0     0                    2.201511e+07 2.2044e+07  0.13%     -    5s
+     0     0 2.2044e+07    0  104 2.2015e+07 2.2044e+07  0.13%     -    5s
+
+Cutting planes:
+  Gomory: 7
+  Cover: 20
+  Implied bound: 378
+  MIR: 180
+  Flow cover: 267
+  RLT: 6
+  Relax-and-lift: 121
+
+Explored 1 nodes (9393 simplex iterations) in 5.55 seconds (4.99 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 7: 2.20151e+07 2.19988e+07 2.19819e+07 ... 2.01014e+07
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.201510901955e+07, best bound 2.204352403160e+07, gap 0.1291%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run4
+  RP objective: 22015109.01955306
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run4/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 22028309.125964068
+  EVPI (EV_PI - RP): 13200.106411006302
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 22028851.08158019
+  Conditional EVPI: 13742.062027130276
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run4/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21899132.415687032
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 5)
+  ==================================================
+  RP  = 22,015,109.02
+  EV  = 20,390,479.47
+  EEV = 21,899,132.42
+  VSS = 115,976.60
+  VSS% = 0.53%
+  EVPI = 13,200.11
+  EVPI_cond = 13,742.06
+
+======================================================================
+RUN 6/10 (seed=5)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmpg3q87ri7.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run5"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0x1e281dad
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 2e+05]
+Presolve removed 9440 rows and 6254 columns
+Presolve time: 0.58s
+Presolved: 35105 rows, 6396 columns, 154594 nonzeros
+Variable types: 4972 continuous, 1424 integer (1424 binary)
+Root relaxation presolved: 34062 rows, 5354 columns, 152594 nonzeros
+
+Extra simplex iterations after uncrush: 193
+
+Root relaxation: objective 2.191885e+07, 4605 iterations, 0.34 seconds (0.36 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.1919e+07    0   86          - 2.1919e+07      -     -    1s
+H    0     0                    1.355016e+07 2.1919e+07  61.8%     -    2s
+     0     0 2.1917e+07    0  102 1.3550e+07 2.1917e+07  61.7%     -    2s
+H    0     0                    2.177850e+07 2.1917e+07  0.64%     -    2s
+     0     0 2.1916e+07    0  116 2.1778e+07 2.1916e+07  0.63%     -    2s
+     0     0 2.1916e+07    0  120 2.1778e+07 2.1916e+07  0.63%     -    2s
+     0     0 2.1915e+07    0  125 2.1778e+07 2.1915e+07  0.62%     -    3s
+     0     0 2.1914e+07    0  123 2.1778e+07 2.1914e+07  0.62%     -    3s
+     0     0 2.1910e+07    0  124 2.1778e+07 2.1910e+07  0.61%     -    3s
+     0     0 2.1910e+07    0  125 2.1778e+07 2.1910e+07  0.61%     -    3s
+     0     0 2.1910e+07    0  126 2.1778e+07 2.1910e+07  0.61%     -    3s
+     0     0 2.1910e+07    0  126 2.1778e+07 2.1910e+07  0.61%     -    3s
+     0     0 2.1910e+07    0  133 2.1778e+07 2.1910e+07  0.61%     -    4s
+H    0     0                    2.182591e+07 2.1910e+07  0.39%     -    4s
+     0     0 2.1910e+07    0  126 2.1826e+07 2.1910e+07  0.39%     -    4s
+     0     0 2.1910e+07    0  131 2.1826e+07 2.1910e+07  0.39%     -    4s
+     0     0 2.1910e+07    0  128 2.1826e+07 2.1910e+07  0.39%     -    4s
+     0     0 2.1910e+07    0  129 2.1826e+07 2.1910e+07  0.39%     -    4s
+     0     0 2.1910e+07    0  137 2.1826e+07 2.1910e+07  0.39%     -    5s
+     0     0 2.1910e+07    0  134 2.1826e+07 2.1910e+07  0.39%     -    5s
+H    0     0                    2.187853e+07 2.1910e+07  0.15%     -    5s
+     0     0 2.1910e+07    0  132 2.1879e+07 2.1910e+07  0.15%     -    5s
+
+Cutting planes:
+  Gomory: 11
+  Cover: 8
+  Implied bound: 325
+  MIR: 159
+  Flow cover: 259
+  Relax-and-lift: 110
+
+Explored 1 nodes (8880 simplex iterations) in 5.60 seconds (5.17 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 5: 2.18785e+07 2.18785e+07 2.18259e+07 ... 1.35502e+07
+
+Optimal solution found (tolerance 2.00e-03)
+Warning: max bound violation (1.1372e-06) exceeds tolerance
+Best objective 2.187852961205e+07, best bound 2.191041634939e+07, gap 0.1457%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run5
+  RP objective: 21878529.612053324
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run5/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21897974.41966517
+  EVPI (EV_PI - RP): 19444.807611845434
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 21893452.85558609
+  Conditional EVPI: 14923.243532765657
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run5/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21788553.186271932
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 6)
+  ==================================================
+  RP  = 21,878,529.61
+  EV  = 20,390,479.47
+  EEV = 21,788,553.19
+  VSS = 89,976.43
+  VSS% = 0.41%
+  EVPI = 19,444.81
+  EVPI_cond = 14,923.24
+
+======================================================================
+RUN 7/10 (seed=6)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmpjn43b81v.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run6"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0x2d0f29fd
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 2e+05]
+Presolve removed 9501 rows and 6350 columns
+Presolve time: 0.58s
+Presolved: 35044 rows, 6300 columns, 153954 nonzeros
+Variable types: 4900 continuous, 1400 integer (1400 binary)
+Found heuristic solution: objective 1.948390e+07
+Root relaxation presolved: 33993 rows, 5249 columns, 151924 nonzeros
+
+Extra simplex iterations after uncrush: 127
+
+Root relaxation: objective 2.131295e+07, 4497 iterations, 0.32 seconds (0.34 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.1313e+07    0   98 1.9484e+07 2.1313e+07  9.39%     -    2s
+H    0     0                    2.105312e+07 2.1303e+07  1.19%     -    2s
+     0     0 2.1303e+07    0  129 2.1053e+07 2.1303e+07  1.19%     -    2s
+H    0     0                    2.108533e+07 2.1302e+07  1.03%     -    3s
+     0     0 2.1302e+07    0  134 2.1085e+07 2.1302e+07  1.03%     -    3s
+     0     0 2.1302e+07    0  135 2.1085e+07 2.1302e+07  1.03%     -    3s
+     0     0 2.1301e+07    0  137 2.1085e+07 2.1301e+07  1.02%     -    3s
+     0     0 2.1300e+07    0  141 2.1085e+07 2.1300e+07  1.02%     -    4s
+     0     0 2.1300e+07    0  142 2.1085e+07 2.1300e+07  1.02%     -    4s
+     0     0 2.1300e+07    0  142 2.1085e+07 2.1300e+07  1.02%     -    4s
+     0     0 2.1299e+07    0  123 2.1085e+07 2.1299e+07  1.01%     -    4s
+     0     0 2.1299e+07    0  129 2.1085e+07 2.1299e+07  1.01%     -    4s
+H    0     0                    2.120602e+07 2.1299e+07  0.44%     -    4s
+     0     0 2.1299e+07    0  129 2.1206e+07 2.1299e+07  0.44%     -    4s
+     0     0 2.1299e+07    0  129 2.1206e+07 2.1299e+07  0.44%     -    4s
+     0     0 2.1298e+07    0  118 2.1206e+07 2.1298e+07  0.43%     -    5s
+     0     0 2.1298e+07    0  120 2.1206e+07 2.1298e+07  0.43%     -    5s
+     0     0 2.1298e+07    0  117 2.1206e+07 2.1298e+07  0.43%     -    5s
+     0     0 2.1298e+07    0  114 2.1206e+07 2.1298e+07  0.43%     -    5s
+     0     0 2.1297e+07    0   97 2.1206e+07 2.1297e+07  0.43%     -    6s
+     0     0 2.1296e+07    0   93 2.1206e+07 2.1296e+07  0.43%     -    6s
+     0     0 2.1296e+07    0   94 2.1206e+07 2.1296e+07  0.42%     -    6s
+     0     0 2.1296e+07    0   95 2.1206e+07 2.1296e+07  0.42%     -    6s
+     0     0 2.1296e+07    0   95 2.1206e+07 2.1296e+07  0.42%     -    6s
+     0     0 2.1296e+07    0  101 2.1206e+07 2.1296e+07  0.42%     -    6s
+H    0     0                    2.120873e+07 2.1295e+07  0.41%     -    7s
+     0     0 2.1295e+07    0  103 2.1209e+07 2.1295e+07  0.41%     -    7s
+     0     0 2.1295e+07    0   97 2.1209e+07 2.1295e+07  0.41%     -    7s
+     0     0 2.1295e+07    0  100 2.1209e+07 2.1295e+07  0.41%     -    7s
+     0     0 2.1295e+07    0  105 2.1209e+07 2.1295e+07  0.41%     -    7s
+     0     0 2.1295e+07    0  103 2.1209e+07 2.1295e+07  0.41%     -    8s
+     0     0 2.1295e+07    0  101 2.1209e+07 2.1295e+07  0.41%     -    8s
+     0     0 2.1295e+07    0  102 2.1209e+07 2.1295e+07  0.41%     -    8s
+     0     0 2.1295e+07    0   99 2.1209e+07 2.1295e+07  0.41%     -    8s
+     0     0 2.1295e+07    0  102 2.1209e+07 2.1295e+07  0.41%     -    8s
+     0     0 2.1295e+07    0   97 2.1209e+07 2.1295e+07  0.40%     -    9s
+     0     0 2.1295e+07    0  104 2.1209e+07 2.1295e+07  0.40%     -    9s
+     0     0 2.1295e+07    0   94 2.1209e+07 2.1295e+07  0.40%     -    9s
+H    0     0                    2.123287e+07 2.1295e+07  0.29%     -   10s
+     0     0 2.1295e+07    0   94 2.1233e+07 2.1295e+07  0.29%     -   10s
+     0     2 2.1295e+07    0   94 2.1233e+07 2.1295e+07  0.29%     -   11s
+H  374   373                    2.123674e+07 2.1286e+07  0.23%  81.5   14s
+H  404   373                    2.123682e+07 2.1286e+07  0.23%  77.8   14s
+   834   705 2.1277e+07   19   78 2.1237e+07 2.1286e+07  0.23%  57.8   15s
+
+Cutting planes:
+  Learned: 1
+  Gomory: 16
+  Cover: 9
+  Implied bound: 718
+  MIR: 466
+  Flow cover: 538
+  RLT: 11
+  Relax-and-lift: 261
+  PSD: 2
+
+Explored 1337 nodes (87546 simplex iterations) in 15.37 seconds (16.27 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 8: 2.12368e+07 2.12367e+07 2.12329e+07 ... 1.94839e+07
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.123681640111e+07, best bound 2.127831215909e+07, gap 0.1954%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run6
+  RP objective: 21236816.40111216
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run6/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21251103.939244725
+  EVPI (EV_PI - RP): 14287.538132563233
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 21250675.915855788
+  Conditional EVPI: 13859.514743626118
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run6/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21141566.056337487
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 7)
+  ==================================================
+  RP  = 21,236,816.40
+  EV  = 20,390,479.47
+  EEV = 21,141,566.06
+  VSS = 95,250.34
+  VSS% = 0.45%
+  EVPI = 14,287.54
+  EVPI_cond = 13,859.51
+
+======================================================================
+RUN 8/10 (seed=7)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmps6eewxxc.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run7"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0x9f473d64
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 1e+05]
+Presolve removed 9401 rows and 6238 columns
+Presolve time: 0.64s
+Presolved: 35144 rows, 6412 columns, 153801 nonzeros
+Variable types: 4984 continuous, 1428 integer (1428 binary)
+Root relaxation presolved: 33980 rows, 5248 columns, 151541 nonzeros
+
+Extra simplex iterations after uncrush: 111
+
+Root relaxation: objective 2.163764e+07, 4334 iterations, 0.33 seconds (0.35 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.1638e+07    0   87          - 2.1638e+07      -     -    1s
+H    0     0                    2.097152e+07 2.1638e+07  3.18%     -    1s
+     0     0 2.1609e+07    0  126 2.0972e+07 2.1609e+07  3.04%     -    2s
+     0     0 2.1605e+07    0  125 2.0972e+07 2.1605e+07  3.02%     -    2s
+     0     0 2.1605e+07    0  128 2.0972e+07 2.1605e+07  3.02%     -    2s
+     0     0 2.1605e+07    0  128 2.0972e+07 2.1605e+07  3.02%     -    2s
+H    0     0                    2.109175e+07 2.1605e+07  2.43%     -    2s
+H    0     0                    2.129742e+07 2.1605e+07  1.44%     -    2s
+     0     0 2.1604e+07    0  113 2.1297e+07 2.1604e+07  1.44%     -    2s
+     0     0 2.1604e+07    0  117 2.1297e+07 2.1604e+07  1.44%     -    3s
+     0     0 2.1604e+07    0  117 2.1297e+07 2.1604e+07  1.44%     -    3s
+     0     0 2.1604e+07    0  111 2.1297e+07 2.1604e+07  1.44%     -    3s
+H    0     0                    2.146283e+07 2.1603e+07  0.66%     -    4s
+     0     0 2.1603e+07    0  117 2.1463e+07 2.1603e+07  0.66%     -    4s
+     0     0 2.1603e+07    0  119 2.1463e+07 2.1603e+07  0.65%     -    4s
+     0     0 2.1603e+07    0  119 2.1463e+07 2.1603e+07  0.65%     -    4s
+     0     0 2.1603e+07    0  120 2.1463e+07 2.1603e+07  0.65%     -    4s
+     0     0 2.1603e+07    0  119 2.1463e+07 2.1603e+07  0.65%     -    4s
+H    0     0                    2.151483e+07 2.1603e+07  0.41%     -    5s
+     0     0 2.1603e+07    0  127 2.1515e+07 2.1603e+07  0.41%     -    5s
+     0     0 2.1603e+07    0  128 2.1515e+07 2.1603e+07  0.41%     -    5s
+     0     0 2.1603e+07    0  131 2.1515e+07 2.1603e+07  0.41%     -    5s
+     0     0 2.1603e+07    0  131 2.1515e+07 2.1603e+07  0.41%     -    5s
+H    0     0                    2.152801e+07 2.1603e+07  0.35%     -    5s
+     0     0 2.1603e+07    0   84 2.1528e+07 2.1603e+07  0.35%     -    5s
+     0     0 2.1602e+07    0   91 2.1528e+07 2.1602e+07  0.35%     -    6s
+     0     0 2.1602e+07    0   92 2.1528e+07 2.1602e+07  0.35%     -    6s
+     0     0 2.1602e+07    0   98 2.1528e+07 2.1602e+07  0.34%     -    6s
+     0     0 2.1602e+07    0   99 2.1528e+07 2.1602e+07  0.34%     -    6s
+     0     0 2.1602e+07    0  101 2.1528e+07 2.1602e+07  0.34%     -    6s
+     0     0 2.1602e+07    0  102 2.1528e+07 2.1602e+07  0.34%     -    6s
+H    0     0                    2.153310e+07 2.1602e+07  0.32%     -    7s
+H    0     0                    2.153525e+07 2.1602e+07  0.31%     -    7s
+     0     0 2.1602e+07    0  100 2.1535e+07 2.1602e+07  0.31%     -    7s
+     0     0 2.1602e+07    0   96 2.1535e+07 2.1602e+07  0.31%     -    7s
+     0     0 2.1602e+07    0   93 2.1535e+07 2.1602e+07  0.31%     -    7s
+     0     0 2.1602e+07    0   92 2.1535e+07 2.1602e+07  0.31%     -    7s
+H    0     0                    2.153939e+07 2.1601e+07  0.29%     -    8s
+     0     0 2.1601e+07    0   91 2.1539e+07 2.1601e+07  0.29%     -    8s
+     0     0 2.1601e+07    0   91 2.1539e+07 2.1601e+07  0.29%     -    8s
+     0     0 2.1601e+07    0   90 2.1539e+07 2.1601e+07  0.29%     -    8s
+     0     0 2.1601e+07    0   89 2.1539e+07 2.1601e+07  0.28%     -    9s
+H    0     0                    2.154238e+07 2.1601e+07  0.27%     -    9s
+H    0     0                    2.158292e+07 2.1601e+07  0.08%     -   10s
+
+Cutting planes:
+  Gomory: 11
+  Cover: 14
+  Implied bound: 768
+  MIR: 230
+  Flow cover: 577
+  Relax-and-lift: 218
+
+Explored 1 nodes (10510 simplex iterations) in 10.46 seconds (9.50 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 10: 2.15829e+07 2.15829e+07 2.15424e+07 ... 2.12974e+07
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.158292467703e+07, best bound 2.160059261466e+07, gap 0.0819%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run7
+  RP objective: 21582924.677026417
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run7/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21597575.4552618
+  EVPI (EV_PI - RP): 14650.778235383332
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 21599309.148558665
+  Conditional EVPI: 16384.47153224796
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run7/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21454330.169313673
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 8)
+  ==================================================
+  RP  = 21,582,924.68
+  EV  = 20,390,479.47
+  EEV = 21,454,330.17
+  VSS = 128,594.51
+  VSS% = 0.60%
+  EVPI = 14,650.78
+  EVPI_cond = 16,384.47
+
+======================================================================
+RUN 9/10 (seed=8)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmpm407gpo8.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run8"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0xa71fce5f
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 2e+05]
+Presolve removed 9477 rows and 6222 columns
+Presolve time: 0.62s
+Presolved: 35068 rows, 6428 columns, 153986 nonzeros
+Variable types: 4996 continuous, 1432 integer (1432 binary)
+Root relaxation presolved: 33938 rows, 5298 columns, 151814 nonzeros
+
+Extra simplex iterations after uncrush: 62
+
+Root relaxation: objective 2.132307e+07, 4596 iterations, 0.34 seconds (0.36 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.1323e+07    0   81          - 2.1323e+07      -     -    1s
+H    0     0                    2.082703e+07 2.1323e+07  2.38%     -    2s
+     0     0 2.1320e+07    0   97 2.0827e+07 2.1320e+07  2.37%     -    2s
+H    0     0                    2.094466e+07 2.1320e+07  1.79%     -    2s
+     0     0 2.1319e+07    0  100 2.0945e+07 2.1319e+07  1.79%     -    2s
+     0     0 2.1319e+07    0  103 2.0945e+07 2.1319e+07  1.79%     -    2s
+     0     0 2.1318e+07    0  117 2.0945e+07 2.1318e+07  1.78%     -    3s
+     0     0 2.1317e+07    0  110 2.0945e+07 2.1317e+07  1.78%     -    3s
+     0     0 2.1317e+07    0  118 2.0945e+07 2.1317e+07  1.78%     -    3s
+     0     0 2.1317e+07    0  119 2.0945e+07 2.1317e+07  1.78%     -    3s
+     0     0 2.1314e+07    0  114 2.0945e+07 2.1314e+07  1.76%     -    4s
+H    0     0                    2.130350e+07 2.1314e+07  0.05%     -    4s
+
+Cutting planes:
+  Gomory: 8
+  Cover: 8
+  Implied bound: 243
+  MIR: 102
+  Flow cover: 187
+  Relax-and-lift: 52
+
+Explored 1 nodes (7909 simplex iterations) in 4.86 seconds (4.42 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 3: 2.13035e+07 2.09447e+07 2.0827e+07 
+
+Optimal solution found (tolerance 2.00e-03)
+Warning: max constraint violation (2.8457e-06) exceeds tolerance
+Best objective 2.130349649367e+07, best bound 2.131396452162e+07, gap 0.0491%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run8
+  RP objective: 21303496.49367371
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run8/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21307453.594864946
+  EVPI (EV_PI - RP): 3957.101191237569
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 21308740.2674223
+  Conditional EVPI: 5243.773748591542
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run8/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21252446.153754365
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 9)
+  ==================================================
+  RP  = 21,303,496.49
+  EV  = 20,390,479.47
+  EEV = 21,252,446.15
+  VSS = 51,050.34
+  VSS% = 0.24%
+  EVPI = 3,957.10
+  EVPI_cond = 5,243.77
+
+======================================================================
+RUN 10/10 (seed=9)
+======================================================================
+
+[Step 1] Solving full stochastic model (Recourse Problem)...
+Read LP format model from file /scratch-local/lbeemster.22743751/tmphsiry85_.pyomo.lp
+Reading time = 0.12 seconds
+x1: 44545 rows, 12650 columns, 255200 nonzeros
+Set parameter OutputFlag to value 1
+Set parameter MIPGap to value 0.002
+Set parameter Threads to value 48
+Set parameter Presolve to value 1
+Set parameter Cuts to value 1
+Set parameter NodefileStart to value 1
+Set parameter NodefileDir to value "/scratch-local/lbeemster.22743751/gurobi_vss_rp_run9"
+Set parameter MemLimit to value 60
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (linux64 - "Red Hat Enterprise Linux 9.6 (Plow)")
+
+CPU model: AMD EPYC 9654 96-Core Processor, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 192 physical cores, 192 logical processors, using up to 48 threads
+
+Non-default parameters:
+MemLimit  60
+MIPGap  0.002
+NodefileStart  1
+Cuts  1
+Presolve  1
+Threads  48
+
+Academic license 2514514 - for non-commercial use only - registered to l.___@student.vu.nl
+Optimize a model with 44545 rows, 12650 columns and 255200 nonzeros
+Model fingerprint: 0x532ae43f
+Variable types: 9994 continuous, 2656 integer (2656 binary)
+Coefficient statistics:
+  Matrix range     [1e-06, 1e+05]
+  Objective range  [6e+00, 3e+04]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [3e-01, 2e+05]
+Presolve removed 9481 rows and 6430 columns
+Presolve time: 0.62s
+Presolved: 35064 rows, 6220 columns, 155640 nonzeros
+Variable types: 4840 continuous, 1380 integer (1380 binary)
+Root relaxation presolved: 34116 rows, 5272 columns, 153824 nonzeros
+
+Extra simplex iterations after uncrush: 137
+
+Root relaxation: objective 2.166257e+07, 5042 iterations, 0.35 seconds (0.35 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.1663e+07    0   93          - 2.1663e+07      -     -    1s
+H    0     0                    2.135262e+07 2.1663e+07  1.45%     -    2s
+     0     0 2.1659e+07    0   94 2.1353e+07 2.1659e+07  1.44%     -    2s
+     0     0 2.1658e+07    0  120 2.1353e+07 2.1658e+07  1.43%     -    2s
+     0     0 2.1658e+07    0  121 2.1353e+07 2.1658e+07  1.43%     -    2s
+     0     0 2.1658e+07    0  120 2.1353e+07 2.1658e+07  1.43%     -    2s
+     0     0 2.1655e+07    0  147 2.1353e+07 2.1655e+07  1.41%     -    3s
+     0     0 2.1655e+07    0  153 2.1353e+07 2.1655e+07  1.41%     -    3s
+     0     0 2.1654e+07    0  156 2.1353e+07 2.1654e+07  1.41%     -    3s
+     0     0 2.1654e+07    0  158 2.1353e+07 2.1654e+07  1.41%     -    3s
+     0     0 2.1654e+07    0  159 2.1353e+07 2.1654e+07  1.41%     -    3s
+H    0     0                    2.141961e+07 2.1654e+07  1.10%     -    4s
+     0     0 2.1650e+07    0  139 2.1420e+07 2.1650e+07  1.07%     -    4s
+H    0     0                    2.143328e+07 2.1650e+07  1.01%     -    5s
+     0     0 2.1649e+07    0  151 2.1433e+07 2.1649e+07  1.01%     -    5s
+H    0     0                    2.143540e+07 2.1649e+07  1.00%     -    5s
+     0     0 2.1649e+07    0  150 2.1435e+07 2.1649e+07  1.00%     -    5s
+     0     0 2.1649e+07    0  153 2.1435e+07 2.1649e+07  1.00%     -    5s
+     0     0 2.1649e+07    0  155 2.1435e+07 2.1649e+07  1.00%     -    5s
+H    0     0                    2.148268e+07 2.1649e+07  0.78%     -    5s
+     0     0 2.1649e+07    0  155 2.1483e+07 2.1649e+07  0.78%     -    5s
+     0     0 2.1647e+07    0  136 2.1483e+07 2.1647e+07  0.77%     -    6s
+     0     0 2.1647e+07    0  132 2.1483e+07 2.1647e+07  0.77%     -    6s
+     0     0 2.1647e+07    0  130 2.1483e+07 2.1647e+07  0.77%     -    6s
+     0     0 2.1647e+07    0  130 2.1483e+07 2.1647e+07  0.77%     -    6s
+     0     0 2.1646e+07    0  120 2.1483e+07 2.1646e+07  0.76%     -    6s
+     0     0 2.1646e+07    0  116 2.1483e+07 2.1646e+07  0.76%     -    6s
+H    0     0                    2.150336e+07 2.1646e+07  0.66%     -    6s
+     0     0 2.1646e+07    0  119 2.1503e+07 2.1646e+07  0.66%     -    6s
+     0     0 2.1646e+07    0  117 2.1503e+07 2.1646e+07  0.66%     -    6s
+     0     0 2.1646e+07    0  118 2.1503e+07 2.1646e+07  0.66%     -    6s
+     0     0 2.1646e+07    0  115 2.1503e+07 2.1646e+07  0.66%     -    7s
+     0     0 2.1646e+07    0  119 2.1503e+07 2.1646e+07  0.66%     -    7s
+     0     0 2.1646e+07    0  117 2.1503e+07 2.1646e+07  0.66%     -    7s
+     0     0 2.1646e+07    0  108 2.1503e+07 2.1646e+07  0.66%     -    8s
+H    0     0                    2.150758e+07 2.1646e+07  0.64%     -    8s
+H    0     0                    2.151275e+07 2.1646e+07  0.62%     -    8s
+H    0     0                    2.151912e+07 2.1646e+07  0.59%     -    8s
+     0     0 2.1646e+07    0  112 2.1519e+07 2.1646e+07  0.59%     -    8s
+     0     0 2.1646e+07    0  116 2.1519e+07 2.1646e+07  0.59%     -    8s
+     0     0 2.1646e+07    0  116 2.1519e+07 2.1646e+07  0.59%     -    8s
+     0     0 2.1646e+07    0  117 2.1519e+07 2.1646e+07  0.59%     -    9s
+     0     0 2.1646e+07    0  117 2.1519e+07 2.1646e+07  0.59%     -   10s
+H    0     0                    2.153198e+07 2.1646e+07  0.53%     -   11s
+H    0     0                    2.158465e+07 2.1646e+07  0.28%     -   11s
+     0     2 2.1646e+07    0  117 2.1585e+07 2.1646e+07  0.28%     -   12s
+   885   814 2.1631e+07   19  122 2.1585e+07 2.1638e+07  0.25%  44.7   15s
+H 4098  3117                    2.158642e+07 2.1632e+07  0.21%  34.7   17s
+H 4777  3279                    2.158909e+07 2.1631e+07  0.19%  34.8   22s
+
+Cutting planes:
+  Gomory: 11
+  Cover: 8
+  Implied bound: 595
+  MIR: 537
+  Flow cover: 688
+  RLT: 4
+  Relax-and-lift: 228
+
+Explored 4777 nodes (178519 simplex iterations) in 23.55 seconds (23.38 work units)
+Thread count was 48 (of 192 available processors)
+
+Solution count 10: 2.15891e+07 2.15864e+07 2.15847e+07 ... 2.14354e+07
+
+Optimal solution found (tolerance 2.00e-03)
+Best objective 2.158909448198e+07, best bound 2.163105170943e+07, gap 0.1943%
+Deleted nodefile directory: /scratch-local/lbeemster.22743751/gurobi_vss_rp_run9
+  RP objective: 21589094.48198358
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/rp/sub0.0/run9/model_snapshot.pkl
+
+[EVPI] Solving each scenario deterministically for perfect information...
+  EV_PI expected objective: 21608750.620776873
+  EVPI (EV_PI - RP): 19656.138793293387
+
+[Conditional EVPI] Using RP deviation structure...
+  Computing conditional EVPI for leaf scenario 1 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 2 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 3 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 4 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 5 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 6 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 7 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 8 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 9 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 10 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 11 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 12 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 13 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 14 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 15 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  Computing conditional EVPI for leaf scenario 16 with probability 0.0625 and fixed delta values from RP...
+    Fixed delta values: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0}
+  EV_PI_cond expected objective: 21607864.697096698
+  Conditional EVPI: 18770.21511311829
+
+[Step 2] Solving deterministic Expected Value model...
+  EV objective: 20390479.467201658
+Saved model snapshot to study_case_model/figures/vss_experiment/14526/ev/sub0.0/run9/model_snapshot.pkl
+
+[Step 3] Solving EEV (stochastic model with fixed EV decisions)...
+  EEV objective: 21519492.79896005
+
+  ==================================================
+  VALUE OF STOCHASTIC SOLUTION (Run 10)
+  ==================================================
+  RP  = 21,589,094.48
+  EV  = 20,390,479.47
+  EEV = 21,519,492.80
+  VSS = 69,601.68
+  VSS% = 0.32%
+  EVPI = 19,656.14
+  EVPI_cond = 18,770.22
+
+Saved results to study_case_model/figures/vss_experiment/14526/vss_results_0_0_4_4.csv
