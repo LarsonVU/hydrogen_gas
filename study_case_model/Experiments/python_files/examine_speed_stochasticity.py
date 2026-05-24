@@ -93,9 +93,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--run",
+    "--runs",
     type= int,
-    default=0,
+    default=2,
     help = "Runs per experiment"
 )
 
@@ -111,7 +111,7 @@ FOLDER = args.folder
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1: 1, 2: args.branches_stage2, 3: args.branches_stage3}
 PRECISION = args.precision
-RUN= args.run
+RUNS= args.runs
 DENSITY_BOUNDS = args.density_bounds
 THREADS = args.threads
 DEVIATION = args.deviation
@@ -141,11 +141,11 @@ def add_row_dict_to_csv(row, folder, filename):
 
     print(f"Saved to {file_path}")
 
-def create_row(model, solve_time):
+def create_row(model, solve_time, run):
     row = {
         "subsidy": args.subsidy,
         "deviation": args.deviation,
-        "run": args.run, 
+        "run": run, 
         "solve_time": solve_time,
     }
     h2_vals = [pyo.value(model.h2_production[m_3]) for m_3 in model.M[3]]
@@ -164,11 +164,13 @@ if __name__ == "__main__":
     # Apply subsidy
     G = apply_subsidy(G, subsidy_mscm)
 
-    print("Solving model:" + f" dev{DEVIATION}, sub{SUBSIDY}, run{RUN}", flush=True)
-    scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
-    model = create_model(G, scenarios, allowed_deviation=DEVIATION, number_of_density_bounds=DENSITY_BOUNDS, splits_per_arc=np.linspace(0, 1, HOMOGENEOUS_SPLITS))
-    time_taken = time_model(model)
-    row = create_row(model, time_taken)
-    add_row_dict_to_csv(row, FOLDER + f"sub{SUBSIDY}/dev{DEVIATION}/run{RUN}/",  "solve_times.csv")
-    save_model_values(model, args.pickle_folder +  f"sub{SUBSIDY}/dev{DEVIATION}/run{RUN}/model.pkl")
+
+    for RUN in range(0,RUNS):
+        print("Solving model:" + f" dev{DEVIATION}, sub{SUBSIDY}, run{RUN}", flush=True)
+        scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, seed=RUN)
+        model = create_model(G, scenarios, allowed_deviation=DEVIATION, number_of_density_bounds=DENSITY_BOUNDS, splits_per_arc=np.linspace(0, 1, HOMOGENEOUS_SPLITS))
+        time_taken = time_model(model)
+        row = create_row(model, time_taken, RUN)
+        add_row_dict_to_csv(row, FOLDER + f"sub{SUBSIDY}/dev{DEVIATION}/run{RUN}/",  "solve_times.csv")
+        save_model_values(model, args.pickle_folder +  f"sub{SUBSIDY}/dev{DEVIATION}/run{RUN}/model.pkl")
     print("== Done ==")

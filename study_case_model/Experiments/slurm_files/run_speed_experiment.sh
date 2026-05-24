@@ -3,10 +3,10 @@
 #SBATCH -t 10:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=48
 #SBATCH --mem-per-cpu=2G
 #SBATCH --partition=genoa
-#SBATCH --array=1-1
+#SBATCH --array=1-400%3
 #SBATCH --output=logs/%A_%a.out
 #SBATCH --mail-type=BEGIN,FAIL,END
 #SBATCH --mail-user=l.m.j.beemster@student.vu.nl
@@ -24,11 +24,7 @@ export GRB_LICENSE_FILE="${HOME}/gurobi.lic"
 # ✅ FIXED venv activation
 source activate hydrogen_venv
 
-# UNIQUE_ID="${GIT_BRANCH}_job${SLURM_JOB_ID}"
-# # Construct the full paths to match your script's structure but inside the unique folder
-# FIG_PATH="$HOME/projects/hydrogen_gas/study_case_model/figures/examine_speed/$UNIQUE_ID/"
-
 cd $HOME/projects/hydrogen_gas
 
 i=${SLURM_ARRAY_TASK_ID}
-$(head -$i study_case_model/Experiments/slurm_files/speed_jobs.txt | tail -1)
+$(head -$i study_case_model/Experiments/slurm_files/speed_jobs_24526.txt | tail -1)
