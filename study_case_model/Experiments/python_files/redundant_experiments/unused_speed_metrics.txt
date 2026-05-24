@@ -1,146 +1,4 @@
 
-import matplotlib.pyplot as plt
-from pyomo.opt import TerminationCondition
-import numpy as np
-import pyomo.environ as pyo
-from pathlib import Path
-import pandas as pd
-import time
-import os
-import sys
-import argparse
-
-# Add the parent directory to the Python path
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.append(str(ROOT))
-
-from study_case_stochastic_model import solve_model, create_model, generate_cutting_plane_pairs
-from study_case_problem_file import build_base_graph,  create_scenarios
-
-# =========================
-# Argument parser
-# =========================
-parser = argparse.ArgumentParser(description="Solve times experiments")
-
-# Folder
-parser.add_argument(
-    "--folder",
-    type=str,
-    default="study_case_model/figures/solve_times/",
-    help="Folder to save figures and CSVs"
-)
-
-parser.add_argument(
-    "--branches_stage2",
-    type=int,
-    default=4,
-    help="Number of branches in stage 2"
-)
-parser.add_argument(
-    "--branches_stage3",
-    type=int,
-    default=4,
-    help="Number of branches in stage 3"
-)
-
-parser.add_argument(
-    "--precision",
-    type=float,
-    default=0.001,
-    help="Solver precision / tolerance"
-)
-
-# =========================
-# Parse arguments
-# =========================
-args = parser.parse_args()
-
-# =========================
-# Map to variables
-# =========================
-FOLDER = args.folder
-NUMBER_OF_STAGES = 3
-BRANCHES_PER_STAGE = {1: 1, 2: args.branches_stage2, 3: args.branches_stage3}
-PRECISION = args.precision
-RUNS = 10
-
-def time_model(model, precision = PRECISION):
-    start_time = time.time()
-    results = solve_model(model, verbose=False, precision = precision, threads = 32)
-    end_time = time.time()
-    return end_time - start_time
-
-
-
-def branch_solve_time_matrix(network, max_2, max_3, runs=4):
-    G = network.copy()
-    solve_times = {}
-
-    for m_2 in range(2, max_2+1, 2):
-        for m_3 in range(2, max_3+1, 2):
-
-            times = []
-
-            for r in range(runs):
-                scenarios = create_scenarios(NUMBER_OF_STAGES, {1: 1, 2: m_2, 3: m_3}, G)
-                model = create_model(G, scenarios, number_of_density_bounds=1)
-                t = time_model(model)
-                times.append(t)
-
-            times = np.array(times)
-            mean = np.mean(times)
-            std = np.std(times, ddof=1)  # sample std
-            stderr = std / np.sqrt(runs)
-
-            solve_times[(m_2, m_3)] = (mean, stderr)
-
-            print(
-                f"Branches Stage 2: {m_2}, Stage 3: {m_3} | "
-                f"Mean: {mean:.2f}s ± {stderr:.2f}"
-            )
-
-    return solve_times
-    
-def plot_solve_time_matrix(solve_times, folder=FOLDER):
-    os.makedirs(folder, exist_ok=True)
-
-    m_2_values = sorted(set(m_2 for m_2, m_3 in solve_times.keys()))
-    m_3_values = sorted(set(m_3 for m_2, m_3 in solve_times.keys()))
-
-    # Extract mean values for heatmap
-    Z = np.array([
-        [solve_times.get((m_2, m_3), (0, 0))[0] for m_3 in m_3_values]
-        for m_2 in m_2_values
-    ])
-
-    plt.figure(figsize=(10, 6))
-    plt.imshow(Z, origin='lower', aspect='auto', cmap='viridis')
-    plt.colorbar(label='Mean Solve Time (seconds)')
-
-    # Annotate with mean ± stderr
-    for i, m_2 in enumerate(m_2_values):
-        for j, m_3 in enumerate(m_3_values):
-            mean, stderr = solve_times.get((m_2, m_3), (0, 0))
-            plt.text(
-                j, i,
-                f'{mean:.2f}±{stderr:.2f}',
-                ha='center', va='center',
-                color='white',
-                fontsize=9
-            )
-
-    plt.xticks(ticks=range(len(m_3_values)), labels=m_3_values)
-    plt.yticks(ticks=range(len(m_2_values)), labels=m_2_values)
-
-    plt.xlabel('Branches in Stage 3')
-    plt.ylabel('Branches in Stage 2')
-    plt.title(f'Solve Time Matrix (Tolerance = {PRECISION * 100}%)')
-
-    plt.tight_layout()
-    plt.savefig(folder + 'solve_time_matrix.png')
-    plt.close()
-
-
 def allowed_deviation_solve_times(network, scenarios, deviation_values):
     G = network.copy()
     solve_times = {}
@@ -335,57 +193,32 @@ def plot_splits_objective(results, precision=0.01, runs =5):
     plt.savefig(FOLDER + 'splits_per_arc_objective.png')
     plt.close()
 
-def save_dict_to_csv(data_dict, folder, filename):
-    Path(folder).mkdir(parents=True, exist_ok=True)
 
-    # Convert dict to DataFrame
-    df = pd.DataFrame.from_dict(data_dict, orient="index")
 
-    # Case 1: tuple values (mean, stderr)
-    if df.shape[1] == 2:
-        df.columns = ["mean", "stderr"]
+solve_times = branch_solve_time_matrix(G, max_2=8, max_3=8, runs=RUNS)
+save_dict_to_csv(solve_times, FOLDER, "branch_solve_times")
+plot_solve_time_matrix(solve_times)
 
-    # Case 2: scalar values
-    elif df.shape[1] == 1:
-        df.columns = ["value"]
+scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
 
-    # Optional: split tuple index (m_2, m_3) into columns
-    if isinstance(df.index[0], tuple):
-        df.index = pd.MultiIndex.from_tuples(df.index, names=["m_2", "m_3"])
-        df = df.reset_index()
+# deviation_values = np.linspace(0, 1, 9) 
+# deviation_solve_times = allowed_deviation_solve_times(G, scenarios, deviation_values)
+# plot_deviation_solve_times(deviation_solve_times)
 
-    file_path = Path(folder) / f"{filename}.csv"
-    df.to_csv(file_path, index=False)
+# cutting_plane_times = cutting_planes_solve_times(G, scenarios, 20, 20)
+# save_dict_to_csv(cutting_plane_times, FOLDER, "cut_plane_solve_times")
+# plot_cutting_plane_solve_times(cutting_plane_times)
 
-    print(f"Saved to {file_path}")
+density_bounds = [1, 2, 3, 4]
+solve_times = density_solve_times(G, density_bounds, runs = RUNS)
+save_dict_to_csv(solve_times, FOLDER, "density_solve_times")
+plot_density_solve_times(solve_times, runs=RUNS)
 
-if __name__ == "__main__":
-    G = build_base_graph()
+solve_times = splits_per_arc_experiment(G, splits_values=[6,11,16,21,26], runs= RUNS)
 
-    solve_times = branch_solve_time_matrix(G, max_2=8, max_3=8, runs=RUNS)
-    save_dict_to_csv(solve_times, FOLDER, "branch_solve_times")
-    plot_solve_time_matrix(solve_times)
-
-    scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G)
-
-    # deviation_values = np.linspace(0, 1, 9) 
-    # deviation_solve_times = allowed_deviation_solve_times(G, scenarios, deviation_values)
-    # plot_deviation_solve_times(deviation_solve_times)
-
-    # cutting_plane_times = cutting_planes_solve_times(G, scenarios, 20, 20)
-    # save_dict_to_csv(cutting_plane_times, FOLDER, "cut_plane_solve_times")
-    # plot_cutting_plane_solve_times(cutting_plane_times)
-
-    density_bounds = [1, 2, 3, 4]
-    solve_times = density_solve_times(G, density_bounds, runs = RUNS)
-    save_dict_to_csv(solve_times, FOLDER, "density_solve_times")
-    plot_density_solve_times(solve_times, runs=RUNS)
-
-    solve_times = splits_per_arc_experiment(G, splits_values=[6,11,16,21,26], runs= RUNS)
-
-    plot_splits_solve_times(solve_times, runs= RUNS)
-    save_dict_to_csv(solve_times, FOLDER, "splits_solve_times")
-    plot_splits_objective(solve_times, runs= RUNS)
+plot_splits_solve_times(solve_times, runs= RUNS)
+save_dict_to_csv(solve_times, FOLDER, "splits_solve_times")
+plot_splits_objective(solve_times, runs= RUNS)
 
 
 

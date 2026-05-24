@@ -11,7 +11,8 @@ from statsmodels.stats.multitest import multipletests
 
 
 # Read all CSV files matching the pattern
-csv_files = glob('study_case_model/figures/vss_experiment/30426/vss_results_*.csv')
+EXPERIMENT_ID = 14526
+csv_files = glob(f'study_case_model/figures/vss_experiment/{EXPERIMENT_ID}/vss_results_*.csv')
 
 # Read and combine all files into one dataframe
 dfs = [pd.read_csv(file) for file in csv_files]
@@ -23,6 +24,7 @@ print(combined_df.describe()["VSS"])
 grouped = combined_df.groupby(['subsidy', 'deviation', 'branches_s2', 'branches_s3']).agg({
     'VSS': ['mean', 'std'],
     'EVPI': ['mean', 'std'],
+    'EVPI_cond' : ['mean', 'std'],
     'RP': 'mean',
     'run': 'count'  # Count the number of samples in each group
 })
@@ -32,8 +34,11 @@ grouped[('VSS_pct', 'mean')] = (grouped[('VSS', 'mean')] / grouped[('RP', 'mean'
 grouped[('VSS_pct', 'std')] = (grouped[('VSS', 'std')] / grouped[('RP', 'mean')] * 100)
 grouped[('EVPI_pct', 'mean')] = (grouped[('EVPI', 'mean')] / grouped[('RP', 'mean')] * 100)
 grouped[('EVPI_pct', 'std')] = (grouped[('EVPI', 'std')] / grouped[('RP', 'mean')] * 100)
+grouped[('EVPI_cond_pct', 'mean')] = (grouped[('EVPI_cond', 'mean')] / grouped[('RP', 'mean')] * 100)
+grouped[('EVPI_cond_pct', 'std')] = (grouped[('EVPI_cond', 'std')] / grouped[('RP', 'mean')] * 100)
 grouped[('VSS_pct', 'se')] = grouped[('VSS_pct', 'std')] / np.sqrt(grouped[('run', 'count')])
 grouped[('EVPI_pct', 'se')] = grouped[('EVPI_pct', 'std')] / np.sqrt(grouped[('run', 'count')])
+grouped[('EVPI_cond_pct', 'se')] = grouped[('EVPI_cond_pct', 'std')] / np.sqrt(grouped[('run', 'count')])
 
 
 
@@ -46,6 +51,13 @@ for deviation_val in grouped.index.get_level_values('deviation').unique():
 
     evpi_mean = subset[('EVPI_pct', 'mean')].unstack(['branches_s2', 'branches_s3']).T
     evpi_se   = subset[('EVPI_pct', 'se')].unstack(['branches_s2', 'branches_s3']).T
+
+    evpi_cond_mean = subset[('EVPI_cond_pct', 'mean')].unstack(['branches_s2', 'branches_s3']).T
+    evpi_cond_se = subset[('EVPI_cond_pct', 'se')].unstack(['branches_s2', 'branches_s3']).T
+
+    print(f"\n--- Deviation: {int(deviation_val * 100)}% ---")
+    print(f"EVPI means: \n{evpi_mean}")
+    print(f"CEVPI means: \n{evpi_cond_mean}")
 
     # Keep structure for grouping
     original_index = vss_mean.index
@@ -60,9 +72,13 @@ for deviation_val in grouped.index.get_level_values('deviation').unique():
 
     vss_annot = format_annot(vss_mean, vss_se)
     evpi_annot = format_annot(evpi_mean, evpi_se)
+    evpi_cond_annot = format_annot(evpi_cond_mean, evpi_cond_se)
 
     # --- Figure ---
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    if deviation_val not in [0.0, 1.0]:
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
+    else: 
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     # Colormap
     pastel_colors = ["#82C9FF", "#7AFF97"]
@@ -70,6 +86,7 @@ for deviation_val in grouped.index.get_level_values('deviation').unique():
         "continuous_pastel", pastel_colors
     )
 
+    cbars = []
     # --- Heatmaps ---
     hm1 = sns.heatmap(
         vss_mean,
@@ -82,7 +99,13 @@ for deviation_val in grouped.index.get_level_values('deviation').unique():
         cbar_kws={'label': 'VSS (%)'}
     )
 
-    hm2 = sns.heatmap(
+    # --- Colorbar formatting (ticks + borders) ---
+    cbar1 = hm1.collections[0].colorbar
+    cbar1.set_ticks([0.35, 0.375, 0.40, 0.425, 0.45])
+    cbars.append(cbar1)
+
+    if deviation_val in [0.0, 1.0]:
+        hm2 = sns.heatmap(
         evpi_mean,
         annot=evpi_annot,
         fmt='',
@@ -92,15 +115,40 @@ for deviation_val in grouped.index.get_level_values('deviation').unique():
         vmax=0.10,
         cbar_kws={'label': 'EVPI (%)'}
     )
+        cbar2 = hm2.collections[0].colorbar
+        cbar2.set_ticks([0.05, 0.06, 0.07, 0.08, 0.09, 0.10])
+        cbars.append(cbar2)
+    else:
+        hm2 = sns.heatmap(
+        evpi_mean,
+        annot=evpi_annot,
+        fmt='',
+        ax=ax2,
+        cmap=continuous_pastel,
+        vmin=0.0,
+        vmax=1.5,
+        cbar_kws={'label': 'EVPI (%)'}
+        )
+        
+        hm3 = sns.heatmap(
+            evpi_cond_mean,
+            annot=evpi_cond_annot,
+            fmt='',
+            ax=ax3,
+            cmap=continuous_pastel,
+            vmin=0.05,
+            vmax=0.10,
+            cbar_kws={'label': 'Conditional EVPI (%)'}
+        )
+        cbar2 = hm2.collections[0].colorbar
+        cbar2.set_ticks([0.0, 0.50, 1.0, 1.5])
+        cbars.append(cbar2)
 
-    # --- Colorbar formatting (ticks + borders) ---
-    cbar1 = hm1.collections[0].colorbar
-    cbar2 = hm2.collections[0].colorbar
-
-    cbar1.set_ticks([0.35, 0.375, 0.40, 0.425, 0.45])
-    cbar2.set_ticks([0.05, 0.06, 0.07, 0.08, 0.09, 0.10])
-
-    for cbar in [cbar1, cbar2]:
+        cbar3 = hm3.collections[0].colorbar
+        cbar3.set_ticks([0.05, 0.06, 0.07, 0.08, 0.09, 0.10])
+        cbars.append(cbar3)
+    
+    for cbar in cbars:
         cbar.ax.tick_params(length=6, width=1.2, direction='out')
 
     # --- S3 labels only ---
@@ -161,10 +209,21 @@ for deviation_val in grouped.index.get_level_values('deviation').unique():
     ax1.set_xlabel('Subsidy')
     ax2.set_xlabel('Subsidy')
 
+    if deviation_val not in [0.0, 1.0]:
+        ax3.set_yticklabels(s3_labels, rotation=90)
+        ax3.set_xticklabels(x_labels, rotation=0)
+
+        add_s2_separators(ax3, original_index)
+        add_s2_group_labels(ax3, original_index)
+
+        ax3.set_title(f'Conditional EVPI (deviation={int(deviation_val * 100)}%)')
+        ax3.set_ylabel('Branches', labelpad=40)
+        ax3.set_xlabel('Subsidy')
+
     plt.tight_layout()
 
     plt.savefig(
-        f'study_case_model/figures/vss_experiment/30426/vss_evpi_deviation_{deviation_val}.png',
+        f'study_case_model/figures/vss_experiment/{EXPERIMENT_ID}/vss_evpi_deviation_{deviation_val}.png',
         dpi=300,
         bbox_inches='tight'
     )

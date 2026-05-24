@@ -702,7 +702,7 @@ def plot_scenario_revenue_costs(model, folder="figures/", show=False):
     ax1.set_xticks(positions_revenue)
     ax1.set_xticklabels(["Revenue"])
     ax1.set_title("Revenue Distribution", fontsize=14)
-    ax1.set_ylim(bottom=0, top = 25)
+    ax1.set_ylim(bottom=0, top = max(25, 1.01 * max(y_positions)))
     ax1.grid(alpha=0.3, axis="y")
 
     # ============================================

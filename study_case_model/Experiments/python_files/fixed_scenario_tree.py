@@ -22,12 +22,12 @@ from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, a
 parser = argparse.ArgumentParser(description="Fixed scenario tree experiment")
 
 parser.add_argument("--run", type=int, default=0)
-parser.add_argument("--subsidy", type=float, default=70)
+parser.add_argument("--subsidy", type=float, default=0)
 parser.add_argument("--deviation", type=float, default=0)
 
 parser.add_argument("--threads", type=int, default=8)
 parser.add_argument("--time_limit", type=float, default=None)
-parser.add_argument("--precision", type=float, default=0.01)
+parser.add_argument("--precision", type=float, default=0.002)
 parser.add_argument("--upper_bounds", type=int, default=1)
 
 parser.add_argument("--node_file_folder", type=str, default="node_files_fixed/")
@@ -41,6 +41,7 @@ args = parser.parse_args()
 # Constants
 # =========================
 NUMBER_OF_STAGES = 3
+PLOT = True
 
 BRANCHES_PER_STAGE = {
     1: 1,
@@ -81,6 +82,8 @@ def generate_binary_patterns(n):
 # =========================
 def add_fixed_demand_scenarios(scenarios, deviation):
     patterns = generate_binary_patterns(2)  # UK, DE
+    print("=== Adding fixed demand scenarios ===")
+    print("Patterns:", patterns)
 
     for i, scenario in enumerate(scenarios[2]):
         pattern = patterns[i % len(patterns)]
@@ -89,7 +92,7 @@ def add_fixed_demand_scenarios(scenarios, deviation):
             "UK": pattern[0],
             "DE": pattern[1]
         }
-
+        print(f"=== Demand in scenario {i+1} ===")
         for node in scenario.G.nodes:
             node_data = scenario.G.nodes[node]
 
@@ -104,14 +107,15 @@ def add_fixed_demand_scenarios(scenarios, deviation):
             group = DEMAND_GROUPS.get(node, None)
 
             if group is None:
-                multiplier = 1.0
+                demand = avg
             else:
                 if demand_state[group] == "high":
-                    multiplier = 1 + deviation * var *2 
+                    multiplier = 1 + var *2 
                 else:
-                    multiplier = 1 - deviation * var *2
+                    multiplier = 1 - var *2
 
-            demand = max(avg * multiplier, 0)
+                demand = max(avg * multiplier, 0)
+                print(node, demand)
 
             if "supplier_ratios" in node_data:
                 ratios = node_data["supplier_ratios"]
@@ -130,6 +134,8 @@ def add_fixed_demand_scenarios(scenarios, deviation):
             if node in pred.G.nodes and "demand" in pred.G.nodes[node]:
                 scenario.G.nodes[node]["demand"] = pred.G.nodes[node]["demand"]
 
+                
+
 
 # =========================
 # Fixed price scenarios (Stage 3)
@@ -146,7 +152,8 @@ def add_fixed_price_scenarios(scenarios, deviation):
             "P3": pattern[2],
             "P4": pattern[3],
         }
-
+        if i < 16:  # print for first scenario of each pattern
+            print(f"=== Prices in scenario {i+1} ===")
         for node in scenario.G.nodes:
             node_data = scenario.G.nodes[node]
 
@@ -156,20 +163,21 @@ def add_fixed_price_scenarios(scenarios, deviation):
             
             avg = float(node_data["average_market_price"] if node_data["average_market_price"] is not None else 0)
             std = float(node_data.get("long_term_price_std", 0) if node_data.get("long_term_price_std", 0) is not None else 0)
-
             group = PRICE_GROUPS.get(node, None)
 
             if group is None:
                 continue
 
             if price_state[group] == "high":
-                multiplier = 1 + deviation * std *2
+                multiplier = 1 + std *2
             else:
-                multiplier = 1 - deviation * std *2
+                multiplier = 1 - std *2
 
             price = max(avg * multiplier, 0)
 
             scenario.G.nodes[node]["price"] = price
+            if i < 16:  # print for first scenario of each pattern
+                print(node, price)
 
 
 # =========================
@@ -265,6 +273,8 @@ def main():
 
     print("=== DONE ===")
 
+    if PLOT:
+        scsm.plot_results(model, folder=args.pickle_folder)
 
 # =========================
 # Run
