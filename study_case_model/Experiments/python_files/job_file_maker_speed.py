@@ -28,7 +28,7 @@ for split in homogeneous_splits:
         for dev_idx, dev in enumerate(deviations):
             for sub_idx, sub in enumerate(subsidies):
                 cmd = (
-                    "python study_case_model/Experiments/python_files/fixed_scenario_tree.py "
+                    "python study_case_model/Experiments/python_files/examine_speed_stochasticity.py "
                     f"--runs {runs} "
                     f"--subsidy {sub} "
                     f"--deviation {dev} "
