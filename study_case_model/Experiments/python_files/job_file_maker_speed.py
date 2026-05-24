@@ -32,7 +32,6 @@ for split in homogeneous_splits:
                     f"--runs {runs} "
                     f"--subsidy {sub} "
                     f"--deviation {dev} "
-                    f"--upper_bounds 1 "
                     f"--precision {precision} "
                     f"--pickle_folder {pickle_folder} "
                     f"--threads {threads} "
