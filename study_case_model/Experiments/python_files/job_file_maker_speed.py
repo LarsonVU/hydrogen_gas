@@ -11,8 +11,8 @@ runs = 4
 homogeneous_splits = [5, 10, 15, 20, 25]
 density_bounds = [1, 2, 4, 8]
 
-branches_stage2 = 4
-branches_stage3 = 4
+branches_stage2 = 1
+branches_stage3 = 1
 
 pickle_folder = "study_case_model/figures/speed_experiment_1a/run_24526/"
 threads = 48

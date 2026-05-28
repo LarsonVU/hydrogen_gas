@@ -39,7 +39,7 @@ parser.add_argument(
 
 parser.add_argument(
     "--threads",
-    type = str,
+    type = int,
     default=8,
     help = "Amount of threads for the model to run on"
 )
@@ -47,13 +47,13 @@ parser.add_argument(
 parser.add_argument(
     "--branches_stage2",
     type=int,
-    default=4,
+    default=1,
     help="Number of branches in stage 2"
 )
 parser.add_argument(
     "--branches_stage3",
     type=int,
-    default=4,
+    default=1,
     help="Number of branches in stage 3"
 )
 
@@ -67,28 +67,28 @@ parser.add_argument(
 parser.add_argument(
     "--subsidy",
     type= float,
-    default=0.0,
+    default=70.0,
     help = "subsidy level"
 )
 
 parser.add_argument(
     "--deviation",
     type= float,
-    default =0.0,
+    default =1.0,
     help = 'Allowed deviation'
 )
 
 parser.add_argument(
     "--homogeneous_splits",
     type = int,
-    default=10,
+    default=25,
     help = "Number of homogeneous splits per split arc"
     )
 
 parser.add_argument(
     "--density_bounds",
     type = int,
-    default=1,
+    default=8,
     help = "Number of density bounds"
 )
 
@@ -143,6 +143,10 @@ def add_row_dict_to_csv(row, folder, filename):
 
 def create_row(model, solve_time, run):
     row = {
+        "density_bounds": DENSITY_BOUNDS,
+        "homogeneous_splits": HOMOGENEOUS_SPLITS,
+        "stage2_branches": BRANCHES_PER_STAGE[2],
+        "stage3_branches": BRANCHES_PER_STAGE[3],
         "subsidy": args.subsidy,
         "deviation": args.deviation,
         "run": run, 
@@ -166,11 +170,11 @@ if __name__ == "__main__":
 
 
     for RUN in range(0,RUNS):
-        print("Solving model:" + f" dev{DEVIATION}, sub{SUBSIDY}, run{RUN}", flush=True)
+        print("Solving model:" + f" dev{DEVIATION}, sub{SUBSIDY}, run{RUN}, den{DENSITY_BOUNDS}, split{HOMOGENEOUS_SPLITS}", flush=True)
         scenarios = create_scenarios(NUMBER_OF_STAGES, BRANCHES_PER_STAGE, G, seed=RUN)
         model = create_model(G, scenarios, allowed_deviation=DEVIATION, number_of_density_bounds=DENSITY_BOUNDS, splits_per_arc=np.linspace(0, 1, HOMOGENEOUS_SPLITS))
         time_taken = time_model(model)
         row = create_row(model, time_taken, RUN)
-        add_row_dict_to_csv(row, FOLDER + f"sub{SUBSIDY}/dev{DEVIATION}/run{RUN}/",  "solve_times.csv")
-        save_model_values(model, args.pickle_folder +  f"sub{SUBSIDY}/dev{DEVIATION}/run{RUN}/model.pkl")
+        add_row_dict_to_csv(row, FOLDER + f"sub{SUBSIDY}/dev{DEVIATION}/den{DENSITY_BOUNDS}/split{HOMOGENEOUS_SPLITS}/",  "solve_times.csv")
+        save_model_values(model, args.pickle_folder +  f"sub{SUBSIDY}/dev{DEVIATION}/den{DENSITY_BOUNDS}/split{HOMOGENEOUS_SPLITS}/run{RUN}/model.pkl")
     print("== Done ==")

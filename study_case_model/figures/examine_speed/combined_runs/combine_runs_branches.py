@@ -113,8 +113,8 @@ def load_and_plot_solve_time_matrix(csv_path, folder="figures/"):
                     fontsize=9
                 )
 
-    plt.xticks(ticks=range(len(m_3_values)), labels=m_3_values)
-    plt.yticks(ticks=range(len(m_2_values)), labels=m_2_values)
+    plt.xticks(ticks=range(len(m_3_values)), labels=[int(m_3) for m_3 in m_3_values])
+    plt.yticks(ticks=range(len(m_2_values)), labels=[int(m_2) for m_2 in m_2_values])
 
     plt.xlabel('Branches in Stage 3')
     plt.ylabel('Branches in Stage 2')

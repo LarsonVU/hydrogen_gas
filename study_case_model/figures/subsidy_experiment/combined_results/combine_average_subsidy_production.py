@@ -16,7 +16,7 @@ LOAD_ONE_RUN = None #"run0"
 MINIMUM_RUNS = 2
 HYDROGEN_MSCM_MWH = 2.78 * 1000 
 
-folder = f"study_case_model/figures/subsidy_experiment/combined_results/{EXPERIMENT}/"
+folder = f"study_case_model/figures/subsidy_experiment/combined_results/one_deviation" #{EXPERIMENT}/"
 
 # =========================
 # COLOR PALETTE
@@ -415,7 +415,8 @@ def plot_hydrogen_production(h2_dict, folder):
     plt.ylabel('Average Hydrogen Production (Gwh)')
     plt.title('Average Hydrogen Production vs Subsidy')
     plt.grid(alpha=0.3, axis="y")
-    plt.legend() 
+    if len(h2_dict) > 1:
+        plt.legend() 
     
     plt.savefig(os.path.join(folder, "hydrogen_production_vs_subsidy.png")) 
     plt.close()
@@ -658,7 +659,8 @@ def plot_net_effect(objective_dict, h2_dict, folder, co2_method ="zero"):
     plt.ylabel('Net Effect (Euro)')
     plt.title('Net Welfare Effect of Subsidy')
     plt.grid(alpha=0.3, axis="y")
-    plt.legend()
+    if len(objective_dict) > 1:
+        plt.legend()
 
     plt.savefig(os.path.join(folder, f"net_effect_vs_subsidy_{co2_method}.png"))
     plt.close()
@@ -1617,7 +1619,9 @@ if __name__ == "__main__":
             network_plot_hydrogen_production(sub_value, dev_value, base_folder, f"study_case_model/figures/subsidy_experiment/combined_results/html_networks/{EXPERIMENT}/")
 
     results = analyze_experiment(base_folder)
-
+    # Filter to only include deviation == 0.0
+    #results = {k: v for k, v in results.items() if float(k) == 0.0}
+    
     if LOAD_ONE_RUN:
         plot_hydrogen_production(results, folder=folder + f"{LOAD_ONE_RUN}")
         plot_hydrogen_production_by_subsidy(results, folder= folder +f"{LOAD_ONE_RUN}")
@@ -1632,6 +1636,8 @@ if __name__ == "__main__":
         plot_subsidy_cost(results, folder =folder)
 
     objective_dict = analyze_objectives(base_folder)
+    # Filter to only include deviation == 0.0
+    #objective_dict = {k: v for k, v in objective_dict.items() if float(k) == 0.0}
 
     if LOAD_ONE_RUN:
         plot_objective_values(objective_dict, folder=folder + f"{LOAD_ONE_RUN}")
