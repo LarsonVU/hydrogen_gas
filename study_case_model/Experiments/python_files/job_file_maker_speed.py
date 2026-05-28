@@ -6,7 +6,7 @@ import os
 # Different density of subsidies to illuminate trend
 subsidies = [0,30, 45, 70]  # 0,5,...,80
 deviations = [0, 0.05, 0.1, 0.2 ,1]
-runs = 4
+runs = 10
 
 homogeneous_splits = [5, 10, 15, 20, 25]
 density_bounds = [1, 2, 4, 8]
