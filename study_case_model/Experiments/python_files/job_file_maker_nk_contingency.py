@@ -13,7 +13,8 @@ with open("nk_contingency_jobs.txt", "w") as f:
             f"python study_case_model/Experiments/python_files/examine_nk_contingency.py "
             f"--subsidy {subsidy} --max_k {max_k} --run {run} "
             f"--branches_stage2 4 --branches_stage3 4 "
-            f"--threads 48 --precision 0.01 --time_limit 600"
+            f"--threads 48 --precision 0.01 --time_limit 600 "
+            f"--skip_plants "
         )
         f.write(cmd + "\n")
 

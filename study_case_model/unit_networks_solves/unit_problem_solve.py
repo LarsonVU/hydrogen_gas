@@ -9,7 +9,7 @@ import mini_network_maker as mwm
 DATA_FOLDER = "study_case_model/smaller_network/scenario_variables/"
 FOLDER = "study_case_model/unit_networks_solves/figures/"
 PICKLE_FOLDER = "study_case_model/unit_networks_solves/snapshots/"
-NETWORK_FOLDER = "study_case_model/unit_networks"
+NETWORK_FOLDER = "study_case_model/unit_networks_solves/unit_gen2_networks/"
 
 NUMBER_OF_STAGES = 3
 BRANCHES_PER_STAGE = {1 : 1, 2 : 1, 3: 1}
@@ -27,6 +27,7 @@ def solve_small_network(path, file):
         NUMBER_OF_STAGES,
         BRANCHES_PER_STAGE,
         G,
+        0,
         DATA_FOLDER
     )
 
@@ -61,7 +62,7 @@ def print_objectives():
             print(model_values["objectives"])
 
 if __name__ == "__main__":
-    #solve_small_networks()
+    solve_small_networks()
     print_objectives()
 
     # solve_small_network(os.path.join(NETWORK_FOLDER, "021_Spearow.pkl"), "021_Spearow.pkl")
