@@ -40,7 +40,7 @@ sys.path.append(str(ROOT))
 
 import study_case_stochastic_model as scsm
 import study_case_problem_file as scpf
-from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy, change_demand_constraint
+from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, apply_subsidy
 
 
 # =========================
@@ -49,13 +49,13 @@ from Experiments.python_files.experiment_utils import subsidy_per_mwh_to_mscm, a
 parser = argparse.ArgumentParser(description="Force hydrogen constraint experiment for hydrogen gas network")
 
 parser.add_argument("--run", type=int, default=0)
-parser.add_argument("--branches_stage2", type=int, default=4)
+parser.add_argument("--branches_stage2", type=int, default=12)
 parser.add_argument("--branches_stage3", type=int, default=1)
 parser.add_argument("--subsidy", type=float, default=0, help="H2 subsidy in EUR/MWh (applied in addition to forcing)")
 parser.add_argument("--deviation", type=float, default=0.0)
 
 # Hydrogen forcing levels to test (percentages of total potential production)
-parser.add_argument("--h2_levels", type=str, default="0,1.0,2.0,3.0,5.0,7.5,10",
+parser.add_argument("--h2_levels", type=str, default="0,8,8.25, 8.3, 8.4, 8.5",
                     help="Comma-separated hydrogen forcing levels (percent of max capacity)")
 
 parser.add_argument("--upper_bounds", type=int, default=1)
@@ -253,8 +253,6 @@ if __name__ == "__main__":
             allowed_deviation=args.deviation,
             number_of_density_bounds=args.upper_bounds
         )
-
-        model = change_demand_constraint(model)
 
         # Add hydrogen forcing constraint
         if h2_level > 0:
