@@ -22,7 +22,7 @@ lines = []
 for run_idx in range(0,runs):
     for dev_idx, dev in enumerate(deviations):
             cmd = (
-                "python study_case_model/Experiments/python_files/fixed_scenario_tree.py "
+                "python study_case_model/Experiments/python_files/force_hydrogen.py "
                 f"--run {run_idx} "
                 f"--h2_levels {h2_levels} "
                 f"--deviation {dev} "
