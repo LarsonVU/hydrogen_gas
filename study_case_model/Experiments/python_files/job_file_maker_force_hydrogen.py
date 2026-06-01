@@ -13,7 +13,7 @@ csv_folder = "study_case_model/figures/force_hydrogen/run_1626/"
 threads = 48
 output_file = "study_case_model/Experiments/slurm_files/force_jobs_1626.txt"
 precision = 0.002
-h2_levels = ",".join(f"{i}" for i in range(1, 21))
+h2_levels = ",".join(f"{i}" for i in range(0, 21)) 
 
 # =========================
 # Generate jobs
